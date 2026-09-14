@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite --host 0.0.0.0",
-        "test:frontend": "node --test tests/frontend/**/*.test.js"
+        "test:frontend": "node --test tests/frontend/**/*.test.js",
+        "generate:template": "node scripts/generate_template.cjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
