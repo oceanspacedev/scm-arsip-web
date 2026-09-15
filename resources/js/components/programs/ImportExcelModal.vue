@@ -421,6 +421,8 @@ function mapRawRow(raw) {
   let npwp = '';
   let category = 'Logistik';
   let program_date = new Date().toISOString().split('T')[0];
+  let faktur_number = '';
+  let faktur_date = null;
 
   for (const [key, val] of Object.entries(raw)) {
     const k = normalizeKey(key);
@@ -503,6 +505,19 @@ function mapRawRow(raw) {
     ) {
       program_date = parseImportDate(val);
     }
+    // 12. FAKTUR PAJAK / TAX INVOICE
+    else if (
+      k.includes('fakturpajak') ||
+      k.includes('taxinvoice') ||
+      k.includes('nofp') ||
+      (k.includes('faktur') && k.includes('pajak'))
+    ) {
+      if (k.includes('tanggal') || k.includes('date') || k.includes('tgl')) {
+        faktur_date = parseImportDate(val);
+      } else {
+        faktur_number = String(val || '').trim();
+      }
+    }
   }
 
   // Automatic Fallbacks & Calculations
@@ -530,7 +545,11 @@ function mapRawRow(raw) {
     total_invoice,
     npwp,
     category,
-    program_date
+    program_date,
+    faktur_number: faktur_number || null,
+    faktur_date: faktur_date || null,
+    tax_invoice_number: faktur_number || null,
+    tax_invoice_date: faktur_date || null
   };
 }
 

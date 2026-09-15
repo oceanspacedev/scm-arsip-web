@@ -457,6 +457,8 @@ class ProgramController extends Controller
                 $dueDate = $this->parseSafeDate($p['due_date'] ?? $p['program_date'] ?? null);
                 $companyName = $p['company_name'] ?? $p['company'] ?? 'PT SCM Nusantara';
                 $poSjNumber = $p['po_sj_number'] ?? $p['no_po_sj'] ?? null;
+                $fakturNumber = $p['faktur_number'] ?? $p['tax_invoice_number'] ?? null;
+                $fakturDate = $p['faktur_date'] ?? $p['tax_invoice_date'] ?? null;
 
                 $program = Program::updateOrCreate(
                     ['id' => $id],
@@ -473,8 +475,8 @@ class ProgramController extends Controller
                         'total_amount' => $total,
                         'pph_type' => $p['pph_type'] ?? 'NON_PPH',
                         'pph_amount' => (float) ($p['pph_amount'] ?? $p['pph'] ?? 0),
-                        'faktur_number' => $p['faktur_number'] ?? $p['tax_invoice_number'] ?? null,
-                        'faktur_date' => !empty($p['faktur_date'] ?? $p['tax_invoice_date']) ? $this->parseSafeDate($p['faktur_date'] ?? $p['tax_invoice_date']) : null,
+                        'faktur_number' => $fakturNumber,
+                        'faktur_date' => !empty($fakturDate) ? $this->parseSafeDate($fakturDate) : null,
                         'tax_notes' => $p['tax_notes'] ?? null,
                         'is_verified' => (bool) ($p['is_verified'] ?? false),
                         'due_date' => $dueDate,
