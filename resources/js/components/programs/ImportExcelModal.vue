@@ -624,7 +624,7 @@ function downloadTemplate(format = 'xlsx') {
     : 'Template_Import_Arsip_Program_SCM.xlsx';
 
   const link = document.createElement('a');
-  link.href = `/${fileName}`;
+  link.href = `/templates/${fileName}`;
   link.download = fileName;
   document.body.appendChild(link);
   link.click();

@@ -207,22 +207,14 @@ for (let R = 1; R <= sampleRows.length; ++R) {
 
 XLSX.utils.book_append_sheet(wb, ws, 'Template Program');
 
-// Output directories
-const targets = [
-  path.join(__dirname, 'Template_Import_Arsip_Program_SCM.xlsx'),
-  path.join(__dirname, 'public', 'Template_Import_Arsip_Program_SCM.xlsx'),
-  path.join(__dirname, 'public', 'templates', 'Template_Import_Arsip_Program_SCM.xlsx')
-];
+const publicDir = path.join(__dirname, '..', 'public', 'templates');
+const xlsxPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.xlsx');
+const csvPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.csv');
 
-// Ensure public/templates dir exists
-fs.mkdirSync(path.join(__dirname, 'public', 'templates'), { recursive: true });
+fs.mkdirSync(publicDir, { recursive: true });
+XLSX.writeFile(wb, xlsxPath);
+console.log('Generated Excel:', xlsxPath);
 
-targets.forEach(t => {
-  XLSX.writeFile(wb, t);
-  console.log('Generated Excel:', t);
-});
-
-// 2. Build CSV File
 const csvLines = [
   sampleHeaders.join(','),
   ...sampleRows.map(row => {
@@ -234,17 +226,5 @@ const csvLines = [
     }).join(',');
   })
 ];
-const csvBuffer = '\uFEFF' + csvLines.join('\r\n');
-
-const csvTargets = [
-  path.join(__dirname, 'Template_Import_Arsip_Program_SCM.csv'),
-  path.join(__dirname, 'public', 'Template_Import_Arsip_Program_SCM.csv'),
-  path.join(__dirname, 'public', 'templates', 'Template_Import_Arsip_Program_SCM.csv')
-];
-
-csvTargets.forEach(t => {
-  fs.writeFileSync(t, csvBuffer, 'utf8');
-  console.log('Generated CSV:', t);
-});
-
-console.log('All dummy templates successfully created!');
+fs.writeFileSync(csvPath, '\uFEFF' + csvLines.join('\r\n'), 'utf8');
+console.log('Generated CSV:', csvPath);
