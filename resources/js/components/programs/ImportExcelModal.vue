@@ -53,6 +53,8 @@
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">DPP</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">PPN</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">TOTAL INVOICE</span>
+              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. FAKTUR PAJAK</span>
+              <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800/80 font-mono font-bold text-blue-700 dark:text-blue-300">TAX INVOICE DATE</span>
             </div>
             <p class="text-slate-500 dark:text-slate-400 mt-1.5 text-[10px]">
               * PPN (11%) dan Total Invoice akan dihitung otomatis jika nilainya dikosongkan.
@@ -173,6 +175,7 @@
                     <th class="py-2.5 px-3">PROGRAM</th>
                     <th class="py-2.5 px-3">SUPPLIER</th>
                     <th class="py-2.5 px-3">NO. INVOICE</th>
+                    <th class="py-2.5 px-2.5 whitespace-nowrap">TAX INVOICE DATE</th>
                     <th class="py-2.5 px-3 text-right">DPP</th>
                     <th class="py-2.5 px-3 text-right">PPN</th>
                     <th class="py-2.5 px-3 text-right">TOTAL INVOICE</th>
@@ -205,6 +208,15 @@
                     </td>
                     <td class="py-2 px-3 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px]">
                       {{ row.invoice_number }}
+                    </td>
+                    <td class="py-2 px-2.5 whitespace-nowrap text-[11px]">
+                      <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-700 dark:text-slate-300">
+                        {{ row.tax_invoice_date || row.faktur_date }}
+                      </div>
+                      <div v-else class="text-slate-400 dark:text-slate-500 font-mono text-[10px]">-</div>
+                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate" :title="row.tax_invoice_number || row.faktur_number">
+                        {{ row.tax_invoice_number || row.faktur_number }}
+                      </div>
                     </td>
                     <td class="py-2 px-3 font-mono text-right text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       {{ formatRupiah(row.dpp) }}
@@ -507,13 +519,15 @@ function mapRawRow(raw) {
     }
     // 12. FAKTUR PAJAK / TAX INVOICE
     else if (
-      k.includes('fakturpajak') ||
       k.includes('taxinvoice') ||
+      k.includes('fakturpajak') ||
+      k.includes('tglfp') ||
       k.includes('nofp') ||
-      (k.includes('faktur') && k.includes('pajak'))
+      k.includes('tanggalfp') ||
+      (k.includes('faktur') && (k.includes('pajak') || k.includes('date') || k.includes('tgl') || k.includes('tanggal') || k.includes('no')))
     ) {
       if (k.includes('tanggal') || k.includes('date') || k.includes('tgl')) {
-        faktur_date = parseImportDate(val);
+        faktur_date = (val !== null && val !== undefined && String(val).trim() !== '') ? parseImportDate(val) : null;
       } else {
         faktur_number = String(val || '').trim();
       }

@@ -503,7 +503,9 @@ export const useTaxStore = () => {
                 const matchCompany = getProgramCompanyName(p).toLowerCase().includes(query);
                 const matchPoSj = getProgramPoSjNumber(p).toLowerCase().includes(query);
                 const matchCategory = (p.category || '').toLowerCase().includes(query);
-                if (!matchName && !matchSupplier && !matchInvoice && !matchNpwp && !matchCompany && !matchPoSj && !matchCategory) {
+                const matchFaktur = (p.faktur_number || '').toLowerCase().includes(query);
+                const matchFakturDate = (p.faktur_date || '').toLowerCase().includes(query);
+                if (!matchName && !matchSupplier && !matchInvoice && !matchNpwp && !matchCompany && !matchPoSj && !matchCategory && !matchFaktur && !matchFakturDate) {
                     return false;
                 }
             }
@@ -934,6 +936,8 @@ export const useTaxStore = () => {
                 "DPP (IDR)",
                 "PPN (IDR)",
                 "TOTAL INVOICE (IDR)",
+                "NO. FAKTUR PAJAK",
+                "TAX INVOICE DATE",
                 "STATUS AUDIT",
                 "DOKUMEN TERSEDIA"
             ];
@@ -954,6 +958,8 @@ export const useTaxStore = () => {
                     Number(p.dpp) || 0,
                     Number(p.ppn) || 0,
                     Number(p.total_invoice) || 0,
+                    p.faktur_number || '-',
+                    p.faktur_date ? String(p.faktur_date).slice(0, 10) : '-',
                     `${comp.count}/3 (${comp.status})`,
                     docs
                 ];
@@ -976,6 +982,8 @@ export const useTaxStore = () => {
                 { wch: 20 },  // DPP
                 { wch: 18 },  // PPN
                 { wch: 22 },  // TOTAL INVOICE
+                { wch: 24 },  // NO. FAKTUR PAJAK
+                { wch: 20 },  // TAX INVOICE DATE
                 { wch: 22 },  // STATUS
                 { wch: 32 }   // DOKUMEN
             ];
@@ -1011,6 +1019,8 @@ export const useTaxStore = () => {
             "DPP (IDR)",
             "PPN (IDR)",
             "Total Invoice (IDR)",
+            "No. Faktur Pajak",
+            "Tax Invoice Date",
             "Kelengkapan Dokumen",
             "Dokumen Tersedia"
         ];
@@ -1033,6 +1043,8 @@ export const useTaxStore = () => {
                     p.dpp || 0,
                     p.ppn || 0,
                     p.total_invoice || 0,
+                    `"${p.faktur_number || '-'}"`,
+                    `"${p.faktur_date ? String(p.faktur_date).slice(0, 10) : '-'}"`,
                     `"${comp.count}/3 (${comp.status})"`,
                     `"${docs}"`
                 ].join(',');

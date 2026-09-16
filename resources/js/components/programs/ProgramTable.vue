@@ -12,6 +12,7 @@
             <th class="py-2.5 px-3 font-bold min-w-[160px]">PROGRAM</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[130px]">SUPPLIER</th>
             <th class="py-2.5 px-2 font-bold min-w-[100px]">NO. INVOICE</th>
+            <th class="py-2.5 px-2.5 font-bold min-w-[125px]">TAX INVOICE DATE</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[90px]">DPP</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[85px]">PPN</th>
             <th class="py-2.5 px-2.5 font-bold text-right min-w-[105px]">TOTAL INVOICE</th>
@@ -84,6 +85,19 @@
             <!-- 3. NO. INVOICE -->
             <td class="py-2.5 px-2 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
               {{ program.invoice_number || '-' }}
+            </td>
+
+            <!-- TAX INVOICE DATE -->
+            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px]">
+              <div v-if="program.faktur_date" class="font-medium text-slate-700 dark:text-slate-300">
+                {{ formatDate(program.faktur_date) }}
+              </div>
+              <div v-else class="text-slate-400 dark:text-slate-500 font-mono text-[10px]">
+                -
+              </div>
+              <div v-if="program.faktur_number" class="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate" :title="program.faktur_number">
+                {{ program.faktur_number }}
+              </div>
             </td>
 
             <!-- 4. DPP -->
@@ -196,7 +210,7 @@
 
           <!-- Empty State Desktop -->
           <tr v-if="filteredPrograms.length === 0">
-            <td colspan="13" class="py-14 text-center">
+            <td colspan="14" class="py-14 text-center">
               <div class="flex flex-col items-center justify-center space-y-2">
                 <FolderArchive class="w-8 h-8 text-slate-300 dark:text-slate-600" />
                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada program ditemukan</p>
@@ -297,6 +311,20 @@
               <span class="font-mono font-bold text-xs sm:text-sm block text-slate-900 dark:text-slate-100">
                 {{ formatRupiah(program.total_invoice) }}
               </span>
+            </div>
+          </div>
+
+          <!-- Tax Invoice Date & No. FP -->
+          <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
+            <div>
+              <span class="text-slate-500 dark:text-slate-400 block">Tax Invoice Date:</span>
+              <span class="font-medium text-slate-700 dark:text-slate-300 block">
+                {{ program.faktur_date ? formatDate(program.faktur_date) : '-' }}
+              </span>
+            </div>
+            <div class="text-right" v-if="program.faktur_number">
+              <span class="text-slate-500 dark:text-slate-400 block">No. FP:</span>
+              <span class="font-mono text-slate-700 dark:text-slate-300 block">{{ program.faktur_number }}</span>
             </div>
           </div>
 
@@ -558,6 +586,26 @@
               </div>
             </div>
 
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">No. Faktur Pajak</label>
+                <input
+                  v-model="editForm.faktur_number"
+                  type="text"
+                  placeholder="010.000-25.00000001"
+                  class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Tax Invoice Date</label>
+                <input
+                  v-model="editForm.faktur_date"
+                  type="date"
+                  class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Nilai DPP (IDR)</label>
@@ -731,6 +779,8 @@ const editForm = reactive({
   po_sj_number: '',
   npwp: '',
   invoice_number: '',
+  faktur_number: '',
+  faktur_date: '',
   category: 'Logistik',
   dpp: 0,
   ppn: 0
@@ -788,6 +838,8 @@ function openEditModal(program) {
   editForm.po_sj_number = getProgramPoSjNumber(program);
   editForm.npwp = program.npwp || '';
   editForm.invoice_number = program.invoice_number || '';
+  editForm.faktur_number = program.faktur_number || '';
+  editForm.faktur_date = program.faktur_date ? String(program.faktur_date).slice(0, 10) : '';
   editForm.category = program.category || 'Logistik';
   editForm.dpp = Number(program.dpp) || 0;
   editForm.ppn = Number(program.ppn) || Math.round((Number(program.dpp) || 0) * 0.11);
@@ -807,6 +859,10 @@ async function saveEdit() {
     po_sj_number: editForm.po_sj_number,
     npwp: editForm.npwp,
     invoice_number: editForm.invoice_number,
+    faktur_number: editForm.faktur_number,
+    faktur_date: editForm.faktur_date || null,
+    tax_invoice_number: editForm.faktur_number,
+    tax_invoice_date: editForm.faktur_date || null,
     category: editForm.category,
     dpp: editForm.dpp,
     ppn: editForm.ppn,
