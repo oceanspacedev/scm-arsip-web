@@ -25,10 +25,6 @@ export function resolveAuthRedirect({ name, isPublic }, { loggedIn, isAdmin, isL
         return { name: 'login' };
     }
 
-    if (isPublic && loggedIn && (name === 'login' || name === 'register')) {
-        return { path: '/dashboard' };
-    }
-
     if ((name === 'users' || name === 'settings') && !isAdmin) {
         return { path: '/dashboard' };
     }

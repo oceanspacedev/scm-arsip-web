@@ -136,8 +136,8 @@
         </div>
         <div class="py-2.5 flex items-center justify-between">
           <div>
-            <p class="font-semibold text-[#17201E] dark:text-slate-100">3. Memo / MOU Perjanjian Kerjasama</p>
-            <p class="text-[#66736F] dark:text-slate-400">Perjanjian kerja, purchase order, atau dasar hukum pengadaan barang/jasa SCM.</p>
+            <p class="font-semibold text-[#17201E] dark:text-slate-100">3. Memo / DO Perjanjian Kerjasama</p>
+            <p class="text-[#66736F] dark:text-slate-400">Surat perintah kerja, delivery order (DO), purchase order, atau dasar hukum pengadaan barang/jasa SCM.</p>
           </div>
           <span class="px-2 py-0.5 rounded bg-[#F4F6F5] dark:bg-slate-800 text-[#17201E] dark:text-slate-300 border border-[#DDE4E1] dark:border-slate-700 font-mono">Wajib</span>
         </div>

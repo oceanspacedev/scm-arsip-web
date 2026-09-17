@@ -222,7 +222,7 @@ export function getMissingDocuments(program) {
     const missing = [];
     if (!docTypes.includes('invoice')) missing.push('Invoice');
     if (!docTypes.includes('faktur_pajak')) missing.push('Faktur Pajak');
-    if (!docTypes.includes('mou')) missing.push('Memo / MOU');
+    if (!docTypes.includes('mou')) missing.push('Memo/DO');
     return missing;
 }
 
@@ -547,7 +547,7 @@ export const useTaxStore = () => {
                     if (!docTypes.includes('faktur_pajak')) return false;
                 } else if (status === 'kurang_faktur' || status === 'Kurang Faktur Pajak') {
                     if (docTypes.includes('faktur_pajak')) return false;
-                } else if (status === 'kurang_mou' || status === 'Kurang Memo/MOU') {
+                } else if (status === 'kurang_mou' || status === 'Kurang Memo/MOU' || status === 'Kurang Memo/DO') {
                     if (docTypes.includes('mou')) return false;
                 } else if (status === 'kurang_invoice' || status === 'Kurang Invoice') {
                     if (docTypes.includes('invoice')) return false;
@@ -1156,7 +1156,7 @@ export const useTaxStore = () => {
     function getDocTypeLabel(docType) {
         if (docType === 'invoice') return 'Invoice';
         if (docType === 'faktur_pajak') return 'Faktur Pajak';
-        if (docType === 'mou') return 'Memo / MOU';
+        if (docType === 'mou') return 'Memo/DO';
         return docType;
     }
 

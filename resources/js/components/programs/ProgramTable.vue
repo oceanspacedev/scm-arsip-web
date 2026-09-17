@@ -144,17 +144,17 @@
                   <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 text-[8px] font-normal">+</span>FP
                 </button>
 
-                <!-- MEMO / MOU -->
+                <!-- MEMO / DO -->
                 <button
                   type="button"
                   class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all cursor-pointer select-none active:scale-95"
                   :class="hasDoc(program, 'mou')
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                     : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-                  :title="hasDoc(program, 'mou') ? 'MOU ada - Klik untuk melihat' : 'MOU belum ada - Klik unggah'"
-                  @click="handlePillClick(program, 'mou', 'Memo / MOU')"
+                  :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : 'Memo/DO belum ada - Klik unggah'"
+                  @click="handlePillClick(program, 'mou', 'Memo/DO')"
                 >
-                  <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[8px] font-normal">+</span>MO
+                  <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[8px] font-normal">+</span>DO
                 </button>
               </div>
             </td>
@@ -372,17 +372,17 @@
               <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 font-normal">+</span>FP
             </button>
 
-            <!-- MOU -->
+            <!-- Memo / DO -->
             <button
               type="button"
               class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
               :class="hasDoc(program, 'mou')
                 ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                 : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-              :title="hasDoc(program, 'mou') ? 'MOU ada - Klik untuk melihat' : 'MOU belum ada - Klik unggah'"
-              @click="handlePillClick(program, 'mou', 'Memo / MOU')"
+              :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : 'Memo/DO belum ada - Klik unggah'"
+              @click="handlePillClick(program, 'mou', 'Memo/DO')"
             >
-              <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal">+</span>MO
+              <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal">+</span>DO
             </button>
           </div>
 

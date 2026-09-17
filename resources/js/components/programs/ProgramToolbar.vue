@@ -279,7 +279,7 @@ const statusOptions = [
   { value: 'Dokumen Lengkap', label: 'Dokumen Lengkap' },
   { value: 'Terverifikasi Pajak', label: 'Terverifikasi Pajak' },
   { value: 'Kurang Faktur Pajak', label: 'Kurang Faktur Pajak' },
-  { value: 'Kurang Memo/MOU', label: 'Kurang Memo/MOU' },
+  { value: 'Kurang Memo/DO', label: 'Kurang Memo/DO' },
   { value: 'Kurang Invoice', label: 'Kurang Invoice' },
   { value: 'Belum Ada Dokumen', label: 'Belum Ada Dokumen' },
 ];

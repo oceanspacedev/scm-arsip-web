@@ -52,10 +52,14 @@ describe('resolveAuthRedirect', () => {
         );
     });
 
-    it('sends logged-in users away from login and register', () => {
-        assert.deepEqual(
+    it('allows navigating to login and register even when logged in without auto-redirect', () => {
+        assert.equal(
             resolveAuthRedirect({ name: 'login', isPublic: true }, { loggedIn: true, isAdmin: true }),
-            { path: '/dashboard' }
+            null
+        );
+        assert.equal(
+            resolveAuthRedirect({ name: 'register', isPublic: true }, { loggedIn: true, isAdmin: true }),
+            null
         );
     });
 

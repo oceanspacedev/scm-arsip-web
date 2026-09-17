@@ -24,9 +24,12 @@ const routes = [
     },
     {
         path: '/',
+        redirect: '/login'
+    },
+    {
+        path: '/',
         component: AppShell,
         children: [
-            { path: '', redirect: '/dashboard' },
             {
                 path: 'dashboard',
                 name: 'dashboard',
@@ -61,7 +64,7 @@ const routes = [
     },
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/dashboard',
+        redirect: '/login',
     }
 ];
 

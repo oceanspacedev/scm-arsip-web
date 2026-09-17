@@ -293,8 +293,8 @@
               <span class="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-[11px]">{{ program.category }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NOMOR MEMO/MOU</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300">{{ program.mou_number || `MOU/SCM/2025/${String(program.id).padStart(3, '0')}` }}</span>
+              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NOMOR MEMO/DO</span>
+              <span class="font-mono text-slate-700 dark:text-slate-300">{{ program.mou_number || `DO/SCM/2026/${String(program.id).padStart(3, '0')}` }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
               <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">PERIODE MULAI</span>
@@ -314,7 +314,7 @@
               CATATAN PEMERIKSAAN
             </h4>
             <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {{ completeness.count === 3 ? 'Semua berkas invoice, faktur pajak, dan memo/MOU telah lengkap dan diverifikasi tim audit pajak.' : 'Menunggu kelengkapan dokumen perpajakan.' }}
+              {{ completeness.count === 3 ? 'Semua berkas invoice, faktur pajak, dan Memo/DO telah lengkap dan diverifikasi tim audit pajak.' : 'Menunggu kelengkapan dokumen perpajakan.' }}
             </p>
           </div>
         </div>
@@ -668,8 +668,8 @@ const documentCategories = [
   },
   {
     type: 'mou',
-    label: 'Memo / MOU',
-    description: 'Surat Perintah Kerja / Dokumen MOU',
+    label: 'Memo/DO',
+    description: 'Surat Perintah Kerja / Dokumen Memo/DO',
     icon: FileSignature,
   }
 ];
@@ -693,7 +693,7 @@ const statusBadgeText = computed(() => {
   if (count === 3) return 'Dokumen Lengkap';
   if (!hasFaktur && hasInvoice && hasMou) return 'Kurang Faktur Pajak';
   if (!hasInvoice && hasFaktur && hasMou) return 'Kurang Invoice';
-  if (!hasMou && hasInvoice && hasFaktur) return 'Kurang Memo / MOU';
+  if (!hasMou && hasInvoice && hasFaktur) return 'Kurang Memo/DO';
   if (count === 0) return 'Belum Ada Dokumen';
   return `Kurang ${3 - count} Dokumen`;
 });
