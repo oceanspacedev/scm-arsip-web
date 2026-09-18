@@ -27,39 +27,20 @@
         <!-- Card Header: Clean Title & Description (Sign Up moved to bottom) -->
         <CardHeader class="pb-4 pt-6 px-6 sm:px-7">
           <CardTitle class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Login to your account
+            Login ke Akun
           </CardTitle>
           <CardDescription class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Enter your email below to login to your account
+            {{ loginTab === 'whatsapp' ? 'Masukkan nomor WhatsApp terdaftar untuk verifikasi OTP' : 'Masukkan email dan kata sandi untuk masuk ke sistem' }}
           </CardDescription>
         </CardHeader>
 
         <CardContent class="px-6 sm:px-7 pb-7 space-y-4">
-          <!-- Method Tab Switcher (Email vs WhatsApp) -->
-          <div class="flex rounded-lg bg-slate-100 dark:bg-slate-800/70 p-0.5 text-xs font-semibold">
-            <button
-              type="button"
-              class="flex-1 py-1.5 rounded-md transition-all cursor-pointer text-center text-xs"
-              :class="loginTab === 'password' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-              @click="loginTab = 'password'; errorMessage = ''"
-            >
-              Email & Kata Sandi
-            </button>
-            <button
-              type="button"
-              class="flex-1 py-1.5 rounded-md transition-all cursor-pointer text-center text-xs"
-              :class="loginTab === 'whatsapp' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-              @click="loginTab = 'whatsapp'; errorMessage = ''"
-            >
-              WhatsApp OTP
-            </button>
-          </div>
 
           <!-- Error / Pending / Not Registered Alert -->
           <div
             v-if="errorMessage"
             class="p-3.5 rounded-lg border text-xs flex flex-col gap-2 animate-in fade-in duration-150"
-            :class="isPendingAlert ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-400' : isNotRegisteredAlert ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400'"
+            :class="isPendingAlert ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-400' : isNotRegisteredAlert ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-300' : 'bg-rose-50 dark:rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400'"
           >
             <div class="flex items-start gap-2">
               <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
@@ -143,6 +124,28 @@
               <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <span v-else>Login</span>
             </button>
+
+            <!-- Divider: atau login dengan -->
+            <div class="relative flex items-center justify-center pt-1">
+              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
+              <span class="bg-white dark:bg-[#111827] px-3 text-[11px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+                atau login dengan
+              </span>
+              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
+            </div>
+
+            <!-- WhatsApp button with Authentic WhatsApp Icon -->
+            <button
+              type="button"
+              class="w-full h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs transition-all flex items-center justify-center gap-2.5 shadow-2xs cursor-pointer group"
+              @click="loginTab = 'whatsapp'; errorMessage = ''"
+            >
+              <svg class="w-4 h-4 shrink-0 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12C2 13.82 2.484 15.522 3.327 16.991L2 22L7.151 20.697C8.583 21.523 10.237 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z" fill="#25D366" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M17.472 14.382C17.171 14.232 15.692 13.504 15.416 13.404C15.14 13.304 14.94 13.254 14.739 13.554C14.539 13.854 13.962 14.532 13.787 14.732C13.612 14.932 13.436 14.957 13.135 14.807C12.835 14.657 11.868 14.34 10.721 13.317C9.575 12.295 8.801 11.033 8.575 10.647C8.35 10.261 8.551 10.052 8.701 9.902C8.836 9.767 9.002 9.551 9.152 9.376C9.302 9.201 9.352 9.076 9.453 8.876C9.553 8.676 9.503 8.5 9.428 8.35C9.353 8.2 8.751 6.718 8.501 6.115C8.257 5.527 8.009 5.607 7.824 5.598C7.649 5.59 7.448 5.588 7.247 5.588C7.047 5.588 6.721 5.663 6.445 5.964C6.169 6.264 5.392 6.992 5.392 8.472C5.392 9.952 6.47 11.382 6.621 11.583C6.772 11.783 8.743 14.823 11.762 16.128C12.48 16.438 13.041 16.624 13.478 16.763C14.2 16.993 14.856 16.96 15.375 16.883C15.953 16.796 17.155 16.156 17.406 15.454C17.657 14.752 17.657 14.151 17.582 14.025C17.506 13.899 17.306 13.824 17.005 13.674" fill="white" />
+              </svg>
+              <span>WhatsApp</span>
+            </button>
           </form>
 
           <!-- Tab 2: WhatsApp OTP Form -->
@@ -171,21 +174,43 @@
               <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <span v-else>Kirim Kode OTP</span>
             </button>
+
+            <!-- Divider: atau login dengan -->
+            <div class="relative flex items-center justify-center pt-1">
+              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
+              <span class="bg-white dark:bg-[#111827] px-3 text-[11px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+                atau login dengan
+              </span>
+              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
+            </div>
+
+            <!-- Email & Sandi button -->
+            <button
+              type="button"
+              class="w-full h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs transition-all flex items-center justify-center gap-2 shadow-2xs cursor-pointer group"
+              @click="loginTab = 'password'; errorMessage = ''"
+            >
+              <Mail class="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <span>Email & Kata Sandi</span>
+            </button>
           </form>
 
           <!-- Demo Accounts Box (Controlled by Admin settings) -->
           <div v-if="showDemoAccounts" class="pt-4 border-t border-slate-100 dark:border-slate-800 animate-in fade-in duration-200">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-              Akun Cepat / Demo
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Akun Cepat / Demo
+              </span>
             </div>
 
-            <div class="grid grid-cols-3 gap-1.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
                 v-for="user in demoAccounts"
                 :key="user.email"
                 type="button"
-                class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-blue-50/60 dark:hover:bg-slate-800 transition-all text-left cursor-pointer group"
-                @click="fillDemoAccount(user)"
+                class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all text-left cursor-pointer group"
+                :title="`Masuk langsung sebagai ${user.label}`"
+                @click="quickLoginDemo(user)"
               >
                 <div class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 leading-tight truncate">
                   {{ user.label }}
@@ -418,8 +443,9 @@
                 required
                 class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
               >
-                <option value="Tim Pajak">Tim Pajak (Verifikasi Faktur & Compliance)</option>
-                <option value="Staf SCM">Staf SCM (Pengadaan & Logistik)</option>
+                <option value="Staff Gudang">Staff Gudang</option>
+                <option value="Staff Finance">Staff Finance</option>
+                <option value="Staff SCM">Staff SCM</option>
               </select>
             </div>
 
@@ -506,6 +532,7 @@ import {
   Smartphone,
   Sun,
   Moon,
+  Mail,
 } from 'lucide-vue-next';
 import {
   Card,
@@ -570,7 +597,7 @@ const regForm = reactive({
   name: '',
   phone: '',
   email: '',
-  role: 'Tim Pajak',
+  role: 'Staff Gudang',
   password: '',
   passwordConfirmation: ''
 });
@@ -584,8 +611,9 @@ onMounted(() => {
 
 const demoAccounts = [
   { label: 'Admin SCM', email: 'admin@scm.corp', role: 'Admin SCM', phone: '081234567890' },
-  { label: 'Tim Pajak', email: 'auditor@pajak.corp', role: 'Tim Pajak', phone: '081224290502' },
-  { label: 'Staf SCM', email: 'staff@scm.corp', role: 'Staf SCM', phone: '081298765432' },
+  { label: 'Staff Gudang', email: 'gudang@scm.corp', role: 'Staff Gudang', phone: '081298765431' },
+  { label: 'Staff Finance', email: 'finance@scm.corp', role: 'Staff Finance', phone: '081224290503' },
+  { label: 'Staff SCM', email: 'scm@scm.corp', role: 'Staff SCM', phone: '081298765433' },
 ];
 
 const maskedPhone = computed(() => {
@@ -624,6 +652,38 @@ function fillDemoAccount(acc) {
   isPendingAlert.value = false;
 }
 
+// Login instan 1-klik untuk akun demo tanpa OTP
+async function quickLoginDemo(acc) {
+  isLoading.value = true;
+  errorMessage.value = '';
+  isPendingAlert.value = false;
+
+  try {
+    const credCheck = await store.validatePasswordCredentials(acc.email, 'password123');
+    if (credCheck.success && credCheck.user) {
+      store.loginDirect(credCheck.user);
+      isLoading.value = false;
+      router.push('/dashboard');
+      return;
+    }
+  } catch (e) {
+    console.warn('Quick demo login fallback', e);
+  }
+
+  // Fallback langsung ke store jika API offline
+  const found = store.state.users.find(u => u.email.toLowerCase() === acc.email.toLowerCase()) || {
+    id: 'usr-' + acc.role.toLowerCase(),
+    name: acc.label,
+    email: acc.email,
+    role: acc.role,
+    phone: acc.phone,
+    status: 'approved'
+  };
+  store.loginDirect(found);
+  isLoading.value = false;
+  router.push('/dashboard');
+}
+
 function handleForgotPassword() {
   alert('Untuk mereset kata sandi, silakan hubungi Administrator Sistem atau gunakan metode WhatsApp OTP.');
 }
@@ -643,11 +703,12 @@ async function handlePasswordSubmit() {
       return;
     }
 
-    // Akun admin dan demo langsung login tanpa OTP
+    // Semua akun demo (@scm.corp, demoAccounts, dan Admin SCM) langsung login tanpa OTP
     const cleanEmail = (email.value || '').trim().toLowerCase();
-    const isDemoOrAdmin = cleanEmail === 'admin@scm.corp' ||
+    const isDemoOrAdmin = cleanEmail.includes('@scm.corp') ||
                           cleanEmail === 'auditor@pajak.corp' ||
                           cleanEmail === 'staff@scm.corp' ||
+                          demoAccounts.some(d => d.email.toLowerCase() === cleanEmail) ||
                           credCheck.user?.role === 'Admin SCM';
 
     if (isDemoOrAdmin) {
@@ -682,6 +743,29 @@ async function handleWhatsAppSubmit() {
   isPendingAlert.value = false;
   isNotRegisteredAlert.value = false;
   isLoading.value = true;
+
+  // Bypass OTP jika identifier adalah akun demo
+  const cleanId = (identifier.value || '').trim().toLowerCase();
+  const cleanDigits = cleanId.replace(/[^0-9]/g, '');
+  const demoMatch = demoAccounts.find(d => 
+    d.email.toLowerCase() === cleanId || 
+    (cleanDigits.length >= 8 && d.phone.replace(/[^0-9]/g, '') === cleanDigits)
+  );
+
+  if (demoMatch) {
+    const found = store.state.users.find(u => u.email.toLowerCase() === demoMatch.email.toLowerCase()) || {
+      id: 'usr-' + demoMatch.role.toLowerCase(),
+      name: demoMatch.label,
+      email: demoMatch.email,
+      role: demoMatch.role,
+      phone: demoMatch.phone,
+      status: 'approved'
+    };
+    store.loginDirect(found);
+    isLoading.value = false;
+    router.push('/dashboard');
+    return;
+  }
 
   try {
     const otpRes = await store.sendOtp(identifier.value);

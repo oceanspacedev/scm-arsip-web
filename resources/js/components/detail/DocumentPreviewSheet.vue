@@ -16,62 +16,46 @@
         <div
           class="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
-          <!-- Clean, Professional Header -->
-          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0 gap-4">
-            <div class="min-w-0 flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                <FileText class="w-4.5 h-4.5 text-slate-700 dark:text-slate-300" />
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                    {{ documentTitle }}
-                  </h3>
-                  <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {{ isPdf ? 'PDF' : (isImage ? 'Gambar' : 'Berkas') }}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  <span class="truncate max-w-xs sm:max-w-md font-medium text-slate-700 dark:text-slate-200">{{ document?.file_name }}</span>
-                  <span v-if="document?.file_size">·</span>
-                  <span v-if="document?.file_size">{{ document?.file_size }}</span>
-                  <span v-if="document?.uploaded_at">·</span>
-                  <span v-if="document?.uploaded_at">Diunggah {{ formatUploadDate(document?.uploaded_at) }}</span>
-                </div>
-              </div>
+          <!-- Clean, Minimal, Non-Slop Header -->
+          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0 gap-4">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                {{ document?.file_name || documentTitle }}
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                {{ documentTitle }}<span v-if="document?.uploaded_at"> · Diunggah {{ formatUploadDate(document?.uploaded_at) }}</span><span v-if="program?.program_name"> · {{ program.program_name }}</span>
+              </p>
             </div>
 
-            <!-- Action buttons -->
+            <!-- Action buttons (Clean text buttons without icons) -->
             <div class="flex items-center gap-2 shrink-0">
               <a
                 v-if="actualFileUrl"
                 :href="actualFileUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                 title="Buka berkas di tab baru"
               >
-                <ExternalLink class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                <span class="hidden sm:inline">Tab Baru</span>
+                Tab Baru
               </a>
 
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                 @click="handleDownload"
                 title="Unduh berkas"
               >
-                <Download class="w-3.5 h-3.5" />
-                <span>Unduh</span>
+                Unduh
               </button>
 
               <button
                 type="button"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                 @click="close"
-                title="Tutup (Esc)"
+                title="Tutup pratinjau"
               >
-                <X class="w-5 h-5" />
+                Tutup
               </button>
             </div>
           </div>
@@ -107,17 +91,15 @@
             <!-- Generic file fallback -->
             <div
               v-else-if="actualFileUrl"
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
             >
-              <FileText class="w-12 h-12 text-slate-400 mx-auto" />
-              <p class="font-bold text-slate-900 dark:text-slate-100 text-sm">{{ document?.file_name }}</p>
+              <p class="font-semibold text-slate-900 dark:text-slate-100 text-sm">{{ document?.file_name }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400">Berkas ini dapat diunduh langsung untuk dibuka pada perangkat Anda.</p>
               <button
                 type="button"
-                class="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                class="px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 @click="handleDownload"
               >
-                <Download class="w-3.5 h-3.5" />
                 Unduh Berkas
               </button>
             </div>
@@ -125,29 +107,13 @@
             <!-- Empty state -->
             <div
               v-else
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2"
+              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
             >
-              <FileText class="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
               <h4 class="font-semibold text-slate-800 dark:text-slate-200 text-sm">Berkas Belum Tersedia</h4>
               <p class="text-xs text-slate-500 dark:text-slate-400">
                 Belum ada berkas fisik yang diunggah untuk tipe {{ documentTitle }}.
               </p>
             </div>
-          </div>
-
-          <!-- Minimal Clean Footer -->
-          <div class="px-5 py-2.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
-            <div class="truncate pr-4">
-              <span class="font-medium text-slate-700 dark:text-slate-300">{{ program?.program_name || 'Program SCM' }}</span>
-              <span v-if="program?.supplier" class="text-slate-400 dark:text-slate-500"> · {{ program?.supplier }}</span>
-            </div>
-            <button
-              type="button"
-              class="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs transition-colors cursor-pointer"
-              @click="close"
-            >
-              Tutup
-            </button>
           </div>
         </div>
       </div>
@@ -157,7 +123,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Download, FileText, ExternalLink, X } from 'lucide-vue-next';
 import { formatUploadDate, useTaxStore } from '../../store/taxStore';
 
 const props = defineProps({

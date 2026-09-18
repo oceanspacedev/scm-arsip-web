@@ -13,9 +13,9 @@
           <span>DATA PROGRAM</span>
         </h4>
 
-        <!-- Row 1: Nama Program & Kategori Program -->
+        <!-- Row 1: Nama Program, Kategori Program & Brand -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-8">
+          <div class="md:col-span-6">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               NAMA PROGRAM <span class="text-red-500">*</span>
             </label>
@@ -28,7 +28,7 @@
             />
           </div>
 
-          <div class="md:col-span-4">
+          <div class="md:col-span-3">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               KATEGORI PROGRAM <span class="text-red-500">*</span>
             </label>
@@ -41,6 +41,18 @@
                 {{ cat }}
               </option>
             </select>
+          </div>
+
+          <div class="md:col-span-3">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
+              BRAND
+            </label>
+            <input
+              v-model="form.brand"
+              type="text"
+              placeholder="Contoh: SCTV, Indosiar, Vidio, dll."
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+            />
           </div>
         </div>
 
@@ -397,6 +409,7 @@ const categoriesList = [
 const form = reactive({
   program_name: '',
   category: 'Promosi',
+  brand: 'SCM',
   company_name: 'PT SCM Nusantara',
   po_sj_number: '',
   supplier: '',
@@ -455,6 +468,8 @@ async function handleSubmit() {
   const created = await store.addProgram({
     program_name: form.program_name,
     category: form.category,
+    brand: form.brand || 'SCM',
+    company_name: form.company_name,
     supplier: form.supplier,
     npwp: form.npwp,
     mou_number: form.mou_number,
@@ -478,6 +493,7 @@ async function handleSubmit() {
   // Reset form to defaults
   form.program_name = '';
   form.category = 'Promosi';
+  form.brand = 'SCM';
   form.supplier = '';
   form.npwp = '';
   form.mou_number = '';

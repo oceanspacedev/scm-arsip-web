@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const sampleHeaders = [
   'BULAN',
   'KATEGORI',
+  'BRAND',
   'COMPANY NAME',
   'NO. PO/SJ',
   'PROGRAM',
@@ -22,6 +23,7 @@ const sampleRows = [
   [
     'Maret 2026',
     'Pipa & Tubing',
+    'SCTV',
     'PT SCM Nusantara',
     'PO/2026/0101 / SJ-0101',
     'Pengadaan Komponen Pipa Gas Tuban',
@@ -37,6 +39,7 @@ const sampleRows = [
   [
     'Maret 2026',
     'Sewa Alat Berat',
+    'Indosiar',
     'PT SCM Solusi Indonesia',
     'PO/2026/0102 / SJ-0102',
     'Penyewaan Heavy Crane Lepas Pantai 50 Ton',
@@ -52,6 +55,7 @@ const sampleRows = [
   [
     'Maret 2026',
     'Inspeksi & Sertifikasi',
+    'Vidio',
     'PT SCM Nusantara',
     'PO/2026/0103 / SJ-0103',
     'Jasa Inspeksi Tangki Kilang Balikpapan',
@@ -67,6 +71,7 @@ const sampleRows = [
   [
     'Maret 2026',
     'Mekanikal & Valve',
+    'Moji',
     'PT SCM Logistik Utama',
     'PO/2026/0104 / SJ-0104',
     'Pengadaan High Pressure Valve & Flange Class 600',
@@ -82,6 +87,7 @@ const sampleRows = [
   [
     'Maret 2026',
     'Bahan Kimia',
+    'Mentari TV',
     'PT Surya Citra Media Tbk',
     'PO/2026/0105 / SJ-0105',
     'Pengadaan Chemical Demulsifier Lapangan Minyak',
@@ -97,6 +103,7 @@ const sampleRows = [
   [
     'Februari 2026',
     'Logistik',
+    'SCM',
     'PT SCM Solusi Indonesia',
     'PO/2026/0201 / SJ-0201',
     'Pengadaan Armada Wingbox Pendingin Logistik',
@@ -112,6 +119,7 @@ const sampleRows = [
   [
     'Februari 2026',
     'IT & Software',
+    'Vidio',
     'PT SCM Nusantara',
     'PO/2026/0202 / SJ-0202',
     'Integrasi WMS Automated Sorting Center Phase 2',
@@ -127,6 +135,7 @@ const sampleRows = [
   [
     'Februari 2026',
     'Distribusi',
+    'Indosiar',
     'PT SCM Logistik Utama',
     'PO/2026/0203 / SJ-0203',
     'Distribusi Ritel Multi-Hub Jawa Bali',
@@ -142,6 +151,7 @@ const sampleRows = [
   [
     'Februari 2026',
     'Material Handling',
+    'SCTV',
     'PT Surya Citra Media Tbk',
     'PO/2026/0204 / SJ-0204',
     'Pengadaan Forklift Elektrik 3 Ton High-Mast',
@@ -157,6 +167,7 @@ const sampleRows = [
   [
     'Januari 2026',
     'Warehouse',
+    'SCM',
     'PT SCM Nusantara',
     'PO/2026/0111 / SJ-0111',
     'Instalasi Selective Pallet Racking Gudang Cikarang',
@@ -172,6 +183,7 @@ const sampleRows = [
   [
     'Januari 2026',
     'Packaging',
+    'Moji',
     'PT SCM Solusi Indonesia',
     'PO/2026/0112 / SJ-0112',
     'Pengadaan Kemasan Corrugated Box & Stretch Film',
@@ -187,6 +199,7 @@ const sampleRows = [
   [
     'Januari 2026',
     'Promosi',
+    'Mentari TV',
     'PT Surya Citra Media Tbk',
     'PO/2026/0113 / SJ-0113',
     'Pengadaan Booth Branding & Material Event SCM Expo',
@@ -201,58 +214,121 @@ const sampleRows = [
   ]
 ];
 
-// 1. Build Excel Workbook
-const wb = XLSX.utils.book_new();
-const ws = XLSX.utils.aoa_to_sheet([sampleHeaders, ...sampleRows]);
+async function generateTemplates() {
+  const publicDir = path.join(__dirname, '..', 'public', 'templates');
+  fs.mkdirSync(publicDir, { recursive: true });
 
-// Column widths for easy reading in Excel
-ws['!cols'] = [
-  { wch: 15 }, // BULAN
-  { wch: 22 }, // KATEGORI
-  { wch: 26 }, // COMPANY NAME
-  { wch: 24 }, // NO. PO/SJ
-  { wch: 42 }, // PROGRAM
-  { wch: 38 }, // SUPPLIER
-  { wch: 24 }, // NPWP
-  { wch: 22 }, // NO. INVOICE
-  { wch: 18 }, // DPP
-  { wch: 16 }, // PPN
-  { wch: 18 }, // TOTAL INVOICE
-  { wch: 24 }, // NO. FAKTUR PAJAK
-  { wch: 20 }  // TAX INVOICE DATE
-];
+  // 1. Generate Executive Styled Excel (.xlsx) using ExcelJS
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'SCM TaxVault';
+  workbook.lastModifiedBy = 'SCM TaxVault';
+  workbook.created = new Date();
+  workbook.modified = new Date();
 
-// Format financial cells as integers with comma
-for (let R = 1; R <= sampleRows.length; ++R) {
-  const dppRef = XLSX.utils.encode_cell({ r: R, c: 8 });
-  const ppnRef = XLSX.utils.encode_cell({ r: R, c: 9 });
-  const totRef = XLSX.utils.encode_cell({ r: R, c: 10 });
+  const worksheet = workbook.addWorksheet('Template Program', {
+    views: [{ state: 'frozen', ySplit: 1, activeCell: 'A2' }],
+    properties: { defaultRowHeight: 22 }
+  });
 
-  if (ws[dppRef]) { ws[dppRef].t = 'n'; ws[dppRef].z = '#,##0'; }
-  if (ws[ppnRef]) { ws[ppnRef].t = 'n'; ws[ppnRef].z = '#,##0'; }
-  if (ws[totRef]) { ws[totRef].t = 'n'; ws[totRef].z = '#,##0'; }
+  // Column definitions with optimal widths
+  worksheet.columns = [
+    { header: 'BULAN', key: 'bulan', width: 16 },
+    { header: 'KATEGORI', key: 'kategori', width: 22 },
+    { header: 'BRAND', key: 'brand', width: 16 },
+    { header: 'COMPANY NAME', key: 'company', width: 28 },
+    { header: 'NO. PO/SJ', key: 'po_sj', width: 26 },
+    { header: 'PROGRAM', key: 'program', width: 46 },
+    { header: 'SUPPLIER', key: 'supplier', width: 40 },
+    { header: 'NPWP', key: 'npwp', width: 24 },
+    { header: 'NO. INVOICE', key: 'invoice', width: 24 },
+    { header: 'DPP', key: 'dpp', width: 20 },
+    { header: 'PPN', key: 'ppn', width: 18 },
+    { header: 'TOTAL INVOICE', key: 'total', width: 22 },
+    { header: 'NO. FAKTUR PAJAK', key: 'faktur_no', width: 24 },
+    { header: 'TAX INVOICE DATE', key: 'faktur_date', width: 20 }
+  ];
+
+  // Style Header Row (Row 1)
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 30;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' } // Dark Slate #1E293B
+    };
+    cell.alignment = {
+      vertical: 'middle',
+      horizontal: 'center'
+    };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF475569' } },
+      left: { style: 'thin', color: { argb: 'FF475569' } },
+      bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+      right: { style: 'thin', color: { argb: 'FF475569' } }
+    };
+  });
+
+  // Populate & Style Data Rows
+  sampleRows.forEach((rowData, index) => {
+    const row = worksheet.addRow(rowData);
+    row.height = 22;
+    const isEven = index % 2 === 1;
+    const bgColor = isEven ? 'FFF8FAFC' : 'FFFFFFFF';
+
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF1E293B' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: bgColor }
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+      };
+
+      // Alignment and Formatting
+      if ([1, 2, 3, 5, 8, 9, 13, 14].includes(colNumber)) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if ([10, 11, 12].includes(colNumber)) {
+        cell.alignment = { vertical: 'middle', horizontal: 'right' };
+        cell.numFmt = '#,##0';
+        if (colNumber === 12) {
+          cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+        }
+      } else {
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      }
+    });
+  });
+
+  // Enable AutoFilter on header row
+  worksheet.autoFilter = 'A1:N1';
+
+  const xlsxPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.xlsx');
+  await workbook.xlsx.writeFile(xlsxPath);
+  console.log('Generated Styled Excel (.xlsx):', xlsxPath);
+
+  // 2. Generate CSV with 'sep=,' directive so Excel opens with separate columns on any Windows locale
+  const csvLines = [
+    'sep=,',
+    sampleHeaders.join(','),
+    ...sampleRows.map(row => {
+      return row.map(cell => {
+        if (typeof cell === 'string') {
+          return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+      }).join(',');
+    })
+  ];
+  const csvPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.csv');
+  fs.writeFileSync(csvPath, '\uFEFF' + csvLines.join('\r\n'), 'utf8');
+  console.log('Generated Separated CSV (.csv):', csvPath);
 }
 
-XLSX.utils.book_append_sheet(wb, ws, 'Template Program');
-
-const publicDir = path.join(__dirname, '..', 'public', 'templates');
-const xlsxPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.xlsx');
-const csvPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.csv');
-
-fs.mkdirSync(publicDir, { recursive: true });
-XLSX.writeFile(wb, xlsxPath);
-console.log('Generated Excel:', xlsxPath);
-
-const csvLines = [
-  sampleHeaders.join(','),
-  ...sampleRows.map(row => {
-    return row.map(cell => {
-      if (typeof cell === 'string') {
-        return `"${cell.replace(/"/g, '""')}"`;
-      }
-      return cell;
-    }).join(',');
-  })
-];
-fs.writeFileSync(csvPath, '\uFEFF' + csvLines.join('\r\n'), 'utf8');
-console.log('Generated CSV:', csvPath);
+generateTemplates().catch(console.error);

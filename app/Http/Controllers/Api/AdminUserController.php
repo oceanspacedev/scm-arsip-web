@@ -34,7 +34,9 @@ class AdminUserController extends Controller
 
         $division = match($validated['role']) {
             'Admin SCM' => 'Supply Chain Management',
-            'Tim Pajak' => 'Tax & Accounting',
+            'Gudang', 'Staff Gudang' => 'Operasional Gudang & Logistik',
+            'Finance', 'Tim Pajak', 'Staff Finance' => 'Tax & Finance Compliance',
+            'SCM', 'Staf SCM', 'Staff SCM' => 'Supply Chain Management',
             default => 'SCM Operations'
         };
 
@@ -144,6 +146,75 @@ class AdminUserController extends Controller
             'success' => true,
             'message' => "Pengajuan akun {$user->name} telah ditolak.",
             'user' => $user
+        ]);
+    }
+
+    /**
+     * Update Data User oleh Admin
+     */
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string',
+            'role' => 'required|string',
+            'status' => 'nullable|string|in:approved,pending,rejected',
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $division = match($validated['role']) {
+            'Admin SCM' => 'Supply Chain Management',
+            'Gudang', 'Staff Gudang' => 'Operasional Gudang & Logistik',
+            'Finance', 'Tim Pajak', 'Staff Finance' => 'Tax & Finance Compliance',
+            'SCM', 'Staf SCM', 'Staff SCM' => 'Supply Chain Management',
+            default => 'SCM Operations'
+        };
+
+        $words = explode(' ', trim($validated['name']));
+        $initials = count($words) >= 2
+            ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1))
+            : strtoupper(substr($validated['name'], 0, 2));
+
+        $updateData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'role' => $validated['role'],
+            'division' => $division,
+            'initials' => $initials,
+        ];
+
+        if (!empty($validated['status'])) {
+            $updateData['status'] = $validated['status'];
+            if ($validated['status'] === 'approved' && !$user->approved_at) {
+                $updateData['approved_at'] = Carbon::now();
+            }
+        }
+
+        if (!empty($validated['password'])) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Data pengguna {$user->name} berhasil diperbarui.",
+            'user' => [
+                'id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'status' => $user->status,
+                'division' => $user->division,
+                'initials' => $user->initials,
+                'registered_at' => $user->created_at ? $user->created_at->format('Y-m-d') : '-',
+                'approved_at' => $user->approved_at ? $user->approved_at->format('Y-m-d H:i') : null,
+            ]
         ]);
     }
 

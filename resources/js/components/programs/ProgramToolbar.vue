@@ -100,10 +100,10 @@
       </div>
     </div>
 
-    <!-- Row 2: Kategori, Company Name, Supplier & Reset -->
+    <!-- Row 2: Kategori, Brand, Company Name, Supplier & Reset -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3.5 pt-1">
       <!-- 4. KATEGORI -->
-      <div class="md:col-span-4 relative" ref="categoryDropdownRef">
+      <div class="md:col-span-3 relative" ref="categoryDropdownRef">
         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-sans">
           KATEGORI
         </label>
@@ -137,8 +137,43 @@
         </div>
       </div>
 
+      <!-- 4.5 BRAND -->
+      <div class="md:col-span-3 relative" ref="brandDropdownRef">
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-sans">
+          BRAND
+        </label>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+          @click="toggleDropdown('brand')"
+        >
+          <span class="truncate">{{ currentBrandLabel }}</span>
+          <ChevronDown class="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1.5 transition-transform" :class="{ 'rotate-180': openDropdown === 'brand' }" />
+        </button>
+
+        <div
+          v-if="openDropdown === 'brand'"
+          class="absolute left-0 mt-1.5 w-60 max-h-64 overflow-y-auto rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+        >
+          <button
+            v-for="b in brandsList"
+            :key="b"
+            type="button"
+            class="w-full flex items-center justify-between px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer truncate"
+            :class="{ 'font-semibold text-slate-900 dark:text-white bg-slate-50/70 dark:bg-slate-800/80': store.state.selectedBrand === b || (b === 'Semua Brand' && store.state.selectedBrand === 'all') }"
+            @click="selectBrand(b)"
+          >
+            <span class="truncate">{{ b }}</span>
+            <Check
+              v-if="store.state.selectedBrand === b || (b === 'Semua Brand' && store.state.selectedBrand === 'all')"
+              class="w-4 h-4 text-slate-800 dark:text-slate-200 shrink-0 ml-2"
+            />
+          </button>
+        </div>
+      </div>
+
       <!-- 5. COMPANY NAME -->
-      <div class="md:col-span-4 relative" ref="companyDropdownRef">
+      <div class="md:col-span-3 relative" ref="companyDropdownRef">
         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-sans">
           COMPANY NAME
         </label>
@@ -173,7 +208,7 @@
       </div>
 
       <!-- 6. SUPPLIER & RESET BUTTON -->
-      <div class="md:col-span-4 flex items-end gap-2">
+      <div class="md:col-span-3 flex items-end gap-2">
         <div class="flex-1 relative" ref="supplierDropdownRef">
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-sans">
             SUPPLIER
@@ -266,10 +301,12 @@ const statusDropdownRef = ref(null);
 const supplierDropdownRef = ref(null);
 const monthDropdownRef = ref(null);
 const categoryDropdownRef = ref(null);
+const brandDropdownRef = ref(null);
 const companyDropdownRef = ref(null);
 
 const suppliersList = computed(() => store.suppliersList.value);
 const categoriesList = computed(() => store.categoriesList.value);
+const brandsList = computed(() => store.brandsList.value);
 const companiesList = computed(() => store.companiesList.value);
 const monthsList = store.monthsList;
 const filteredPrograms = computed(() => store.filteredPrograms.value);
@@ -301,6 +338,13 @@ const currentCompanyLabel = computed(() => {
   return store.state.selectedCompany;
 });
 
+const currentBrandLabel = computed(() => {
+  if (!store.state.selectedBrand || store.state.selectedBrand === 'all') {
+    return 'Semua Brand';
+  }
+  return store.state.selectedBrand;
+});
+
 const currentSupplierLabel = computed(() => {
   if (!store.state.selectedSupplier || store.state.selectedSupplier === 'all') {
     return 'Semua Supplier';
@@ -314,6 +358,7 @@ const hasActiveFilters = computed(() => {
     store.state.selectedStatus !== 'all' ||
     store.state.selectedSupplier !== 'all' ||
     store.state.selectedCategory !== 'Semua Kategori' ||
+    store.state.selectedBrand !== 'all' ||
     store.state.selectedMonth !== 'all' ||
     store.state.selectedCompany !== 'all'
   );
@@ -348,11 +393,17 @@ function selectCompany(val) {
   openDropdown.value = null;
 }
 
+function selectBrand(val) {
+  store.state.selectedBrand = val === 'Semua Brand' ? 'all' : val;
+  openDropdown.value = null;
+}
+
 function resetAllFilters() {
   store.state.searchQuery = '';
   store.state.selectedStatus = 'all';
   store.state.selectedSupplier = 'all';
   store.state.selectedCategory = 'Semua Kategori';
+  store.state.selectedBrand = 'all';
   store.state.selectedMonth = 'all';
   store.state.selectedCompany = 'all';
   openDropdown.value = null;
@@ -365,6 +416,7 @@ function handleClickOutside(event) {
     supplierDropdownRef.value,
     monthDropdownRef.value,
     categoryDropdownRef.value,
+    brandDropdownRef.value,
     companyDropdownRef.value
   ];
   if (!refs.some(r => r && r.contains(event.target))) {

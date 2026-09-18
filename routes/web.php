@@ -26,6 +26,7 @@ Route::prefix('api')->group(function () {
     // 2. Admin User Management & Approval (ACC Admin)
     Route::get('/admin/users', [AdminUserController::class, 'index']);
     Route::post('/admin/users', [AdminUserController::class, 'store']);
+    Route::put('/admin/users/{id}', [AdminUserController::class, 'update']);
     Route::post('/admin/users/{id}/approve', [AdminUserController::class, 'approve']);
     Route::post('/admin/users/{id}/reject', [AdminUserController::class, 'reject']);
     Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);

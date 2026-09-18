@@ -1,8 +1,8 @@
 <template>
   <SidebarProvider>
     <AppSidebar />
-    <SidebarInset class="bg-[#F8FAFC] dark:bg-[#090D16] min-w-0 w-full max-w-full overflow-x-hidden transition-colors">
-      <header class="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-white dark:bg-[#0F172A] px-4 w-full transition-[width,height,background-color,border-color] ease-linear">
+    <SidebarInset class="bg-[#F8FAFC] dark:bg-[#090D16] min-w-0 w-full max-w-full overflow-x-clip transition-colors">
+      <header class="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md px-4 w-full transition-[width,height,background-color,border-color] ease-linear">
         <div class="flex items-center gap-2 min-w-0">
           <SidebarTrigger class="-ml-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer shrink-0" />
           <Separator orientation="vertical" class="mr-2 h-4 bg-slate-200 dark:bg-slate-800 shrink-0" />
@@ -33,7 +33,7 @@
         </div>
       </header>
 
-      <div class="flex-1 min-w-0 w-full max-w-full p-4 sm:p-6 lg:p-7 overflow-y-auto overflow-x-hidden">
+      <div class="flex-1 min-w-0 w-full max-w-full p-4 sm:p-6 lg:p-7 overflow-x-clip">
         <div class="w-full max-w-[1600px] mx-auto min-w-0">
           <router-view />
         </div>

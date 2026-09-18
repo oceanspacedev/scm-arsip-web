@@ -45,6 +45,7 @@
             <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">BULAN</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">KATEGORI</span>
+              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">BRAND</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">COMPANY NAME</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. PO/SJ</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">PROGRAM</span>
@@ -170,6 +171,7 @@
                     <th class="py-2.5 px-3">NO</th>
                     <th class="py-2.5 px-2">BULAN</th>
                     <th class="py-2.5 px-2">KATEGORI</th>
+                    <th class="py-2.5 px-2">BRAND</th>
                     <th class="py-2.5 px-2">COMPANY</th>
                     <th class="py-2.5 px-2">NO. PO/SJ</th>
                     <th class="py-2.5 px-3">PROGRAM</th>
@@ -187,17 +189,20 @@
                     :key="idx"
                     class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    <td class="py-2 px-3 text-slate-400 dark:text-slate-500 font-mono text-[10px]">{{ idx + 1 }}</td>
-                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px] font-medium">
+                    <td class="py-2 px-3 text-slate-400 dark:text-slate-500 text-[10px] tabular-nums">{{ idx + 1 }}</td>
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
                       {{ getProgramMonth(row.program_date) }}
                     </td>
-                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-medium text-slate-700 dark:text-slate-300">{{ row.category }}</span>
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
+                      {{ row.category }}
+                    </td>
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
+                      {{ row.brand || 'SCM' }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.company_name">
                       {{ row.company_name }}
                     </td>
-                    <td class="py-2 px-2 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px]">
+                    <td class="py-2 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px] tabular-nums">
                       {{ row.po_sj_number }}
                     </td>
                     <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white max-w-[140px] truncate" :title="row.program_name">
@@ -206,25 +211,25 @@
                     <td class="py-2 px-3 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.supplier">
                       {{ row.supplier }}
                     </td>
-                    <td class="py-2 px-3 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px]">
+                    <td class="py-2 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px] tabular-nums">
                       {{ row.invoice_number }}
                     </td>
                     <td class="py-2 px-2.5 whitespace-nowrap text-[11px]">
                       <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-700 dark:text-slate-300">
                         {{ row.tax_invoice_date || row.faktur_date }}
                       </div>
-                      <div v-else class="text-slate-400 dark:text-slate-500 font-mono text-[10px]">-</div>
-                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate" :title="row.tax_invoice_number || row.faktur_number">
+                      <div v-else class="text-slate-400 dark:text-slate-500 text-[10px]">-</div>
+                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums" :title="row.tax_invoice_number || row.faktur_number">
                         {{ row.tax_invoice_number || row.faktur_number }}
                       </div>
                     </td>
-                    <td class="py-2 px-3 font-mono text-right text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    <td class="py-2 px-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.dpp) }}
                     </td>
-                    <td class="py-2 px-3 font-mono text-right text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">
+                    <td class="py-2 px-3 text-right text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.ppn) }}
                     </td>
-                    <td class="py-2 px-3 font-mono text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                    <td class="py-2 px-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.total_invoice) }}
                     </td>
                   </tr>
@@ -432,6 +437,7 @@ function mapRawRow(raw) {
   let total_invoice = 0;
   let npwp = '';
   let category = 'Logistik';
+  let brand = '';
   let program_date = new Date().toISOString().split('T')[0];
   let faktur_number = '';
   let faktur_date = null;
@@ -506,6 +512,10 @@ function mapRawRow(raw) {
     else if (k.includes('kategori') || k.includes('category')) {
       category = String(val || '').trim();
     }
+    // 10.5 BRAND
+    else if (k.includes('brand') || k.includes('merk')) {
+      brand = String(val || '').trim();
+    }
     // 11. TANGGAL / BULAN
     else if (
       k.includes('tanggal') ||
@@ -559,6 +569,7 @@ function mapRawRow(raw) {
     total_invoice,
     npwp,
     category,
+    brand: brand || 'SCM',
     program_date,
     faktur_number: faktur_number || null,
     faktur_date: faktur_date || null,
@@ -613,10 +624,22 @@ async function processFile(file) {
 }
 
 function parseCsvText(text) {
-  const lines = text.split(/\r\n|\n/).map(l => l.trim()).filter(Boolean);
+  let lines = text.split(/\r\n|\n/).map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) return [];
 
-  const delimiter = lines[0].includes(';') ? ';' : ',';
+  let delimiter = lines[0].includes(';') ? ';' : ',';
+  if (lines[0].toLowerCase().startsWith('sep=')) {
+    delimiter = lines[0].slice(4).trim() || delimiter;
+    lines.shift();
+  }
+  if (lines.length < 2) return [];
+
+  if (!lines[0].includes(delimiter) && lines[0].includes(';')) {
+    delimiter = ';';
+  } else if (!lines[0].includes(delimiter) && lines[0].includes(',')) {
+    delimiter = ',';
+  }
+
   const headers = lines[0].split(delimiter).map(h => h.replace(/^["']|["']$/g, '').trim());
 
   const rows = [];

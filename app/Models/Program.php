@@ -15,6 +15,7 @@ class Program extends Model
         'supplier',
         'npwp',
         'category',
+        'brand',
         'company_name',
         'po_sj_number',
         'invoice_no',

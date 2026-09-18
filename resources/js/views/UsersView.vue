@@ -242,6 +242,17 @@
                     Aktifkan
                   </button>
 
+                  <!-- Edit Icon Button -->
+                  <button
+                    type="button"
+                    :disabled="processingId === user.id"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
+                    @click="openEditModal(user)"
+                    title="Ubah Pengguna"
+                  >
+                    <Pencil class="w-3.5 h-3.5" />
+                  </button>
+
                   <!-- Trash Delete Icon Button -->
                   <button
                     type="button"
@@ -339,17 +350,30 @@
           </div>
 
           <template v-else>
-            <!-- Delete Button (left aligned) -->
-            <button
-              type="button"
-              :disabled="processingId === user.id"
-              class="h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-              @click="promptDelete(user)"
-              title="Hapus Akun"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              <span>Hapus</span>
-            </button>
+            <!-- Action Buttons (left aligned: Edit & Delete) -->
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                :disabled="processingId === user.id"
+                class="h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                @click="openEditModal(user)"
+                title="Ubah Pengguna"
+              >
+                <Pencil class="w-3.5 h-3.5" />
+                <span>Ubah</span>
+              </button>
+
+              <button
+                type="button"
+                :disabled="processingId === user.id"
+                class="h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                @click="promptDelete(user)"
+                title="Hapus Akun"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>Hapus</span>
+              </button>
+            </div>
 
             <div class="flex items-center gap-1.5">
               <!-- Pending -> ACC -->
@@ -489,8 +513,9 @@
                 class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
               >
                 <option value="Admin SCM">Admin SCM</option>
-                <option value="Tim Pajak">Tim Pajak & Audit</option>
-                <option value="Staf SCM">Staf SCM</option>
+                <option value="Staff Gudang">Staff Gudang</option>
+                <option value="Staff Finance">Staff Finance</option>
+                <option value="Staff SCM">Staff SCM</option>
               </select>
             </div>
 
@@ -525,6 +550,152 @@
               >
                 <span v-if="isSubmitting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 <span v-else>Simpan & Buat Akun</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal: Ubah User -->
+    <Teleport to="body">
+      <div
+        v-if="isEditModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
+        @click.self="isEditModalOpen = false"
+      >
+        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
+          <!-- Modal Header -->
+          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Ubah Data Pengguna
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Perbarui informasi akun, hak akses, dan status pengguna
+              </p>
+            </div>
+            <button
+              type="button"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              @click="isEditModalOpen = false"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Form Body -->
+          <form @submit.prevent="submitEditUser" class="p-5 sm:p-6 space-y-3.5 overflow-y-auto flex-1 text-xs">
+            <div
+              v-if="editError"
+              class="p-2.5 rounded-lg bg-red-50 dark:bg-rose-950/60 border border-red-200 dark:border-rose-900 text-xs text-red-700 dark:text-rose-300 flex items-center gap-2"
+            >
+              <AlertCircle class="w-4 h-4 shrink-0" />
+              <span>{{ editError }}</span>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                Nama Lengkap <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="editForm.name"
+                type="text"
+                required
+                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Email <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="editForm.email"
+                  type="email"
+                  required
+                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors font-mono"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Nomor WhatsApp
+                </label>
+                <input
+                  v-model="editForm.phone"
+                  type="text"
+                  placeholder="081234567890"
+                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors font-mono"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Peran / Role <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="editForm.role"
+                  required
+                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
+                >
+                  <option value="Admin SCM">Admin SCM</option>
+                  <option value="Staff Gudang">Staff Gudang</option>
+                  <option value="Staff Finance">Staff Finance</option>
+                  <option value="Staff SCM">Staff SCM</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Status Akun <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="editForm.status"
+                  required
+                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
+                >
+                  <option value="approved">Aktif (Approved)</option>
+                  <option value="pending">Menunggu ACC (Pending)</option>
+                  <option value="rejected">Nonaktif (Rejected)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                Ganti Kata Sandi (Opsional)
+              </label>
+              <input
+                v-model="editForm.password"
+                type="password"
+                placeholder="Kosongkan jika tidak ingin mengubah sandi"
+                minlength="6"
+                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                :disabled="isEditing"
+                class="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+                @click="isEditModalOpen = false"
+              >
+                Batal
+              </button>
+
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+                :disabled="isEditing"
+              >
+                <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span v-else>Simpan Perubahan</span>
               </button>
             </div>
           </form>
@@ -635,7 +806,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Plus, Search, Trash2, X, AlertCircle, Users, RotateCcw, Eye, EyeOff, Mail, Phone, Calendar, Check } from 'lucide-vue-next';
+import { Plus, Search, Trash2, X, AlertCircle, Users, RotateCcw, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil } from 'lucide-vue-next';
 import { useTaxStore } from '../store/taxStore';
 
 const route = useRoute();
@@ -706,7 +877,21 @@ const addForm = reactive({
   name: '',
   email: '',
   phone: '',
-  role: 'Tim Pajak',
+  role: 'Staff Gudang',
+  password: ''
+});
+
+const isEditModalOpen = ref(false);
+const isEditing = ref(false);
+const editError = ref('');
+
+const editForm = reactive({
+  id: null,
+  name: '',
+  email: '',
+  phone: '',
+  role: 'Staff Gudang',
+  status: 'approved',
   password: ''
 });
 
@@ -748,7 +933,17 @@ function getInitials(name) {
 }
 
 function getRoleBadgeClass(role) {
-  return 'bg-slate-100 text-slate-700 border border-slate-200';
+  const r = (role || '').toLowerCase();
+  if (r.includes('admin')) {
+    return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800';
+  }
+  if (r.includes('gudang')) {
+    return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+  }
+  if (r.includes('finance') || r.includes('pajak')) {
+    return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+  }
+  return 'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800';
 }
 
 function formatDate(dateStr) {
@@ -804,7 +999,7 @@ function openAddModal() {
   addForm.name = '';
   addForm.email = '';
   addForm.phone = '';
-  addForm.role = 'Tim Pajak';
+  addForm.role = 'Staff Gudang';
   addForm.password = '';
   addError.value = '';
   isAddModalOpen.value = true;
@@ -826,6 +1021,47 @@ async function submitAddUser() {
     addError.value = 'Terjadi kesalahan sistem.';
   } finally {
     isSubmitting.value = false;
+  }
+}
+
+function openEditModal(user) {
+  editForm.id = user.id;
+  editForm.name = user.name || '';
+  editForm.email = user.email || '';
+  editForm.phone = user.phone || '';
+  editForm.role = user.role || 'Staff Gudang';
+  editForm.status = user.status || 'approved';
+  editForm.password = '';
+  editError.value = '';
+  isEditModalOpen.value = true;
+}
+
+async function submitEditUser() {
+  if (isEditing.value) return;
+  isEditing.value = true;
+  editError.value = '';
+
+  try {
+    const payload = {
+      name: editForm.name,
+      email: editForm.email,
+      phone: editForm.phone,
+      role: editForm.role,
+      status: editForm.status
+    };
+    if (editForm.password && editForm.password.trim().length >= 6) {
+      payload.password = editForm.password.trim();
+    }
+    const res = await store.updateUser(editForm.id, payload);
+    if (res.success) {
+      isEditModalOpen.value = false;
+    } else {
+      editError.value = res.message || 'Gagal memperbarui pengguna.';
+    }
+  } catch (e) {
+    editError.value = 'Terjadi kesalahan sistem.';
+  } finally {
+    isEditing.value = false;
   }
 }
 </script>

@@ -7,7 +7,7 @@
           {{ program.program_name }}
         </h1>
         <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
-          {{ program.supplier }} · {{ program.category }}
+          {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
         </p>
       </div>
 
@@ -23,8 +23,9 @@
           <span>Kembali</span>
         </button>
 
-        <!-- Ubah -->
+        <!-- Ubah (Hanya untuk Gudang, Finance, dan Admin. SCM View-Only) -->
         <button
+          v-if="canEditProgram"
           type="button"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           @click="openEditModal"
@@ -33,8 +34,9 @@
           <span>Ubah</span>
         </button>
 
-        <!-- Hapus -->
+        <!-- Hapus (Hanya Superadmin Admin SCM) -->
         <button
+          v-if="isAdmin"
           type="button"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-rose-400 hover:border-red-200 dark:hover:border-rose-900/50 hover:bg-red-50/50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
           @click="confirmDeleteProgram"
@@ -77,9 +79,9 @@
           <!-- Card Header: Icon Badge, Title, Subtitle, and Add button -->
           <div class="flex items-start justify-between gap-3 mb-4">
             <div class="flex items-center gap-3 min-w-0">
-              <!-- Clean Neutral Icon Container (Monochrome shadcn style) -->
-              <div class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                <component :is="cat.icon" class="w-4.5 h-4.5 stroke-[1.75]" />
+              <!-- Clean Neutral Icon Container -->
+              <div class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                <component :is="cat.icon" class="w-4 h-4 stroke-[1.75]" />
               </div>
 
               <div class="min-w-0">
@@ -100,9 +102,9 @@
               </div>
             </div>
 
-            <!-- Quick "+ Tambah" button when category has files -->
+            <!-- Quick "+ Tambah" button when category has files and user has upload permission -->
             <button
-              v-if="getDocs(cat.type).length > 0"
+              v-if="getDocs(cat.type).length > 0 && canUploadDoc(cat.type)"
               type="button"
               class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer shrink-0"
               title="Unggah berkas tambahan"
@@ -120,14 +122,15 @@
               :key="doc.id"
               class="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 group"
             >
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
-                  {{ doc.file_name }}
-                </p>
-                <div class="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                  <span v-if="doc.file_size">{{ doc.file_size }}</span>
-                  <span v-if="doc.file_size">·</span>
-                  <span>Diunggah {{ formatUploadDate(doc.uploaded_at || program.program_date) }}</span>
+              <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                <FileText class="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
+                    {{ doc.file_name }}
+                  </p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                    Diunggah {{ formatUploadDate(doc.uploaded_at || program.program_date) }}
+                  </p>
                 </div>
               </div>
 
@@ -150,6 +153,7 @@
                   <Download class="w-3.5 h-3.5" />
                 </button>
                 <button
+                  v-if="canDeleteDoc(cat.type)"
                   type="button"
                   class="p-1.5 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                   title="Hapus berkas ini"
@@ -161,9 +165,10 @@
             </div>
           </div>
 
-          <!-- Card Body: Modern Interactive Dropzone (Replaces generic dashed button) -->
+          <!-- Card Body: Modern Interactive Dropzone or Read-Only State -->
           <div v-else class="flex-1 flex flex-col justify-center">
             <button
+              v-if="canUploadDoc(cat.type)"
               type="button"
               class="w-full py-4 px-3 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group"
               @click="openUpload(cat.type, cat.label)"
@@ -183,6 +188,22 @@
                 </span>
               </div>
             </button>
+            <div
+              v-else
+              class="w-full py-6 px-3 rounded-lg border border-dashed border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 flex flex-col items-center justify-center gap-2 text-center"
+            >
+              <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                <component :is="cat.icon" class="w-4 h-4 stroke-[1.75]" />
+              </div>
+              <div>
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-300 block leading-tight">
+                  Belum Ada Berkas
+                </span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 block mt-1">
+                  {{ cat.type === 'mou' ? 'Khusus diunggah oleh Tim Gudang' : 'Khusus diunggah oleh Tim Finance' }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -203,53 +224,58 @@
           <!-- Key-Value Rows matching screenshot -->
           <div class="px-6 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NO. INVOICE</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300 font-medium">{{ program.invoice_number }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">No. Invoice</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.invoice_number }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">TANGGAL INVOICE</span>
-              <span class="text-slate-700 dark:text-slate-300">{{ formatDate(program.program_date) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Invoice</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">JATUH TEMPO</span>
-              <span class="text-slate-700 dark:text-slate-300">{{ formatDueDate(program.program_date) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Jatuh Tempo</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">DPP</span>
-              <span class="font-mono text-slate-800 dark:text-slate-200 font-semibold">{{ formatRupiah(program.dpp) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">DPP</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.dpp) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">PPN (11%)</span>
-              <span class="font-mono text-slate-800 dark:text-slate-200 font-semibold">{{ formatRupiah(program.ppn) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">PPN (11%)</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.ppn) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">
+              <span class="text-xs text-slate-500 dark:text-slate-400">
                 {{ getPphLabel(program.pph_type) }}
               </span>
-              <span class="font-mono text-slate-700 dark:text-slate-300 font-semibold">{{ formatRupiah(program.pph || 0) }}</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.pph || 0) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NO. FAKTUR PAJAK</span>
-              <span class="font-mono text-slate-600 dark:text-slate-400 font-medium">
-                {{ program.faktur_number || (getDoc('faktur_pajak') ? '010.002-25.88291024' : '-') }}
+              <span class="text-xs text-slate-500 dark:text-slate-400">No. Faktur Pajak</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
+                {{ program.faktur_number || '-' }}
               </span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">TANGGAL FAKTUR PAJAK</span>
-              <span class="text-slate-600 dark:text-slate-400 font-medium">
-                {{ program.faktur_date ? formatDate(program.faktur_date) : (getDoc('faktur_pajak') ? formatDate(program.program_date) : '-') }}
+              <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Faktur Pajak</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
+                {{ program.faktur_date ? formatDate(program.faktur_date) : '-' }}
               </span>
             </div>
           </div>
         </div>
 
-        <!-- TOTAL INVOICE Dark Strip matching screenshot -->
+        <!-- Total Invoice Summary Box (Clean Neutral) -->
         <div class="p-6 pt-4">
-          <div class="bg-[#0F172A] dark:bg-slate-950 dark:border dark:border-slate-800 rounded-xl px-6 py-4 flex items-center justify-between text-white shadow-sm">
-            <span class="text-xs font-bold tracking-wider uppercase text-slate-300 font-sans">
-              TOTAL INVOICE
-            </span>
-            <span class="font-mono text-2xl font-extrabold text-white tracking-tight">
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Total Invoice
+              </p>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                DPP + PPN (Termasuk Pajak)
+              </p>
+            </div>
+            <span class="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
               {{ formatRupiah(program.total_invoice) }}
             </span>
           </div>
@@ -261,7 +287,7 @@
         <div>
           <!-- Title -->
           <div class="p-6 pb-4">
-            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 font-sans">
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">
               Data Program & Supplier
             </h3>
           </div>
@@ -269,51 +295,55 @@
           <!-- Key-Value Rows matching screenshot -->
           <div class="px-6 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">COMPANY NAME</span>
-              <span class="text-slate-800 dark:text-slate-200 font-semibold max-w-[240px] truncate text-right">{{ getProgramCompanyName(program) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Company Name</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.company_name || getProgramCompanyName(program) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NO. PO / SJ</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300 font-medium">{{ getProgramPoSjNumber(program) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">No. PO / SJ</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.po_sj_number || getProgramPoSjNumber(program) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">BULAN / MASA PAJAK</span>
-              <span class="font-semibold text-slate-700 dark:text-slate-300">{{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Bulan / Masa Pajak</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NAMA SUPPLIER</span>
-              <span class="text-slate-800 dark:text-slate-200 font-semibold max-w-[240px] truncate text-right">{{ program.supplier }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Nama Supplier</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.supplier }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NPWP SUPPLIER</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300 font-medium">{{ program.npwp || '02.010.121.3-071.000' }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">NPWP Supplier</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ program.npwp || '02.010.121.3-071.000' }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">KATEGORI</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-[11px]">{{ program.category }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Kategori</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.category }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">NOMOR MEMO/DO</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300">{{ program.mou_number || `DO/SCM/2026/${String(program.id).padStart(3, '0')}` }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Brand</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.brand || getProgramBrand(program) }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">PERIODE MULAI</span>
-              <span class="text-slate-700 dark:text-slate-300">{{ formatDate(program.program_date) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Nomor Memo/DO</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.mou_number || `DO/SCM/2026/${String(program.id).padStart(3, '0')}` }}</span>
             </div>
             <div class="py-3 flex items-center justify-between">
-              <span class="font-bold text-[10px] text-slate-400 dark:text-slate-500 tracking-wider uppercase font-sans">PERIODE SELESAI</span>
-              <span class="text-slate-700 dark:text-slate-300">{{ formatDueDate(program.program_date) }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">Periode Mulai</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
+            </div>
+            <div class="py-3 flex items-center justify-between">
+              <span class="text-xs text-slate-500 dark:text-slate-400">Periode Selesai</span>
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Catatan Pemeriksaan Box matching screenshot -->
+        <!-- Catatan Pemeriksaan Box (Clean Neutral) -->
         <div class="p-6 pt-4">
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5 font-sans">
-              CATATAN PEMERIKSAAN
-            </h4>
-            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Catatan Pemeriksaan
+            </p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               {{ completeness.count === 3 ? 'Semua berkas invoice, faktur pajak, dan Memo/DO telah lengkap dan diverifikasi tim audit pajak.' : 'Menunggu kelengkapan dokumen perpajakan.' }}
             </p>
           </div>
@@ -328,161 +358,229 @@
     >
       <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs" @click="isEditModalOpen = false"></div>
       <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Ubah Data Program & Invoice</h3>
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Ubah Data Program</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Wewenang: {{ store.currentUser.value?.role || 'Pengguna' }}</p>
+          </div>
           <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" @click="isEditModalOpen = false">
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <form @submit.prevent="saveEditProgram" class="p-6 space-y-4 text-xs">
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Program</label>
-            <input
-              v-model="editForm.program_name"
-              type="text"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-            />
-          </div>
+        <form @submit.prevent="saveEditProgram" class="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+          <!-- Section 1: Data Purchase & Vendor -->
+          <div class="space-y-3">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
+              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Purchase & Pengadaan</span>
+              <span v-if="!canEditPurchase" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
+            </div>
 
-          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Supplier</label>
+              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Program</label>
               <input
-                v-model="editForm.supplier"
+                v-model="editForm.program_name"
                 type="text"
                 required
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                :disabled="!canEditPurchase"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NPWP Supplier</label>
-              <input
-                v-model="editForm.npwp"
-                type="text"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-              />
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Supplier</label>
+                <input
+                  v-model="editForm.supplier"
+                  type="text"
+                  required
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">NPWP Supplier</label>
+                <input
+                  v-model="editForm.npwp"
+                  type="text"
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
+                <input
+                  v-model="editForm.company_name"
+                  type="text"
+                  placeholder="Contoh: PT SCM Nusantara"
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. PO / SJ</label>
+                <input
+                  v-model="editForm.po_sj_number"
+                  type="text"
+                  placeholder="PO/SCM/2026/001"
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
+                <select
+                  v-model="editForm.category"
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option v-for="cat in availableCategories" :key="cat" :value="cat">
+                    {{ cat }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
+                <input
+                  v-model="editForm.brand"
+                  type="text"
+                  placeholder="Contoh: SCTV, Indosiar, Vidio, dll."
+                  :disabled="!canEditPurchase"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Section 2: Data Nilai & Perpajakan -->
+          <div class="space-y-3 pt-2">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
+              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Nilai & Faktur Pajak</span>
+              <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
+            </div>
+
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
+              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
               <input
                 v-model="editForm.invoice_number"
                 type="text"
                 required
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                :disabled="!canEditFinance"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
-              <select
-                v-model="editForm.category"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer"
-              >
-                <option v-for="cat in availableCategories" :key="cat" :value="cat">
-                  {{ cat }}
-                </option>
-              </select>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nilai DPP (IDR)</label>
-              <input
-                v-model.number="editForm.dpp"
-                type="number"
-                required
-                @input="calculateTaxes"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-              />
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai DPP (IDR)</label>
+                <input
+                  v-model.number="editForm.dpp"
+                  type="number"
+                  required
+                  :disabled="!canEditFinance"
+                  @input="calculateTaxes"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">PPN 11% (IDR)</label>
+                <input
+                  v-model.number="editForm.ppn"
+                  type="number"
+                  :disabled="!canEditFinance"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice</label>
+                <input
+                  :value="editForm.dpp + editForm.ppn"
+                  type="number"
+                  readonly
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
+                />
+              </div>
             </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">PPN 11% (IDR)</label>
-              <input
-                v-model.number="editForm.ppn"
-                type="number"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Total Invoice (IDR)</label>
-              <input
-                :value="editForm.dpp + editForm.ppn"
-                type="number"
-                readonly
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100"
-              />
-            </div>
-          </div>
 
-          <!-- Jenis PPh & Nilai PPh -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis PPh</label>
-              <select
-                v-model="editForm.pph_type"
-                @change="onPphTypeChange"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer"
-              >
-                <option value="NON_PPH">Non PPh</option>
-                <option value="PPH_21">PPh 21 (2,5%)</option>
-                <option value="PPH_23">PPh 23 (2%)</option>
-                <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
-                <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-              </select>
+            <!-- Jenis PPh & Nilai PPh -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Jenis PPh</label>
+                <select
+                  v-model="editForm.pph_type"
+                  :disabled="!canEditFinance"
+                  @change="onPphTypeChange"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option value="NON_PPH">Non PPh</option>
+                  <option value="PPH_21">PPh 21 (2,5%)</option>
+                  <option value="PPH_23">PPh 23 (2%)</option>
+                  <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
+                  <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPh (IDR)</label>
+                <input
+                  v-model.number="editForm.pph"
+                  type="number"
+                  :disabled="!canEditFinance"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+                  {{ formatRupiah(editForm.pph || 0) }}
+                </p>
+              </div>
             </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nilai PPh (IDR)</label>
-              <input
-                v-model.number="editForm.pph"
-                type="number"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden"
-              />
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
-                {{ formatRupiah(editForm.pph || 0) }}
-              </p>
-            </div>
-          </div>
 
-          <!-- No. Faktur Pajak & Tanggal Faktur Pajak -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">No. Faktur Pajak (No. FP)</label>
-              <input
-                v-model="editForm.faktur_number"
-                type="text"
-                placeholder="010.000-25.00000001"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-              />
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: XXX.XXX-XX.XXXXXXXX</p>
-            </div>
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Faktur Pajak (Tgl FP)</label>
-              <input
-                v-model="editForm.faktur_date"
-                type="date"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-              />
+            <!-- No. Faktur Pajak & Tanggal Faktur Pajak -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Faktur Pajak</label>
+                <input
+                  v-model="editForm.faktur_number"
+                  type="text"
+                  placeholder="010.000-25.00000001"
+                  :disabled="!canEditFinance"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: XXX.XXX-XX.XXXXXXXX</p>
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Faktur Pajak</label>
+                <input
+                  v-model="editForm.faktur_date"
+                  type="date"
+                  :disabled="!canEditFinance"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
           <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
             <button
               type="button"
-              class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              :disabled="isSavingEdit"
+              class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               @click="isEditModalOpen = false"
             >
               Batal
             </button>
             <button
               type="submit"
-              class="px-5 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-medium hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors cursor-pointer"
+              :disabled="isSavingEdit"
+              class="px-5 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-medium hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              Simpan Perubahan
+              <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
             </button>
           </div>
         </form>
@@ -618,9 +716,8 @@ import {
   Trash2,
   FileText,
   Upload,
-  Receipt,
-  FileCheck2,
-  FileSignature,
+  FileCheck,
+  ClipboardList,
   Eye,
   Download,
   Plus,
@@ -637,6 +734,7 @@ import {
   getProgramMonth,
   getProgramYear,
   getProgramCompanyName,
+  getProgramBrand,
   getProgramPoSjNumber,
   getPphLabel,
   calculatePphAmount,
@@ -646,6 +744,22 @@ import {
 const route = useRoute();
 const router = useRouter();
 const store = useTaxStore();
+
+const isAdmin = computed(() => store.isAdmin.value);
+const isGudang = computed(() => store.isGudang.value);
+const isFinance = computed(() => store.isFinance.value);
+const isScm = computed(() => store.isScm.value);
+const canEditPurchase = computed(() => store.canEditPurchase.value);
+const canEditFinance = computed(() => store.canEditFinance.value);
+const canEditProgram = computed(() => store.canEditProgram.value);
+
+function canUploadDoc(docType) {
+  return store.canUploadDoc(docType);
+}
+
+function canDeleteDoc(docType) {
+  return store.canDeleteDoc(docType);
+}
 
 const programId = computed(() => route.params.id);
 const program = computed(() => store.getProgramById(programId.value));
@@ -658,19 +772,19 @@ const documentCategories = [
     type: 'invoice',
     label: 'Invoice',
     description: 'Faktur tagihan & rincian biaya vendor',
-    icon: Receipt,
+    icon: FileText,
   },
   {
     type: 'faktur_pajak',
     label: 'Faktur Pajak',
     description: 'Bukti pungutan PPN e-Faktur resmi',
-    icon: FileCheck2,
+    icon: FileCheck,
   },
   {
     type: 'mou',
     label: 'Memo/DO',
     description: 'Surat Perintah Kerja / Dokumen Memo/DO',
-    icon: FileSignature,
+    icon: ClipboardList,
   }
 ];
 
@@ -858,12 +972,16 @@ const availableCategories = computed(() => {
 
 // Edit Modal State & Handling
 const isEditModalOpen = ref(false);
+const isSavingEdit = ref(false);
 const editForm = reactive({
   program_name: '',
   supplier: '',
+  company_name: '',
   npwp: '',
+  po_sj_number: '',
   invoice_number: '',
   category: 'Logistik',
+  brand: 'SCM',
   dpp: 0,
   ppn: 0,
   pph_type: 'NON_PPH',
@@ -876,9 +994,12 @@ function openEditModal() {
   if (!program.value) return;
   editForm.program_name = program.value.program_name || '';
   editForm.supplier = program.value.supplier || '';
+  editForm.company_name = program.value.company_name || getProgramCompanyName(program.value) || '';
   editForm.npwp = program.value.npwp || '';
+  editForm.po_sj_number = program.value.po_sj_number || getProgramPoSjNumber(program.value) || '';
   editForm.invoice_number = program.value.invoice_number || '';
   editForm.category = program.value.category || 'Logistik';
+  editForm.brand = program.value.brand || getProgramBrand(program.value) || '';
   editForm.dpp = Number(program.value.dpp) || 0;
   editForm.ppn = Number(program.value.ppn) || Math.round(editForm.dpp * 0.11);
   editForm.pph_type = program.value.pph_type || 'NON_PPH';
@@ -902,22 +1023,35 @@ function onPphTypeChange() {
 }
 
 async function saveEditProgram() {
-  await store.updateProgram(program.value.id, {
-    program_name: editForm.program_name,
-    supplier: editForm.supplier,
-    npwp: editForm.npwp,
-    invoice_number: editForm.invoice_number,
-    category: editForm.category,
-    dpp: editForm.dpp,
-    ppn: editForm.ppn,
-    total_invoice: editForm.dpp + editForm.ppn,
-    pph_type: editForm.pph_type,
-    pph: editForm.pph,
-    pph_amount: editForm.pph,
-    faktur_number: editForm.faktur_number,
-    faktur_date: editForm.faktur_date || null
-  });
-  isEditModalOpen.value = false;
+  if (isSavingEdit.value) return;
+  isSavingEdit.value = true;
+  try {
+    const res = await store.updateProgram(program.value.id, {
+      program_name: editForm.program_name,
+      supplier: editForm.supplier,
+      company_name: editForm.company_name,
+      npwp: editForm.npwp,
+      po_sj_number: editForm.po_sj_number,
+      invoice_number: editForm.invoice_number,
+      category: editForm.category,
+      brand: editForm.brand,
+      dpp: editForm.dpp,
+      ppn: editForm.ppn,
+      total_invoice: editForm.dpp + editForm.ppn,
+      pph_type: editForm.pph_type,
+      pph: editForm.pph,
+      pph_amount: editForm.pph,
+      faktur_number: editForm.faktur_number,
+      faktur_date: editForm.faktur_date || null
+    });
+    if (res?.success) {
+      isEditModalOpen.value = false;
+    }
+  } catch (err) {
+    console.error('Gagal menyimpan program:', err);
+  } finally {
+    isSavingEdit.value = false;
+  }
 }
 
 function confirmDeleteProgram() {

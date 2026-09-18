@@ -184,6 +184,7 @@ class ProgramController extends Controller
             'supplier' => $supplier,
             'npwp' => $request->input('npwp') ?: '01.000.000.0-000.000',
             'category' => $request->input('category') ?: 'Logistik',
+            'brand' => $request->input('brand') ?: 'SCM',
             'company_name' => $request->input('company_name') ?: 'PT SCM Nusantara',
             'po_sj_number' => $request->input('po_sj_number') ?: $request->input('no_po_sj'),
             'invoice_no' => $request->input('invoice_no') ?: $request->input('invoice_number') ?: ('INV/' . date('Y') . '/SCM/' . rand(1000, 9999)),
@@ -212,54 +213,77 @@ class ProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+        if ($userRole && str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role SCM hanya memiliki akses melihat arsip (View-Only).'
+            ], 403);
+        }
+
         $program = Program::findOrFail($id);
+
+        $isGudang = $userRole && str_contains(strtolower($userRole), 'gudang');
+        $isFinance = $userRole && (str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak'));
+        $isAdmin = !$userRole || str_contains(strtolower($userRole), 'admin');
 
         $title = $request->input('title') ?: $request->input('program_name');
         $invoiceNo = $request->input('invoice_no') ?: $request->input('invoice_number');
         $dueDate = $request->input('due_date') ?: $request->input('program_date');
 
         $data = [];
-        if ($title) $data['title'] = $title;
-        if ($request->has('supplier')) $data['supplier'] = $request->input('supplier');
-        if ($request->has('npwp')) $data['npwp'] = $request->input('npwp');
-        if ($request->has('category')) $data['category'] = $request->input('category');
-        if ($request->has('company_name')) $data['company_name'] = $request->input('company_name');
-        if ($request->has('po_sj_number') || $request->has('no_po_sj')) {
-            $data['po_sj_number'] = $request->input('po_sj_number') ?? $request->input('no_po_sj');
-        }
-        if ($invoiceNo !== null) $data['invoice_no'] = $invoiceNo;
-        if ($request->has('dpp_amount') || $request->has('dpp')) {
-            $data['dpp_amount'] = (float) ($request->input('dpp_amount') ?? $request->input('dpp'));
-        }
-        if ($request->has('ppn_amount') || $request->has('ppn')) {
-            $data['ppn_amount'] = (float) ($request->input('ppn_amount') ?? $request->input('ppn'));
-        }
-        if ($request->has('total_amount') || $request->has('total_invoice')) {
-            $data['total_amount'] = (float) ($request->input('total_amount') ?? $request->input('total_invoice'));
-        }
-        if ($request->has('pph_type')) {
-            $data['pph_type'] = $request->input('pph_type') ?: 'NON_PPH';
-        }
-        if ($request->has('pph_amount') || $request->has('pph')) {
-            $data['pph_amount'] = (float) ($request->input('pph_amount') ?? $request->input('pph'));
-        }
-        if ($request->has('faktur_number') || $request->has('tax_invoice_number')) {
-            $data['faktur_number'] = $request->input('faktur_number') ?? $request->input('tax_invoice_number');
-        }
-        if ($request->has('faktur_date') || $request->has('tax_invoice_date')) {
-            $fDate = $request->input('faktur_date') ?? $request->input('tax_invoice_date');
-            $data['faktur_date'] = $fDate ? $this->parseSafeDate($fDate) : null;
-        }
-        if ($request->has('tax_notes')) {
-            $data['tax_notes'] = $request->input('tax_notes');
-        }
-        if ($request->has('is_verified')) {
-            $data['is_verified'] = (bool) $request->input('is_verified');
-        }
-        if ($dueDate) $data['due_date'] = $this->parseSafeDate($dueDate);
-        if ($request->has('status')) $data['status'] = $request->input('status');
 
-        $program->update($data);
+        // Purchase & Vendor fields (Wewenang Gudang & Admin SCM)
+        if ($isAdmin || $isGudang) {
+            if ($title) $data['title'] = $title;
+            if ($request->has('supplier')) $data['supplier'] = $request->input('supplier');
+            if ($request->has('npwp')) $data['npwp'] = $request->input('npwp');
+            if ($request->has('category')) $data['category'] = $request->input('category');
+            if ($request->has('brand')) $data['brand'] = $request->input('brand');
+            if ($request->has('company_name')) $data['company_name'] = $request->input('company_name');
+            if ($request->has('po_sj_number') || $request->has('no_po_sj')) {
+                $data['po_sj_number'] = $request->input('po_sj_number') ?? $request->input('no_po_sj');
+            }
+        }
+
+        // Financial & Tax fields (Wewenang Finance & Admin SCM)
+        if ($isAdmin || $isFinance) {
+            if ($invoiceNo !== null) $data['invoice_no'] = $invoiceNo;
+            if ($request->has('dpp_amount') || $request->has('dpp')) {
+                $data['dpp_amount'] = (float) ($request->input('dpp_amount') ?? $request->input('dpp'));
+            }
+            if ($request->has('ppn_amount') || $request->has('ppn')) {
+                $data['ppn_amount'] = (float) ($request->input('ppn_amount') ?? $request->input('ppn'));
+            }
+            if ($request->has('total_amount') || $request->has('total_invoice')) {
+                $data['total_amount'] = (float) ($request->input('total_amount') ?? $request->input('total_invoice'));
+            }
+            if ($request->has('pph_type')) {
+                $data['pph_type'] = $request->input('pph_type') ?: 'NON_PPH';
+            }
+            if ($request->has('pph_amount') || $request->has('pph')) {
+                $data['pph_amount'] = (float) ($request->input('pph_amount') ?? $request->input('pph'));
+            }
+            if ($request->has('faktur_number') || $request->has('tax_invoice_number')) {
+                $data['faktur_number'] = $request->input('faktur_number') ?? $request->input('tax_invoice_number');
+            }
+            if ($request->has('faktur_date') || $request->has('tax_invoice_date')) {
+                $fDate = $request->input('faktur_date') ?? $request->input('tax_invoice_date');
+                $data['faktur_date'] = $fDate ? $this->parseSafeDate($fDate) : null;
+            }
+            if ($request->has('tax_notes')) {
+                $data['tax_notes'] = $request->input('tax_notes');
+            }
+            if ($request->has('is_verified')) {
+                $data['is_verified'] = (bool) $request->input('is_verified');
+            }
+            if ($dueDate) $data['due_date'] = $this->parseSafeDate($dueDate);
+            if ($request->has('status')) $data['status'] = $request->input('status');
+        }
+
+        if (!empty($data)) {
+            $program->update($data);
+        }
 
         return response()->json([
             'success' => true,
@@ -271,8 +295,16 @@ class ProgramController extends Controller
     /**
      * Delete program
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+        if ($userRole && !str_contains(strtolower($userRole), 'admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Admin SCM yang memiliki wewenang untuk menghapus program/arsip.'
+            ], 403);
+        }
+
         $program = Program::findOrFail($id);
         $program->documents()->delete();
         $program->delete();
@@ -288,9 +320,38 @@ class ProgramController extends Controller
      */
     public function uploadDocument(Request $request, $id)
     {
-        $program = Program::with('documents')->find($id);
-
         $docType = $request->input('document_type') ?: $request->input('type', 'faktur_pajak');
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+
+        if ($userRole) {
+            $isGudang = str_contains(strtolower($userRole), 'gudang');
+            $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
+            $isScm = str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin');
+            $isAdmin = str_contains(strtolower($userRole), 'admin');
+
+            if ($isScm) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role SCM hanya memiliki akses melihat (View-Only).'
+                ], 403);
+            }
+
+            if ($isGudang && !in_array($docType, ['mou', 'memo', 'do'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Gudang hanya diizinkan mengunggah dokumen DO / Surat Jalan.'
+                ], 403);
+            }
+
+            if ($isFinance && in_array($docType, ['mou', 'memo', 'do'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Finance hanya diizinkan mengunggah dokumen Invoice dan Faktur Pajak.'
+                ], 403);
+            }
+        }
+
+        $program = Program::with('documents')->find($id);
         $backendType = $docType;
         if ($docType === 'faktur_pajak') $backendType = 'faktur';
         if ($docType === 'mou') $backendType = 'memo';
@@ -364,8 +425,36 @@ class ProgramController extends Controller
     /**
      * Delete Document
      */
-    public function deleteDocument($programId, $docId)
+    public function deleteDocument(Request $request, $programId, $docId)
     {
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+        if ($userRole) {
+            $isGudang = str_contains(strtolower($userRole), 'gudang');
+            $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
+            $isScm = str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin');
+
+            if ($isScm) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role SCM tidak diizinkan menghapus berkas dokumen.'
+                ], 403);
+            }
+
+            if ($isGudang && in_array($docId, ['invoice', 'faktur', 'faktur_pajak'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Gudang tidak diizinkan menghapus dokumen Invoice atau Faktur Pajak.'
+                ], 403);
+            }
+
+            if ($isFinance && in_array($docId, ['mou', 'memo', 'do'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Finance tidak diizinkan menghapus dokumen DO / Surat Jalan.'
+                ], 403);
+            }
+        }
+
         $doc = ProgramDocument::where('program_id', $programId)
             ->where(function ($q) use ($docId) {
                 $q->where('id', $docId)

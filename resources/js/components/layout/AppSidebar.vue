@@ -2,8 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  SquareTerminal,
-  Folder,
+  LayoutDashboard,
+  FolderArchive,
   Users,
   Settings2,
   LogOut,
@@ -37,14 +37,16 @@ const allUsersCount = computed(() => store.allUsers.value.length)
 const pendingUsersCount = computed(() => store.pendingUsersCount.value)
 const approvedUsersCount = computed(() => store.allUsers.value.filter(u => u.status === 'approved').length)
 
-// State for collapsible Manajemen User submenu (open by default like in shadcn documentation)
-const isUsersSubmenuOpen = ref(true)
+// State for collapsible Manajemen User submenu (closed by default upon login)
+const isUsersSubmenuOpen = ref(false)
 
 watch(
   () => route.path,
   (newPath) => {
     if (newPath.startsWith('/users')) {
       isUsersSubmenuOpen.value = true
+    } else {
+      isUsersSubmenuOpen.value = false
     }
   },
   { immediate: true }
@@ -97,7 +99,7 @@ async function handleLogout() {
                 tooltip="Dashboard"
               >
                 <router-link to="/dashboard">
-                  <SquareTerminal />
+                  <LayoutDashboard />
                   <span>Dashboard</span>
                 </router-link>
               </SidebarMenuButton>
@@ -111,7 +113,7 @@ async function handleLogout() {
                 tooltip="Arsip Program"
               >
                 <router-link to="/programs">
-                  <Folder />
+                  <FolderArchive />
                   <span>Arsip Program</span>
                 </router-link>
               </SidebarMenuButton>

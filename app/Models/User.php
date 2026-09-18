@@ -61,7 +61,22 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'Admin SCM';
+        return $this->role === 'Admin SCM' || str_contains(strtolower($this->role ?? ''), 'admin');
+    }
+
+    public function isGudang(): bool
+    {
+        return $this->role === 'Gudang' || str_contains(strtolower($this->role ?? ''), 'gudang');
+    }
+
+    public function isFinance(): bool
+    {
+        return in_array($this->role, ['Finance', 'Tim Pajak']) || str_contains(strtolower($this->role ?? ''), 'finance') || str_contains(strtolower($this->role ?? ''), 'pajak');
+    }
+
+    public function isScm(): bool
+    {
+        return in_array($this->role, ['SCM', 'Staf SCM']) || str_contains(strtolower($this->role ?? ''), 'scm');
     }
 
     public function isApproved(): bool

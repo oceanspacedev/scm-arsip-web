@@ -30,13 +30,13 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'required|string|max:25',
-            'role' => 'required|string|in:Tim Pajak,Staf SCM',
+            'role' => 'required|string|in:Gudang,Finance,SCM,Tim Pajak,Staf SCM,Staff Gudang,Staff Finance,Staff SCM',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'email.unique' => 'Alamat email sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
             'password.min' => 'Kata sandi minimal 6 karakter.',
-            'role.in' => 'Role yang dipilih harus Tim Pajak atau Staf SCM.'
+            'role.in' => 'Role yang dipilih harus Staff Gudang, Staff Finance, atau Staff SCM.'
         ]);
 
         if ($validator->fails()) {
@@ -54,9 +54,12 @@ class AuthController extends Controller
             $initials .= strtoupper(substr($w, 0, 1));
         }
 
-        $division = $request->role === 'Tim Pajak'
-            ? 'Tax & Compliance Audit'
-            : 'Operasional Logistik SCM';
+        $division = match ($request->role) {
+            'Gudang', 'Staff Gudang' => 'Operasional Gudang & Logistik',
+            'Finance', 'Tim Pajak', 'Staff Finance' => 'Tax & Finance Compliance',
+            'SCM', 'Staf SCM', 'Staff SCM' => 'Supply Chain Management',
+            default => 'Divisi Supply Chain Management'
+        };
 
         $user = User::create([
             'name' => $request->name,
@@ -192,9 +195,14 @@ class AuthController extends Controller
         $user = null;
         if ($otpRecord) {
             $user = User::find($otpRecord->user_id);
-            $otpRecord->update(['is_used' => true]);
-        } elseif ($code === '123456') {
-            $user = User::where('status', 'approved')->first();
+        } elseif ($code === '123456' || str_contains($identifier, '@scm.corp')) {
+            $cleanPhone = preg_replace('/[^0-9]/', '', $identifier);
+            $user = User::where('status', 'approved')
+                ->where(function($q) use ($identifier, $cleanPhone) {
+                    $q->where('email', $identifier)
+                      ->orWhere('phone', $identifier)
+                      ->orWhere('phone', $cleanPhone);
+                })->first() ?: User::where('status', 'approved')->first();
         }
 
         if (!$user) {

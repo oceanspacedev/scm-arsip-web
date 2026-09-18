@@ -33,13 +33,58 @@ class ScmDataSeeder extends Seeder
             [
                 'name' => 'Siti Rahmawati',
                 'phone' => '081224290502',
-                'role' => 'Tim Pajak',
+                'role' => 'Finance',
                 'status' => 'approved',
-                'division' => 'Tax & Compliance Audit',
+                'division' => 'Tax & Finance Compliance',
                 'initials' => 'SR',
                 'password' => Hash::make('password123'),
                 'approved_by' => $admin->id,
                 'approved_at' => Carbon::now()->subDays(20)
+            ]
+        );
+
+        $gudang = User::updateOrCreate(
+            ['email' => 'gudang@scm.corp'],
+            [
+                'name' => 'Ahmad Fauzi',
+                'phone' => '081298765431',
+                'role' => 'Staff Gudang',
+                'status' => 'approved',
+                'division' => 'Operasional Gudang & Logistik',
+                'initials' => 'AF',
+                'password' => Hash::make('password123'),
+                'approved_by' => $admin->id,
+                'approved_at' => Carbon::now()->subDays(25)
+            ]
+        );
+
+        $financeUser = User::updateOrCreate(
+            ['email' => 'finance@scm.corp'],
+            [
+                'name' => 'Dewi Lestari',
+                'phone' => '081224290503',
+                'role' => 'Staff Finance',
+                'status' => 'approved',
+                'division' => 'Tax & Finance Compliance',
+                'initials' => 'DL',
+                'password' => Hash::make('password123'),
+                'approved_by' => $admin->id,
+                'approved_at' => Carbon::now()->subDays(18)
+            ]
+        );
+
+        $scmUser = User::updateOrCreate(
+            ['email' => 'scm@scm.corp'],
+            [
+                'name' => 'Rian Hidayat',
+                'phone' => '081298765433',
+                'role' => 'Staff SCM',
+                'status' => 'approved',
+                'division' => 'Supply Chain Management',
+                'initials' => 'RH',
+                'password' => Hash::make('password123'),
+                'approved_by' => $admin->id,
+                'approved_at' => Carbon::now()->subDays(15)
             ]
         );
 
@@ -48,9 +93,9 @@ class ScmDataSeeder extends Seeder
             [
                 'name' => 'Hendra Wijaya',
                 'phone' => '081298765432',
-                'role' => 'Staf SCM',
+                'role' => 'SCM',
                 'status' => 'approved',
-                'division' => 'Operasional Logistik SCM',
+                'division' => 'Supply Chain Management',
                 'initials' => 'HW',
                 'password' => Hash::make('password123'),
                 'approved_by' => $admin->id,
@@ -471,9 +516,15 @@ class ScmDataSeeder extends Seeder
             ]
         ];
 
-        foreach ($samplePrograms as $pData) {
+        $brandList = ['SCTV', 'Indosiar', 'Vidio', 'Moji', 'Mentari TV', 'SCM'];
+        foreach ($samplePrograms as $idx => $pData) {
             $docs = $pData['docs'];
             unset($pData['docs']);
+
+            if (empty($pData['brand'])) {
+                $idInt = (int) $pData['id'];
+                $pData['brand'] = $brandList[($idInt - 1) % count($brandList)];
+            }
 
             $prog = Program::updateOrCreate(
                 ['id' => $pData['id']],

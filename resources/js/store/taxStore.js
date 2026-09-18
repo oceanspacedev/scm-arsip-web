@@ -31,12 +31,48 @@ export const defaultUsers = [
         registered_at: '2026-08-01'
     },
     {
+        id: 'usr-gudang',
+        email: 'gudang@scm.corp',
+        name: 'Ahmad Fauzi',
+        phone: '081298765431',
+        password: 'password123',
+        role: 'Staff Gudang',
+        division: 'Operasional Gudang & Logistik',
+        initials: 'AF',
+        status: 'approved',
+        registered_at: '2026-08-10'
+    },
+    {
+        id: 'usr-finance',
+        email: 'finance@scm.corp',
+        name: 'Dewi Lestari',
+        phone: '081224290503',
+        password: 'password123',
+        role: 'Staff Finance',
+        division: 'Tax & Finance Compliance',
+        initials: 'DL',
+        status: 'approved',
+        registered_at: '2026-08-12'
+    },
+    {
+        id: 'usr-scm',
+        email: 'scm@scm.corp',
+        name: 'Rian Hidayat',
+        phone: '081298765433',
+        password: 'password123',
+        role: 'Staff SCM',
+        division: 'Supply Chain Management',
+        initials: 'RH',
+        status: 'approved',
+        registered_at: '2026-08-14'
+    },
+    {
         id: 'usr-2',
         email: 'auditor@pajak.corp',
         name: 'Siti Rahmawati',
         phone: '081224290502',
         password: 'password123',
-        role: 'Tim Pajak',
+        role: 'Finance',
         division: 'Tax & Compliance Audit',
         initials: 'SR',
         status: 'approved',
@@ -48,7 +84,7 @@ export const defaultUsers = [
         name: 'Hendra Wijaya',
         phone: '081298765432',
         password: 'password123',
-        role: 'Staf SCM',
+        role: 'SCM',
         division: 'Operasional Logistik SCM',
         initials: 'HW',
         status: 'approved',
@@ -116,6 +152,7 @@ const state = reactive({
     activeOtp: null,
     searchQuery: '',
     selectedCategory: 'Semua Kategori',
+    selectedBrand: 'all',
     selectedStatus: 'all',
     selectedSupplier: 'all',
     selectedMonth: 'all',
@@ -297,6 +334,23 @@ export function getProgramCompanyName(program) {
     return companies[(idNum - 1) % companies.length];
 }
 
+export function getProgramBrand(program) {
+    if (!program) return 'SCM';
+    if (program.brand) return program.brand;
+
+    const title = (program.title || program.program_name || '').toLowerCase();
+    const comp = (program.company_name || '').toLowerCase();
+    if (title.includes('sctv') || comp.includes('sctv')) return 'SCTV';
+    if (title.includes('indosiar') || comp.includes('indosiar')) return 'Indosiar';
+    if (title.includes('vidio') || comp.includes('vidio')) return 'Vidio';
+    if (title.includes('moji') || comp.includes('moji')) return 'Moji';
+    if (title.includes('mentari') || comp.includes('mentari')) return 'Mentari TV';
+
+    const defaultBrands = ['SCTV', 'Indosiar', 'Vidio', 'Moji', 'Mentari TV', 'SCM'];
+    const idNum = typeof program.id === 'number' ? program.id : (parseInt(String(program.id).replace(/\D/g, ''), 10) || 1);
+    return defaultBrands[(idNum - 1) % defaultBrands.length];
+}
+
 export function getProgramPoSjNumber(program) {
     if (!program) return '-';
     if (program.po_sj_number) return program.po_sj_number;
@@ -358,6 +412,7 @@ export function mapBackendProgram(p) {
         program_name: p.title || p.program_name || '',
         supplier: p.supplier || '',
         category: p.category || 'Logistik',
+        brand: p.brand || getProgramBrand(p),
         company_name: p.company_name || p.company || getProgramCompanyName(p),
         po_sj_number: p.po_sj_number || p.no_po_sj || getProgramPoSjNumber(p),
         npwp: p.npwp || '01.000.000.0-000.000',
@@ -485,9 +540,19 @@ export const useTaxStore = () => {
         return ['Semua Company', ...Array.from(set).sort()];
     });
 
+    const brandsList = computed(() => {
+        const set = new Set();
+        state.programs.forEach(p => {
+            const b = p.brand || getProgramBrand(p);
+            if (b) set.add(b);
+        });
+        return ['Semua Brand', ...Array.from(set).sort()];
+    });
+
     const filteredPrograms = computed(() => {
         const query = (state.searchQuery || '').toLowerCase().trim();
         const category = state.selectedCategory;
+        const brand = state.selectedBrand;
         const status = state.selectedStatus;
         const supplier = state.selectedSupplier;
         const month = state.selectedMonth;
@@ -521,6 +586,14 @@ export const useTaxStore = () => {
             // Category filter
             if (category && category !== 'Semua Kategori' && p.category !== category) {
                 return false;
+            }
+
+            // Brand filter
+            if (brand && brand !== 'all' && brand !== 'Semua Brand') {
+                const pBrand = p.brand || getProgramBrand(p);
+                if (pBrand !== brand) {
+                    return false;
+                }
             }
 
             // Company filter
@@ -639,44 +712,61 @@ export const useTaxStore = () => {
 
     async function updateProgram(id, updatedData) {
         const index = state.programs.findIndex(p => String(p.id) === String(id));
-        if (index !== -1) {
-            const dppVal = Number(updatedData.dpp) || 0;
-            const ppnVal = Number(updatedData.ppn) || 0;
-            const totalVal = Number(updatedData.total_invoice) || (dppVal + ppnVal);
+        if (index === -1) return { success: false, message: 'Program tidak ditemukan.' };
 
-            const payload = {
-                ...updatedData,
-                dpp: dppVal,
-                ppn: ppnVal,
-                total_invoice: totalVal
-            };
+        const dppVal = Number(updatedData.dpp) || 0;
+        const ppnVal = Number(updatedData.ppn) || 0;
+        const totalVal = Number(updatedData.total_invoice) || (dppVal + ppnVal);
 
-            state.programs[index] = {
-                ...state.programs[index],
-                ...payload
-            };
-            saveToStorage();
+        const payload = {
+            ...updatedData,
+            dpp: dppVal,
+            ppn: ppnVal,
+            total_invoice: totalVal,
+            dpp_amount: dppVal,
+            ppn_amount: ppnVal,
+            total_amount: totalVal,
+            user_role: state.currentUser?.role || ''
+        };
 
-            try {
-                const res = await fetch(`/api/programs/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (res.ok && data.success && data.program) {
-                    state.programs[index] = mapBackendProgram(data.program);
-                    saveToStorage();
+        try {
+            const res = await fetch(`/api/programs/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-User-Role': state.currentUser?.role || ''
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.success && data.program) {
+                const mapped = mapBackendProgram(data.program);
+                if ((!mapped.documents || mapped.documents.length === 0) && state.programs[index]?.documents?.length) {
+                    mapped.documents = state.programs[index].documents;
                 }
-            } catch (e) {
-                console.warn('Backend updateProgram failed:', e);
+                state.programs[index] = { ...state.programs[index], ...mapped };
+                state.programs = [...state.programs];
+                saveToStorage();
+                notify(`Data program "${mapped.program_name}" berhasil diperbarui.`);
+                return { success: true, program: mapped };
+            } else if (!res.ok) {
+                notify(data.message || 'Gagal menyimpan perubahan.', 'error');
+                return { success: false, message: data.message };
             }
-
-            notify(`Data program "${state.programs[index].program_name}" berhasil diperbarui.`);
+        } catch (e) {
+            console.warn('Backend updateProgram failed, applying locally:', e);
         }
+
+        // Local fallback
+        state.programs[index] = {
+            ...state.programs[index],
+            ...payload
+        };
+        state.programs = [...state.programs];
+        saveToStorage();
+        notify(`Data program "${state.programs[index].program_name}" berhasil diperbarui.`);
+        return { success: true, program: state.programs[index] };
     }
 
     async function deleteProgram(id) {
@@ -927,6 +1017,7 @@ export const useTaxStore = () => {
                 "ID",
                 "BULAN",
                 "KATEGORI",
+                "BRAND",
                 "COMPANY NAME",
                 "NO. PO/SJ",
                 "PROGRAM",
@@ -949,6 +1040,7 @@ export const useTaxStore = () => {
                     p.id,
                     `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}`.trim() || '-',
                     p.category || '',
+                    p.brand || getProgramBrand(p),
                     getProgramCompanyName(p),
                     getProgramPoSjNumber(p),
                     p.program_name || '',
@@ -1010,6 +1102,7 @@ export const useTaxStore = () => {
             "ID",
             "Bulan",
             "Kategori",
+            "Brand",
             "Company Name",
             "No. PO/SJ",
             "Program",
@@ -1034,6 +1127,7 @@ export const useTaxStore = () => {
                     p.id,
                     `"${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}"`,
                     `"${p.category || ''}"`,
+                    `"${p.brand || getProgramBrand(p)}"`,
                     `"${getProgramCompanyName(p)}"`,
                     `"${getProgramPoSjNumber(p)}"`,
                     `"${(p.program_name || '').replace(/"/g, '""')}"`,
@@ -1228,7 +1322,7 @@ export const useTaxStore = () => {
                     name: name.trim(),
                     email: cleanEmail,
                     phone: cleanPhone,
-                    role: role === 'Tim Pajak' ? 'Tim Pajak' : 'Staf SCM',
+                    role: role || 'Gudang',
                     password: password,
                     password_confirmation: password
                 })
@@ -1251,8 +1345,10 @@ export const useTaxStore = () => {
             }
         } catch (e) {
             // Local fallback
-            const userRole = role === 'Tim Pajak' ? 'Tim Pajak' : 'Staf SCM';
-            const userDivision = userRole === 'Tim Pajak' ? 'Tax & Compliance Audit' : 'Operasional Logistik SCM';
+            const userRole = role || 'Gudang';
+            let userDivision = 'Operasional Gudang & Logistik';
+            if (userRole === 'Finance' || userRole === 'Tim Pajak') userDivision = 'Tax & Finance Compliance';
+            if (userRole === 'SCM' || userRole === 'Staf SCM') userDivision = 'Supply Chain Management';
             const parts = (name || 'User SCM').trim().split(/\s+/);
             const initials = (parts[0][0] + (parts[1] ? parts[1][0] : parts[0][1] || 'S')).toUpperCase();
 
@@ -1390,6 +1486,25 @@ export const useTaxStore = () => {
                 return { success: true, user: data.user };
             }
             return { success: false, message: data.message || 'Gagal menambahkan user.' };
+        } catch (e) {
+            return { success: false, message: 'Gagal terhubung ke server.' };
+        }
+    }
+
+    async function updateUser(userId, userData) {
+        try {
+            const resp = await fetch(`/api/admin/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                await fetchUsers();
+                notify(data.message || `Data user "${data.user?.name}" berhasil diperbarui.`);
+                return { success: true, user: data.user };
+            }
+            return { success: false, message: data.message || 'Gagal memperbarui user.' };
         } catch (e) {
             return { success: false, message: 'Gagal terhubung ke server.' };
         }
@@ -1608,6 +1723,61 @@ export const useTaxStore = () => {
         return role === 'Admin SCM' || role.toLowerCase().includes('admin');
     });
 
+    const isGudang = computed(() => {
+        const role = (state.currentUser?.role || '').toLowerCase();
+        return role.includes('gudang');
+    });
+
+    const isFinance = computed(() => {
+        const role = (state.currentUser?.role || '').toLowerCase();
+        return role.includes('finance') || role.includes('pajak');
+    });
+
+    const isScm = computed(() => {
+        const role = (state.currentUser?.role || '').toLowerCase();
+        return role.includes('scm') && !role.includes('admin');
+    });
+
+    function canUploadDoc(docType) {
+        if (isAdmin.value) return true;
+        const normalized = (docType || '').toLowerCase();
+        if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
+            return true;
+        }
+        if (isFinance.value && (normalized === 'invoice' || normalized === 'faktur' || normalized === 'faktur_pajak')) {
+            return true;
+        }
+        return false;
+    }
+
+    function canDeleteDoc(docType) {
+        if (isAdmin.value) return true;
+        const normalized = (docType || '').toLowerCase();
+        if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
+            return true;
+        }
+        if (isFinance.value && (normalized === 'invoice' || normalized === 'faktur' || normalized === 'faktur_pajak')) {
+            return true;
+        }
+        return false;
+    }
+
+    const canEditPurchase = computed(() => {
+        return isAdmin.value || isGudang.value;
+    });
+
+    const canEditFinance = computed(() => {
+        return isAdmin.value || isFinance.value;
+    });
+
+    const canEditProgram = computed(() => {
+        return isAdmin.value || isGudang.value || isFinance.value;
+    });
+
+    const canDeleteProgram = computed(() => {
+        return isAdmin.value;
+    });
+
     function openImportModal() {
         state.isImportModalOpen = true;
     }
@@ -1635,6 +1805,15 @@ export const useTaxStore = () => {
         isLoggedIn,
         isLoggingOut: computed(() => state.isLoggingOut),
         isAdmin,
+        isGudang,
+        isFinance,
+        isScm,
+        canUploadDoc,
+        canDeleteDoc,
+        canEditPurchase,
+        canEditFinance,
+        canEditProgram,
+        canDeleteProgram,
         allUsers,
         pendingUsers,
         pendingUsersCount,
@@ -1646,6 +1825,7 @@ export const useTaxStore = () => {
         closeApprovalModal,
         registerUser,
         createUser,
+        updateUser,
         approveUser,
         rejectUser,
         deleteUser,
@@ -1678,11 +1858,13 @@ export const useTaxStore = () => {
         deleteRawImport,
         suppliersList,
         categoriesList,
+        brandsList,
         companiesList,
         monthsList,
         getProgramMonth,
         getProgramYear,
         getProgramCompanyName,
+        getProgramBrand,
         getProgramPoSjNumber,
         fetchPrograms,
         fetchUsers,
