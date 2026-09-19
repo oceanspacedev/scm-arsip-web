@@ -152,6 +152,20 @@ class ProgramController extends Controller
      */
     public function store(Request $request)
     {
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+        if ($userRole) {
+            $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
+            $isGudang = str_contains(strtolower($userRole), 'gudang');
+            $isAdmin = str_contains(strtolower($userRole), 'admin');
+
+            if (($isFinance || $isGudang) && !$isAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Anda tidak memiliki wewenang untuk menambahkan data program baru.'
+                ], 403);
+            }
+        }
+
         $title = $request->input('title') ?: $request->input('program_name');
         $supplier = $request->input('supplier');
 
@@ -214,17 +228,18 @@ class ProgramController extends Controller
     public function update(Request $request, $id)
     {
         $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
-        if ($userRole && str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin')) {
+
+        if ($userRole && str_contains(strtolower($userRole), 'gudang') && !str_contains(strtolower($userRole), 'admin')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Role SCM hanya memiliki akses melihat arsip (View-Only).'
+                'message' => 'Role Staff Gudang tidak memiliki izin untuk mengubah data program/arsip.'
             ], 403);
         }
 
         $program = Program::findOrFail($id);
 
-        $isGudang = $userRole && str_contains(strtolower($userRole), 'gudang');
         $isFinance = $userRole && (str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak'));
+        $isScm = $userRole && str_contains(strtolower($userRole), 'scm');
         $isAdmin = !$userRole || str_contains(strtolower($userRole), 'admin');
 
         $title = $request->input('title') ?: $request->input('program_name');
@@ -233,8 +248,8 @@ class ProgramController extends Controller
 
         $data = [];
 
-        // Purchase & Vendor fields (Wewenang Gudang & Admin SCM)
-        if ($isAdmin || $isGudang) {
+        // Purchase & Vendor fields (Admin SCM & Staff SCM)
+        if ($isAdmin || $isScm) {
             if ($title) $data['title'] = $title;
             if ($request->has('supplier')) $data['supplier'] = $request->input('supplier');
             if ($request->has('npwp')) $data['npwp'] = $request->input('npwp');
@@ -246,8 +261,8 @@ class ProgramController extends Controller
             }
         }
 
-        // Financial & Tax fields (Wewenang Finance & Admin SCM)
-        if ($isAdmin || $isFinance) {
+        // Financial & Tax fields (Admin SCM, Staff SCM, & Finance)
+        if ($isAdmin || $isScm || $isFinance) {
             if ($invoiceNo !== null) $data['invoice_no'] = $invoiceNo;
             if ($request->has('dpp_amount') || $request->has('dpp')) {
                 $data['dpp_amount'] = (float) ($request->input('dpp_amount') ?? $request->input('dpp'));
@@ -326,20 +341,11 @@ class ProgramController extends Controller
         if ($userRole) {
             $isGudang = str_contains(strtolower($userRole), 'gudang');
             $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
-            $isScm = str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin');
-            $isAdmin = str_contains(strtolower($userRole), 'admin');
-
-            if ($isScm) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role SCM hanya memiliki akses melihat (View-Only).'
-                ], 403);
-            }
 
             if ($isGudang && !in_array($docType, ['mou', 'memo', 'do'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Role Gudang hanya diizinkan mengunggah dokumen DO / Surat Jalan.'
+                    'message' => 'Role Staff Gudang hanya diizinkan mengunggah dokumen Memo / Surat Jalan (DO).'
                 ], 403);
             }
 
@@ -431,14 +437,6 @@ class ProgramController extends Controller
         if ($userRole) {
             $isGudang = str_contains(strtolower($userRole), 'gudang');
             $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
-            $isScm = str_contains(strtolower($userRole), 'scm') && !str_contains(strtolower($userRole), 'admin');
-
-            if ($isScm) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role SCM tidak diizinkan menghapus berkas dokumen.'
-                ], 403);
-            }
 
             if ($isGudang && in_array($docId, ['invoice', 'faktur', 'faktur_pajak'])) {
                 return response()->json([
@@ -489,6 +487,20 @@ class ProgramController extends Controller
      */
     public function import(Request $request)
     {
+        $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
+        if ($userRole) {
+            $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
+            $isGudang = str_contains(strtolower($userRole), 'gudang');
+            $isAdmin = str_contains(strtolower($userRole), 'admin');
+
+            if (($isFinance || $isGudang) && !$isAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role Anda tidak memiliki wewenang untuk mengimpor data program.'
+                ], 403);
+            }
+        }
+
         try {
             // 1. Upload Raw File to SeaweedFS / S3 storage if file is present
             $rawImport = null;

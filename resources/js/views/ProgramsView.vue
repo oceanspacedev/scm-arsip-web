@@ -17,8 +17,9 @@
           {{ store.filteredPrograms.value.length }} Program terdaftar
         </span>
 
-        <!-- Import Excel (Neutral white style with authentic Excel icon) -->
+        <!-- Import Excel (Hanya Staff SCM & Admin SCM) -->
         <button
+          v-if="canImportProgram"
           type="button"
           class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
           @click="store.openImportModal()"
@@ -27,8 +28,9 @@
           <span>Import Excel</span>
         </button>
 
-        <!-- Ekspor Excel -->
+        <!-- Ekspor Excel (Hanya Staff SCM & Admin SCM) -->
         <button
+          v-if="canExportProgram"
           type="button"
           class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
           @click="handleExport"
@@ -37,8 +39,9 @@
           <span>Ekspor Excel</span>
         </button>
 
-        <!-- Tambah Program -->
+        <!-- Tambah Program (Hanya Staff SCM & Admin SCM) -->
         <button
+          v-if="canAddProgram"
           type="button"
           class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
           @click="isAddSheetOpen = true"
@@ -63,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Download, Plus } from 'lucide-vue-next';
 import ExcelIcon from '../components/ui/ExcelIcon.vue';
 import ProgramToolbar from '../components/programs/ProgramToolbar.vue';
@@ -73,6 +76,9 @@ import { useTaxStore } from '../store/taxStore';
 
 const store = useTaxStore();
 const isAddSheetOpen = ref(false);
+const canAddProgram = computed(() => store.canAddProgram.value);
+const canImportProgram = computed(() => store.canImportProgram.value);
+const canExportProgram = computed(() => store.canExportProgram.value);
 
 function handleExport() {
   store.exportToCsv();

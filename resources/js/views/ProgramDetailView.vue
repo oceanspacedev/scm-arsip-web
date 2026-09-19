@@ -23,7 +23,7 @@
           <span>Kembali</span>
         </button>
 
-        <!-- Ubah (Hanya untuk Gudang, Finance, dan Admin. SCM View-Only) -->
+        <!-- Ubah (Hanya untuk Finance dan Admin. Gudang & SCM View-Only) -->
         <button
           v-if="canEditProgram"
           type="button"
@@ -200,7 +200,7 @@
                   Belum Ada Berkas
                 </span>
                 <span class="text-[10px] text-slate-400 dark:text-slate-500 block mt-1">
-                  {{ cat.type === 'mou' ? 'Khusus diunggah oleh Tim Gudang' : 'Khusus diunggah oleh Tim Finance' }}
+                  {{ cat.type === 'mou' ? 'Khusus diunggah oleh Tim Gudang / SCM' : 'Khusus diunggah oleh Tim Finance / SCM' }}
                 </span>
               </div>
             </div>

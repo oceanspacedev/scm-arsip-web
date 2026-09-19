@@ -2,10 +2,11 @@
   <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col w-full min-w-0">
     <!-- Desktop Table Container (hidden md:block) -->
     <div class="hidden md:block overflow-x-auto w-full max-w-full">
-      <table class="w-full text-left text-xs border-collapse min-w-[1240px]">
+      <table class="w-full text-left text-xs border-collapse min-w-[1340px]">
         <thead>
           <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
-            <th class="py-2.5 px-3 font-bold min-w-[95px]">BULAN</th>
+            <th class="py-2.5 px-3 font-bold min-w-[105px]">TANGGAL</th>
+            <th class="py-2.5 px-2.5 font-bold min-w-[95px]">BULAN</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[110px]">KATEGORI</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[100px]">BRAND</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[145px]">COMPANY NAME</th>
@@ -29,8 +30,13 @@
             class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
             @click="goToDetail(program.id)"
           >
-            <!-- 1. BULAN -->
-            <td class="py-2.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
+            <!-- 1. TANGGAL -->
+            <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px] tabular-nums font-medium">
+              {{ formatDate(program.program_date) }}
+            </td>
+
+            <!-- 1.5. BULAN -->
+            <td class="py-2.5 px-2.5 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
               {{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}
             </td>
 
@@ -120,11 +126,15 @@
                 <!-- INVOICE -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer select-none active:scale-95"
-                  :class="hasDoc(program, 'invoice')
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                    : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-                  :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : 'Invoice belum ada - Klik unggah'"
+                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  :class="[
+                    hasDoc(program, 'invoice')
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                      : (store.canUploadDoc('invoice')
+                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                  ]"
+                  :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
                   @click="handlePillClick(program, 'invoice', 'Invoice')"
                 >
                   <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 text-[8px] font-normal">+</span>IN
@@ -133,11 +143,15 @@
                 <!-- FAKTUR PAJAK -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer select-none active:scale-95"
-                  :class="hasDoc(program, 'faktur_pajak')
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                    : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-                  :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : 'Faktur Pajak belum ada - Klik unggah'"
+                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  :class="[
+                    hasDoc(program, 'faktur_pajak')
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                      : (store.canUploadDoc('faktur_pajak')
+                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                  ]"
+                  :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
                   @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
                 >
                   <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 text-[8px] font-normal">+</span>FP
@@ -146,11 +160,15 @@
                 <!-- MEMO / DO -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer select-none active:scale-95"
-                  :class="hasDoc(program, 'mou')
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                    : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-                  :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : 'Memo/DO belum ada - Klik unggah'"
+                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  :class="[
+                    hasDoc(program, 'mou')
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                      : (store.canUploadDoc('mou')
+                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                  ]"
+                  :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
                   @click="handlePillClick(program, 'mou', 'Memo/DO')"
                 >
                   <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[8px] font-normal">+</span>DO
@@ -211,7 +229,7 @@
 
           <!-- Empty State Desktop -->
           <tr v-if="filteredPrograms.length === 0">
-            <td colspan="14" class="py-14 text-center">
+            <td colspan="16" class="py-14 text-center">
               <div class="flex flex-col items-center justify-center space-y-2">
                 <FolderArchive class="w-8 h-8 text-slate-300 dark:text-slate-600" />
                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada program ditemukan</p>
@@ -244,6 +262,9 @@
               {{ program.program_name }}
             </router-link>
             <div class="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 tabular-nums">
+                {{ formatDate(program.program_date) }}
+              </span>
               <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                 {{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}
               </span>
@@ -350,11 +371,15 @@
             <!-- INVOICE -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
-              :class="hasDoc(program, 'invoice')
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-              :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : 'Invoice belum ada - Klik unggah'"
+              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              :class="[
+                hasDoc(program, 'invoice')
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                  : (store.canUploadDoc('invoice')
+                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+              ]"
+              :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
               @click="handlePillClick(program, 'invoice', 'Invoice')"
             >
               <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 font-normal">+</span>IN
@@ -363,11 +388,15 @@
             <!-- FAKTUR PAJAK -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
-              :class="hasDoc(program, 'faktur_pajak')
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-              :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : 'Faktur Pajak belum ada - Klik unggah'"
+              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              :class="[
+                hasDoc(program, 'faktur_pajak')
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                  : (store.canUploadDoc('faktur_pajak')
+                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+              ]"
+              :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
               @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
             >
               <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 font-normal">+</span>FP
@@ -376,11 +405,15 @@
             <!-- Memo / DO -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
-              :class="hasDoc(program, 'mou')
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300'"
-              :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : 'Memo/DO belum ada - Klik unggah'"
+              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              :class="[
+                hasDoc(program, 'mou')
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
+                  : (store.canUploadDoc('mou')
+                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+              ]"
+              :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
               @click="handlePillClick(program, 'mou', 'Memo/DO')"
             >
               <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal">+</span>DO
@@ -900,6 +933,11 @@ function handlePillClick(program, docType, docLabel) {
     activeDocument.value = existingDoc;
     isPreviewOpen.value = true;
   } else {
+    if (!store.canUploadDoc(docType)) {
+      const roleName = store.currentUser.value?.role || 'Staff Gudang';
+      store.notify(`Role ${roleName} hanya diizinkan mengunggah dokumen Memo/DO.`, 'warning');
+      return;
+    }
     uploadTargetProgram.value = program;
     uploadDocType.value = docType;
     uploadDocLabel.value = `${docLabel} (${program.program_name})`;

@@ -714,9 +714,14 @@ export const useTaxStore = () => {
         const index = state.programs.findIndex(p => String(p.id) === String(id));
         if (index === -1) return { success: false, message: 'Program tidak ditemukan.' };
 
-        const dppVal = Number(updatedData.dpp) || 0;
-        const ppnVal = Number(updatedData.ppn) || 0;
-        const totalVal = Number(updatedData.total_invoice) || (dppVal + ppnVal);
+        if (!canEditProgram.value) {
+            notify('Anda tidak memiliki wewenang untuk mengubah data program.', 'error');
+            return { success: false, message: 'Forbidden' };
+        }
+
+        const dppVal = Number(updatedData.dpp !== undefined ? updatedData.dpp : (updatedData.dpp_amount !== undefined ? updatedData.dpp_amount : (state.programs[index].dpp || 0)));
+        const ppnVal = Number(updatedData.ppn !== undefined ? updatedData.ppn : (updatedData.ppn_amount !== undefined ? updatedData.ppn_amount : (state.programs[index].ppn || 0)));
+        const totalVal = dppVal + ppnVal;
 
         const payload = {
             ...updatedData,
@@ -792,6 +797,11 @@ export const useTaxStore = () => {
         if (!prog) return false;
         if (!prog.documents) prog.documents = [];
 
+        if (!canUploadDoc(docType)) {
+            notify(`Role ${state.currentUser?.role || 'Staff'} tidak memiliki hak akses mengunggah dokumen ${getDocTypeLabel(docType)}.`, 'error');
+            return false;
+        }
+
         let docId = 'doc-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         const uploader = state.currentUser?.name || 'Staff';
         let serverFileUrl = fileInfo.file_url || null;
@@ -804,9 +814,14 @@ export const useTaxStore = () => {
                 formData.append('document_type', docType);
                 formData.append('file_name', fileInfo.name);
                 formData.append('uploaded_by', uploader);
+                formData.append('user_role', state.currentUser?.role || '');
 
                 const res = await fetch(`/api/programs/${programId}/documents`, {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-User-Role': state.currentUser?.role || ''
+                    },
                     body: formData
                 });
                 if (res.ok) {
@@ -881,7 +896,10 @@ export const useTaxStore = () => {
             try {
                 const res = await fetch(`/api/programs/${programId}/documents/${deletedIdOrType}`, {
                     method: 'DELETE',
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-User-Role': state.currentUser?.role || ''
+                    }
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -1008,6 +1026,11 @@ export const useTaxStore = () => {
     }
 
     function exportToCsv() {
+        if (!canExportProgram.value) {
+            notify('Role Anda tidak memiliki wewenang untuk mengekspor data.', 'error');
+            return;
+        }
+
         const rows = filteredPrograms.value;
         const dateStr = new Date().toISOString().slice(0, 10);
 
@@ -1015,6 +1038,7 @@ export const useTaxStore = () => {
             const XLSX = window.XLSX;
             const headers = [
                 "ID",
+                "TANGGAL",
                 "BULAN",
                 "KATEGORI",
                 "BRAND",
@@ -1038,6 +1062,7 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => getDocTypeLabel(d.document_type)).join(', ') || 'Belum Ada';
                 return [
                     p.id,
+                    formatDate(p.program_date),
                     `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}`.trim() || '-',
                     p.category || '',
                     p.brand || getProgramBrand(p),
@@ -1100,6 +1125,7 @@ export const useTaxStore = () => {
         // CSV Fallback
         const headers = [
             "ID",
+            "Tanggal",
             "Bulan",
             "Kategori",
             "Brand",
@@ -1125,6 +1151,7 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => d.document_type).join('; ');
                 return [
                     p.id,
+                    `"${formatDate(p.program_date)}"`,
                     `"${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}"`,
                     `"${p.category || ''}"`,
                     `"${p.brand || getProgramBrand(p)}"`,
@@ -1739,7 +1766,7 @@ export const useTaxStore = () => {
     });
 
     function canUploadDoc(docType) {
-        if (isAdmin.value) return true;
+        if (isAdmin.value || isScm.value) return true;
         const normalized = (docType || '').toLowerCase();
         if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
             return true;
@@ -1751,7 +1778,7 @@ export const useTaxStore = () => {
     }
 
     function canDeleteDoc(docType) {
-        if (isAdmin.value) return true;
+        if (isAdmin.value || isScm.value) return true;
         const normalized = (docType || '').toLowerCase();
         if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
             return true;
@@ -1763,15 +1790,27 @@ export const useTaxStore = () => {
     }
 
     const canEditPurchase = computed(() => {
-        return isAdmin.value || isGudang.value;
+        return isAdmin.value || isScm.value;
     });
 
     const canEditFinance = computed(() => {
-        return isAdmin.value || isFinance.value;
+        return isAdmin.value || isScm.value || isFinance.value;
     });
 
     const canEditProgram = computed(() => {
-        return isAdmin.value || isGudang.value || isFinance.value;
+        return isAdmin.value || isScm.value || isFinance.value;
+    });
+
+    const canAddProgram = computed(() => {
+        return isAdmin.value || isScm.value;
+    });
+
+    const canImportProgram = computed(() => {
+        return isAdmin.value || isScm.value;
+    });
+
+    const canExportProgram = computed(() => {
+        return isAdmin.value || isScm.value;
     });
 
     const canDeleteProgram = computed(() => {
@@ -1779,6 +1818,10 @@ export const useTaxStore = () => {
     });
 
     function openImportModal() {
+        if (!canImportProgram.value) {
+            notify('Role Anda tidak memiliki wewenang untuk mengimpor data.', 'error');
+            return;
+        }
         state.isImportModalOpen = true;
     }
 
@@ -1813,6 +1856,9 @@ export const useTaxStore = () => {
         canEditPurchase,
         canEditFinance,
         canEditProgram,
+        canAddProgram,
+        canImportProgram,
+        canExportProgram,
         canDeleteProgram,
         allUsers,
         pendingUsers,
