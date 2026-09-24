@@ -43,10 +43,12 @@
           <div class="flex-1 text-[11px] leading-relaxed">
             <p class="font-bold text-slate-900 dark:text-white">Format Kolom yang Didukung:</p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
+              <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800/80 font-mono font-bold text-blue-700 dark:text-blue-300">TANGGAL</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">BULAN</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">KATEGORI</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">BRAND</span>
+              <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 rounded border border-emerald-200 dark:border-emerald-800/80 font-mono font-bold text-emerald-700 dark:text-emerald-300">BRAND</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">COMPANY NAME</span>
+              <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800/80 font-mono font-bold text-amber-700 dark:text-amber-300">KODE GUDANG</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. PO/SJ</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">PROGRAM</span>
               <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">SUPPLIER</span>
@@ -169,15 +171,16 @@
                 <thead class="sticky top-0 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
                   <tr>
                     <th class="py-2.5 px-3">NO</th>
-                    <th class="py-2.5 px-2">BULAN</th>
+                    <th class="py-2.5 px-2.5 whitespace-nowrap">TANGGAL</th>
                     <th class="py-2.5 px-2">KATEGORI</th>
                     <th class="py-2.5 px-2">BRAND</th>
                     <th class="py-2.5 px-2">COMPANY</th>
+                    <th class="py-2.5 px-2 whitespace-nowrap">KODE GUDANG</th>
                     <th class="py-2.5 px-2">NO. PO/SJ</th>
                     <th class="py-2.5 px-3">PROGRAM</th>
                     <th class="py-2.5 px-3">SUPPLIER</th>
                     <th class="py-2.5 px-3">NO. INVOICE</th>
-                    <th class="py-2.5 px-2.5 whitespace-nowrap">TAX INVOICE DATE</th>
+                    <th class="py-2.5 px-2.5 whitespace-nowrap">FAKTUR PAJAK</th>
                     <th class="py-2.5 px-3 text-right">DPP</th>
                     <th class="py-2.5 px-3 text-right">PPN</th>
                     <th class="py-2.5 px-3 text-right">TOTAL INVOICE</th>
@@ -190,17 +193,20 @@
                     class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td class="py-2 px-3 text-slate-400 dark:text-slate-500 text-[10px] tabular-nums">{{ idx + 1 }}</td>
-                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
-                      {{ getProgramMonth(row.program_date) }}
+                    <td class="py-2 px-2.5 text-slate-900 dark:text-white whitespace-nowrap text-[11px] font-mono font-medium">
+                      {{ row.program_date }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                       {{ row.category }}
                     </td>
-                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
+                    <td class="py-2 px-2 text-slate-900 dark:text-slate-100 whitespace-nowrap text-[10px] font-bold">
                       {{ row.brand || 'SCM' }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.company_name">
                       {{ row.company_name }}
+                    </td>
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 font-mono text-[10px] whitespace-nowrap">
+                      {{ row.kode_gudang || '-' }}
                     </td>
                     <td class="py-2 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px] tabular-nums">
                       {{ row.po_sj_number }}
@@ -215,12 +221,12 @@
                       {{ row.invoice_number }}
                     </td>
                     <td class="py-2 px-2.5 whitespace-nowrap text-[11px]">
-                      <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-700 dark:text-slate-300">
+                      <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-800 dark:text-slate-200">
                         {{ row.tax_invoice_date || row.faktur_date }}
                       </div>
                       <div v-else class="text-slate-400 dark:text-slate-500 text-[10px]">-</div>
-                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums" :title="row.tax_invoice_number || row.faktur_number">
-                        {{ row.tax_invoice_number || row.faktur_number }}
+                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-500 dark:text-slate-400 truncate tabular-nums font-mono mt-0.5" :title="row.tax_invoice_number || row.faktur_number">
+                        No: {{ row.tax_invoice_number || row.faktur_number }}
                       </div>
                     </td>
                     <td class="py-2 px-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">
@@ -431,6 +437,7 @@ function mapRawRow(raw) {
   let supplier = '';
   let invoice_number = '';
   let company_name = '';
+  let kode_gudang = '';
   let po_sj_number = '';
   let dpp = 0;
   let ppn = 0;
@@ -438,6 +445,8 @@ function mapRawRow(raw) {
   let npwp = '';
   let category = 'Logistik';
   let brand = '';
+  let raw_tanggal = null;
+  let raw_bulan = null;
   let program_date = new Date().toISOString().split('T')[0];
   let faktur_number = '';
   let faktur_date = null;
@@ -490,6 +499,10 @@ function mapRawRow(raw) {
     else if (k.includes('company') || k.includes('perusahaan') || k.includes('entitas') || k === 'pt') {
       company_name = String(val || '').trim();
     }
+    // 7.5 KODE GUDANG
+    else if (k.includes('kodegudang') || k.includes('gudang') || k.includes('warehouse') || k.includes('whcode') || k === 'wh' || k === 'gdg') {
+      kode_gudang = String(val || '').trim();
+    }
     // 8. NO. PO / SJ
     else if (
       k.includes('posj') ||
@@ -512,22 +525,11 @@ function mapRawRow(raw) {
     else if (k.includes('kategori') || k.includes('category')) {
       category = String(val || '').trim();
     }
-    // 10.5 BRAND
-    else if (k.includes('brand') || k.includes('merk')) {
+    // 10.5 BRAND / MERK
+    else if (k === 'brand' || k.includes('brand') || k.includes('merk')) {
       brand = String(val || '').trim();
     }
-    // 11. TANGGAL / BULAN
-    else if (
-      k.includes('tanggal') ||
-      k.includes('date') ||
-      k.includes('tgl') ||
-      k.includes('bulan') ||
-      k.includes('month') ||
-      k.includes('periode')
-    ) {
-      program_date = parseImportDate(val);
-    }
-    // 12. FAKTUR PAJAK / TAX INVOICE
+    // 11. FAKTUR PAJAK / TAX INVOICE (Harus dicek SEBELUM tanggal/bulan agar 'taxinvoicedate' tidak dianggap program_date)
     else if (
       k.includes('taxinvoice') ||
       k.includes('fakturpajak') ||
@@ -542,6 +544,28 @@ function mapRawRow(raw) {
         faktur_number = String(val || '').trim();
       }
     }
+    // 12. TANGGAL TRANSAKSI / PROGRAM
+    else if (
+      (k === 'tanggal' || k === 'tgl' || k.includes('tanggal') || k.includes('tgl') || k.includes('duedate') || k.includes('programdate') || k.includes('date')) &&
+      !k.includes('bulan') && !k.includes('month') && !k.includes('faktur') && !k.includes('tax')
+    ) {
+      if (val !== null && val !== undefined && String(val).trim() !== '') {
+        raw_tanggal = val;
+      }
+    }
+    // 13. BULAN / PERIODE
+    else if (k.includes('bulan') || k.includes('month') || k.includes('periode')) {
+      if (val !== null && val !== undefined && String(val).trim() !== '') {
+        raw_bulan = val;
+      }
+    }
+  }
+
+  // Resolusi Tanggal: Jika ada TANGGAL spesifik maka gunakan TANGGAL, jika hanya BULAN maka gunakan BULAN
+  if (raw_tanggal) {
+    program_date = parseImportDate(raw_tanggal);
+  } else if (raw_bulan) {
+    program_date = parseImportDate(raw_bulan);
   }
 
   // Automatic Fallbacks & Calculations
@@ -562,6 +586,7 @@ function mapRawRow(raw) {
     program_name: program_name || 'Program SCM',
     supplier: supplier || 'Vendor SCM',
     company_name: company_name || 'PT SCM Nusantara',
+    kode_gudang: kode_gudang || '',
     po_sj_number: po_sj_number || `PO-${Date.now().toString().slice(-4)}`,
     invoice_number,
     dpp,

@@ -200,6 +200,7 @@ class ProgramController extends Controller
             'category' => $request->input('category') ?: 'Logistik',
             'brand' => $request->input('brand') ?: 'SCM',
             'company_name' => $request->input('company_name') ?: 'PT SCM Nusantara',
+            'kode_gudang' => $request->input('kode_gudang') ?: $request->input('warehouse_code'),
             'po_sj_number' => $request->input('po_sj_number') ?: $request->input('no_po_sj'),
             'invoice_no' => $request->input('invoice_no') ?: $request->input('invoice_number') ?: ('INV/' . date('Y') . '/SCM/' . rand(1000, 9999)),
             'dpp_amount' => $dpp,
@@ -229,17 +230,11 @@ class ProgramController extends Controller
     {
         $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
 
-        if ($userRole && str_contains(strtolower($userRole), 'gudang') && !str_contains(strtolower($userRole), 'admin')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Role Staff Gudang tidak memiliki izin untuk mengubah data program/arsip.'
-            ], 403);
-        }
-
         $program = Program::findOrFail($id);
 
         $isFinance = $userRole && (str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak'));
         $isScm = $userRole && str_contains(strtolower($userRole), 'scm');
+        $isGudang = $userRole && str_contains(strtolower($userRole), 'gudang');
         $isAdmin = !$userRole || str_contains(strtolower($userRole), 'admin');
 
         $title = $request->input('title') ?: $request->input('program_name');
@@ -248,14 +243,17 @@ class ProgramController extends Controller
 
         $data = [];
 
-        // Purchase & Vendor fields (Admin SCM & Staff SCM)
-        if ($isAdmin || $isScm) {
+        // Purchase & Vendor fields (Admin SCM, Staff SCM, Staff Gudang)
+        if ($isAdmin || $isScm || $isGudang) {
             if ($title) $data['title'] = $title;
             if ($request->has('supplier')) $data['supplier'] = $request->input('supplier');
             if ($request->has('npwp')) $data['npwp'] = $request->input('npwp');
             if ($request->has('category')) $data['category'] = $request->input('category');
             if ($request->has('brand')) $data['brand'] = $request->input('brand');
             if ($request->has('company_name')) $data['company_name'] = $request->input('company_name');
+            if ($request->has('kode_gudang') || $request->has('warehouse_code')) {
+                $data['kode_gudang'] = $request->input('kode_gudang') ?? $request->input('warehouse_code');
+            }
             if ($request->has('po_sj_number') || $request->has('no_po_sj')) {
                 $data['po_sj_number'] = $request->input('po_sj_number') ?? $request->input('no_po_sj');
             }
@@ -557,6 +555,7 @@ class ProgramController extends Controller
 
                 $dueDate = $this->parseSafeDate($p['due_date'] ?? $p['program_date'] ?? null);
                 $companyName = $p['company_name'] ?? $p['company'] ?? 'PT SCM Nusantara';
+                $kodeGudang = $p['kode_gudang'] ?? $p['warehouse_code'] ?? null;
                 $poSjNumber = $p['po_sj_number'] ?? $p['no_po_sj'] ?? null;
                 $fakturNumber = $p['faktur_number'] ?? $p['tax_invoice_number'] ?? null;
                 $fakturDate = $p['faktur_date'] ?? $p['tax_invoice_date'] ?? null;
@@ -568,7 +567,9 @@ class ProgramController extends Controller
                         'supplier' => $p['supplier'] ?? 'PT Rekanan Vendor',
                         'npwp' => $p['npwp'] ?? '01.000.000.0-000.000',
                         'category' => $p['category'] ?? 'Logistik',
+                        'brand' => !empty($p['brand']) ? trim($p['brand']) : 'SCM',
                         'company_name' => $companyName,
+                        'kode_gudang' => $kodeGudang,
                         'po_sj_number' => $poSjNumber,
                         'invoice_no' => $p['invoice_no'] ?? $p['invoice_number'] ?? ('INV/' . date('Y') . '/SCM/' . rand(1000, 9999)),
                         'dpp_amount' => $dpp,

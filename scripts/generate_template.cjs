@@ -3,10 +3,12 @@ const path = require('path');
 const ExcelJS = require('exceljs');
 
 const sampleHeaders = [
+  'TANGGAL',
   'BULAN',
   'KATEGORI',
   'BRAND',
   'COMPANY NAME',
+  'KODE GUDANG',
   'NO. PO/SJ',
   'PROGRAM',
   'SUPPLIER',
@@ -21,10 +23,12 @@ const sampleHeaders = [
 
 const sampleRows = [
   [
+    '2026-03-05',
     'Maret 2026',
     'Pipa & Tubing',
     'SCTV',
     'PT SCM Nusantara',
+    'GDG-JKT-01',
     'PO/2026/0101 / SJ-0101',
     'Pengadaan Komponen Pipa Gas Tuban',
     'PT Steel Pipe Industry of Indonesia Tbk',
@@ -37,10 +41,12 @@ const sampleRows = [
     '2026-03-05'
   ],
   [
+    '2026-03-08',
     'Maret 2026',
     'Sewa Alat Berat',
     'Indosiar',
     'PT SCM Solusi Indonesia',
+    'GDG-SBY-02',
     'PO/2026/0102 / SJ-0102',
     'Penyewaan Heavy Crane Lepas Pantai 50 Ton',
     'PT Radiant Utama Interinsco Tbk',
@@ -53,10 +59,12 @@ const sampleRows = [
     '2026-03-08'
   ],
   [
+    '2026-03-11',
     'Maret 2026',
     'Inspeksi & Sertifikasi',
     'Vidio',
     'PT SCM Nusantara',
+    'GDG-BDG-01',
     'PO/2026/0103 / SJ-0103',
     'Jasa Inspeksi Tangki Kilang Balikpapan',
     'PT Sucofindo (Persero)',
@@ -69,10 +77,12 @@ const sampleRows = [
     '2026-03-11'
   ],
   [
+    '2026-03-14',
     'Maret 2026',
     'Mekanikal & Valve',
     'Moji',
     'PT SCM Logistik Utama',
+    'GDG-CKR-03',
     'PO/2026/0104 / SJ-0104',
     'Pengadaan High Pressure Valve & Flange Class 600',
     'PT Kitz Valve Indonesia',
@@ -85,10 +95,12 @@ const sampleRows = [
     '2026-03-14'
   ],
   [
+    '2026-03-18',
     'Maret 2026',
     'Bahan Kimia',
     'Mentari TV',
     'PT Surya Citra Media Tbk',
+    'GDG-TBN-01',
     'PO/2026/0105 / SJ-0105',
     'Pengadaan Chemical Demulsifier Lapangan Minyak',
     'PT Clariant Indonesia',
@@ -101,10 +113,12 @@ const sampleRows = [
     '2026-03-18'
   ],
   [
+    '2026-02-04',
     'Februari 2026',
     'Logistik',
     'SCM',
     'PT SCM Solusi Indonesia',
+    'GDG-JKT-02',
     'PO/2026/0201 / SJ-0201',
     'Pengadaan Armada Wingbox Pendingin Logistik',
     'PT Samudera Perkasa Abadi',
@@ -117,10 +131,12 @@ const sampleRows = [
     '2026-02-04'
   ],
   [
+    '2026-02-09',
     'Februari 2026',
     'IT & Software',
     'Vidio',
     'PT SCM Nusantara',
+    'GDG-JKT-01',
     'PO/2026/0202 / SJ-0202',
     'Integrasi WMS Automated Sorting Center Phase 2',
     'PT Global Solusi Informatika',
@@ -133,10 +149,12 @@ const sampleRows = [
     '2026-02-09'
   ],
   [
+    '2026-02-15',
     'Februari 2026',
     'Distribusi',
     'Indosiar',
     'PT SCM Logistik Utama',
+    'GDG-SMG-01',
     'PO/2026/0203 / SJ-0203',
     'Distribusi Ritel Multi-Hub Jawa Bali',
     'PT Mitra Distribusi Utama',
@@ -149,10 +167,12 @@ const sampleRows = [
     '2026-02-15'
   ],
   [
+    '2026-02-20',
     'Februari 2026',
     'Material Handling',
     'SCTV',
     'PT Surya Citra Media Tbk',
+    'GDG-CKR-01',
     'PO/2026/0204 / SJ-0204',
     'Pengadaan Forklift Elektrik 3 Ton High-Mast',
     'PT Toyota Material Handling Indonesia',
@@ -165,10 +185,12 @@ const sampleRows = [
     '2026-02-20'
   ],
   [
+    '2026-01-08',
     'Januari 2026',
     'Warehouse',
     'SCM',
     'PT SCM Nusantara',
+    'GDG-CKR-02',
     'PO/2026/0111 / SJ-0111',
     'Instalasi Selective Pallet Racking Gudang Cikarang',
     'PT Dexion Warehouse Systems',
@@ -181,10 +203,12 @@ const sampleRows = [
     '2026-01-08'
   ],
   [
+    '2026-01-14',
     'Januari 2026',
     'Packaging',
     'Moji',
     'PT SCM Solusi Indonesia',
+    'GDG-SBY-01',
     'PO/2026/0112 / SJ-0112',
     'Pengadaan Kemasan Corrugated Box & Stretch Film',
     'PT Riau Sakti Packaging Industries',
@@ -197,10 +221,12 @@ const sampleRows = [
     '2026-01-14'
   ],
   [
+    '2026-01-22',
     'Januari 2026',
     'Promosi',
     'Mentari TV',
     'PT Surya Citra Media Tbk',
+    'GDG-JKT-03',
     'PO/2026/0113 / SJ-0113',
     'Pengadaan Booth Branding & Material Event SCM Expo',
     'PT Mahaka Visual Integrasi',
@@ -232,10 +258,12 @@ async function generateTemplates() {
 
   // Column definitions with optimal widths
   worksheet.columns = [
+    { header: 'TANGGAL', key: 'tanggal', width: 16 },
     { header: 'BULAN', key: 'bulan', width: 16 },
     { header: 'KATEGORI', key: 'kategori', width: 22 },
     { header: 'BRAND', key: 'brand', width: 16 },
     { header: 'COMPANY NAME', key: 'company', width: 28 },
+    { header: 'KODE GUDANG', key: 'kode_gudang', width: 18 },
     { header: 'NO. PO/SJ', key: 'po_sj', width: 26 },
     { header: 'PROGRAM', key: 'program', width: 46 },
     { header: 'SUPPLIER', key: 'supplier', width: 40 },
@@ -292,12 +320,12 @@ async function generateTemplates() {
       };
 
       // Alignment and Formatting
-      if ([1, 2, 3, 5, 8, 9, 13, 14].includes(colNumber)) {
+      if ([1, 2, 3, 4, 6, 7, 10, 11, 15, 16].includes(colNumber)) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      } else if ([10, 11, 12].includes(colNumber)) {
+      } else if ([12, 13, 14].includes(colNumber)) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' };
         cell.numFmt = '#,##0';
-        if (colNumber === 12) {
+        if (colNumber === 14) {
           cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
         }
       } else {
@@ -306,8 +334,8 @@ async function generateTemplates() {
     });
   });
 
-  // Enable AutoFilter on header row
-  worksheet.autoFilter = 'A1:N1';
+  // Enable AutoFilter on header row (A1 to P1)
+  worksheet.autoFilter = 'A1:P1';
 
   const xlsxPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.xlsx');
   await workbook.xlsx.writeFile(xlsxPath);

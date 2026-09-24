@@ -703,34 +703,11 @@ async function handlePasswordSubmit() {
       return;
     }
 
-    // Semua akun demo (@scm.corp, demoAccounts, dan Admin SCM) langsung login tanpa OTP
-    const cleanEmail = (email.value || '').trim().toLowerCase();
-    const isDemoOrAdmin = cleanEmail.includes('@scm.corp') ||
-                          cleanEmail === 'auditor@pajak.corp' ||
-                          cleanEmail === 'staff@scm.corp' ||
-                          demoAccounts.some(d => d.email.toLowerCase() === cleanEmail) ||
-                          credCheck.user?.role === 'Admin SCM';
-
-    if (isDemoOrAdmin) {
-      store.loginDirect(credCheck.user);
-      isLoading.value = false;
-      router.push('/dashboard');
-      return;
-    }
-
-    // Akun reguler diarahkan ke verifikasi WhatsApp OTP
-    const otpRes = await store.sendOtp(email.value);
+    // Login dengan Email & Password langsung masuk tanpa OTP!
+    store.loginDirect(credCheck.user);
     isLoading.value = false;
-
-    if (otpRes.success) {
-      activeOtpCode.value = otpRes.otp;
-      targetPhone.value = otpRes.phone;
-      isOtpStep.value = true;
-      startCooldown();
-    } else {
-      errorMessage.value = otpRes.message;
-      isPendingAlert.value = !!otpRes.isPending;
-    }
+    router.push('/dashboard');
+    return;
   } catch (e) {
     isLoading.value = false;
     errorMessage.value = 'Terjadi kesalahan sistem saat memproses login.';

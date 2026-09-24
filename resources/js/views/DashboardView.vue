@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-5 select-none">
-    <!-- Header with Title & Fiscal Year Filter Dropdown -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div>
+    <!-- Header with Title & Fiscal Year Filter -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+      <div class="min-w-0">
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
           Dashboard Program SCM
         </h1>
@@ -11,8 +11,8 @@
         </p>
       </div>
 
-      <!-- Fiscal Year Dropdown -->
-      <div class="relative">
+      <!-- Fiscal Year Filter Dropdown -->
+      <div class="relative self-start sm:self-auto">
         <button
           type="button"
           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer"

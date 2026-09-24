@@ -346,9 +346,7 @@ export function getProgramBrand(program) {
     if (title.includes('moji') || comp.includes('moji')) return 'Moji';
     if (title.includes('mentari') || comp.includes('mentari')) return 'Mentari TV';
 
-    const defaultBrands = ['SCTV', 'Indosiar', 'Vidio', 'Moji', 'Mentari TV', 'SCM'];
-    const idNum = typeof program.id === 'number' ? program.id : (parseInt(String(program.id).replace(/\D/g, ''), 10) || 1);
-    return defaultBrands[(idNum - 1) % defaultBrands.length];
+    return 'SCM';
 }
 
 export function getProgramPoSjNumber(program) {
@@ -414,6 +412,7 @@ export function mapBackendProgram(p) {
         category: p.category || 'Logistik',
         brand: p.brand || getProgramBrand(p),
         company_name: p.company_name || p.company || getProgramCompanyName(p),
+        kode_gudang: p.kode_gudang || p.warehouse_code || '',
         po_sj_number: p.po_sj_number || p.no_po_sj || getProgramPoSjNumber(p),
         npwp: p.npwp || '01.000.000.0-000.000',
         invoice_number: p.invoice_no || p.invoice_number || '',
@@ -566,11 +565,12 @@ export const useTaxStore = () => {
                 const matchInvoice = (p.invoice_number || '').toLowerCase().includes(query);
                 const matchNpwp = (p.npwp || '').toLowerCase().includes(query);
                 const matchCompany = getProgramCompanyName(p).toLowerCase().includes(query);
+                const matchKodeGudang = (p.kode_gudang || '').toLowerCase().includes(query);
                 const matchPoSj = getProgramPoSjNumber(p).toLowerCase().includes(query);
                 const matchCategory = (p.category || '').toLowerCase().includes(query);
                 const matchFaktur = (p.faktur_number || '').toLowerCase().includes(query);
                 const matchFakturDate = (p.faktur_date || '').toLowerCase().includes(query);
-                if (!matchName && !matchSupplier && !matchInvoice && !matchNpwp && !matchCompany && !matchPoSj && !matchCategory && !matchFaktur && !matchFakturDate) {
+                if (!matchName && !matchSupplier && !matchInvoice && !matchNpwp && !matchCompany && !matchKodeGudang && !matchPoSj && !matchCategory && !matchFaktur && !matchFakturDate) {
                     return false;
                 }
             }
@@ -661,6 +661,10 @@ export const useTaxStore = () => {
         const payload = {
             program_name: newProg.program_name.trim(),
             category: newProg.category || 'Logistik',
+            brand: (newProg.brand || 'SCM').trim(),
+            company_name: (newProg.company_name || 'PT SCM Nusantara').trim(),
+            kode_gudang: (newProg.kode_gudang || '').trim(),
+            po_sj_number: (newProg.po_sj_number || '').trim(),
             program_date: newProg.program_date || new Date().toISOString().split('T')[0],
             supplier: newProg.supplier.trim(),
             npwp: (newProg.npwp || '').trim(),
@@ -682,7 +686,8 @@ export const useTaxStore = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-User-Role': state.currentUser?.role || ''
                 },
                 body: JSON.stringify(payload)
             });
@@ -951,7 +956,8 @@ export const useTaxStore = () => {
                 res = await fetch('/api/programs/import', {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-User-Role': state.currentUser?.role || ''
                     },
                     body: formData
                 });
@@ -960,7 +966,8 @@ export const useTaxStore = () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-User-Role': state.currentUser?.role || ''
                     },
                     body: JSON.stringify({ programs: rows })
                 });
@@ -1043,6 +1050,7 @@ export const useTaxStore = () => {
                 "KATEGORI",
                 "BRAND",
                 "COMPANY NAME",
+                "KODE GUDANG",
                 "NO. PO/SJ",
                 "PROGRAM",
                 "SUPPLIER",
@@ -1062,11 +1070,12 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => getDocTypeLabel(d.document_type)).join(', ') || 'Belum Ada';
                 return [
                     p.id,
-                    formatDate(p.program_date),
+                    p.program_date ? String(p.program_date).slice(0, 10) : '-',
                     `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}`.trim() || '-',
                     p.category || '',
                     p.brand || getProgramBrand(p),
                     getProgramCompanyName(p),
+                    p.kode_gudang || '-',
                     getProgramPoSjNumber(p),
                     p.program_name || '',
                     p.supplier || '',
@@ -1085,31 +1094,34 @@ export const useTaxStore = () => {
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
 
-            // Set generous column widths
+            // Set generous column widths for all 19 columns
             ws['!cols'] = [
-                { wch: 8 },   // ID
-                { wch: 18 },  // BULAN
-                { wch: 22 },  // KATEGORI
-                { wch: 28 },  // COMPANY NAME
-                { wch: 24 },  // NO. PO/SJ
-                { wch: 44 },  // PROGRAM
-                { wch: 40 },  // SUPPLIER
-                { wch: 24 },  // NPWP
-                { wch: 24 },  // NO. INVOICE
-                { wch: 20 },  // DPP
-                { wch: 18 },  // PPN
-                { wch: 22 },  // TOTAL INVOICE
-                { wch: 24 },  // NO. FAKTUR PAJAK
-                { wch: 20 },  // TAX INVOICE DATE
-                { wch: 22 },  // STATUS
-                { wch: 32 }   // DOKUMEN
+                { wch: 8 },   // 0: ID
+                { wch: 14 },  // 1: TANGGAL
+                { wch: 16 },  // 2: BULAN
+                { wch: 22 },  // 3: KATEGORI
+                { wch: 16 },  // 4: BRAND
+                { wch: 28 },  // 5: COMPANY NAME
+                { wch: 18 },  // 6: KODE GUDANG
+                { wch: 24 },  // 7: NO. PO/SJ
+                { wch: 44 },  // 8: PROGRAM
+                { wch: 40 },  // 9: SUPPLIER
+                { wch: 24 },  // 10: NPWP
+                { wch: 24 },  // 11: NO. INVOICE
+                { wch: 20 },  // 12: DPP
+                { wch: 18 },  // 13: PPN
+                { wch: 22 },  // 14: TOTAL INVOICE
+                { wch: 24 },  // 15: NO. FAKTUR PAJAK
+                { wch: 20 },  // 16: TAX INVOICE DATE
+                { wch: 22 },  // 17: STATUS AUDIT
+                { wch: 32 }   // 18: DOKUMEN TERSEDIA
             ];
 
-            // Format numbers (#,##0)
+            // Format numbers (#,##0) on DPP (col 12), PPN (col 13), and TOTAL (col 14)
             for (let R = 1; R <= dataRows.length; ++R) {
-                const dppRef = XLSX.utils.encode_cell({ r: R, c: 9 });
-                const ppnRef = XLSX.utils.encode_cell({ r: R, c: 10 });
-                const totRef = XLSX.utils.encode_cell({ r: R, c: 11 });
+                const dppRef = XLSX.utils.encode_cell({ r: R, c: 12 });
+                const ppnRef = XLSX.utils.encode_cell({ r: R, c: 13 });
+                const totRef = XLSX.utils.encode_cell({ r: R, c: 14 });
 
                 if (ws[dppRef]) { ws[dppRef].t = 'n'; ws[dppRef].z = '#,##0'; }
                 if (ws[ppnRef]) { ws[ppnRef].t = 'n'; ws[ppnRef].z = '#,##0'; }
@@ -1130,6 +1142,7 @@ export const useTaxStore = () => {
             "Kategori",
             "Brand",
             "Company Name",
+            "Kode Gudang",
             "No. PO/SJ",
             "Program",
             "Supplier",
@@ -1151,11 +1164,12 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => d.document_type).join('; ');
                 return [
                     p.id,
-                    `"${formatDate(p.program_date)}"`,
+                    `"${p.program_date ? String(p.program_date).slice(0, 10) : '-'}"`,
                     `"${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}"`,
                     `"${p.category || ''}"`,
                     `"${p.brand || getProgramBrand(p)}"`,
                     `"${getProgramCompanyName(p)}"`,
+                    `"${p.kode_gudang || '-'}"`,
                     `"${getProgramPoSjNumber(p)}"`,
                     `"${(p.program_name || '').replace(/"/g, '""')}"`,
                     `"${(p.supplier || '').replace(/"/g, '""')}"`,
@@ -1790,7 +1804,7 @@ export const useTaxStore = () => {
     }
 
     const canEditPurchase = computed(() => {
-        return isAdmin.value || isScm.value;
+        return isAdmin.value || isScm.value || isGudang.value;
     });
 
     const canEditFinance = computed(() => {
@@ -1798,7 +1812,7 @@ export const useTaxStore = () => {
     });
 
     const canEditProgram = computed(() => {
-        return isAdmin.value || isScm.value || isFinance.value;
+        return isAdmin.value || isScm.value || isFinance.value || isGudang.value;
     });
 
     const canAddProgram = computed(() => {

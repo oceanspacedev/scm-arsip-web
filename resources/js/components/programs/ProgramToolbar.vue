@@ -12,7 +12,7 @@
           <input
             v-model="store.state.searchQuery"
             type="text"
-            placeholder="Cari program, vendor, no. invoice, PO/SJ, company..."
+            placeholder="Cari program, vendor, no. invoice, PO/SJ, company, gudang..."
             class="w-full pl-9 pr-8 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
           />
           <button

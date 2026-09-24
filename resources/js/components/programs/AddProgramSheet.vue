@@ -56,9 +56,9 @@
           </div>
         </div>
 
-        <!-- Row 1.5: Company Name & No. PO / SJ -->
+        <!-- Row 1.5: Company Name, Kode Gudang & No. PO / SJ -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
+          <div class="md:col-span-4">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               COMPANY NAME
             </label>
@@ -70,7 +70,19 @@
             />
           </div>
 
-          <div class="md:col-span-6">
+          <div class="md:col-span-4">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
+              KODE GUDANG
+            </label>
+            <input
+              v-model="form.kode_gudang"
+              type="text"
+              placeholder="Contoh: GDG-JKT-01"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+            />
+          </div>
+
+          <div class="md:col-span-4">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               NO. PO / SJ
             </label>
@@ -411,6 +423,7 @@ const form = reactive({
   category: 'Promosi',
   brand: 'SCM',
   company_name: 'PT SCM Nusantara',
+  kode_gudang: '',
   po_sj_number: '',
   supplier: '',
   npwp: '',
@@ -470,6 +483,8 @@ async function handleSubmit() {
     category: form.category,
     brand: form.brand || 'SCM',
     company_name: form.company_name,
+    kode_gudang: form.kode_gudang,
+    po_sj_number: form.po_sj_number,
     supplier: form.supplier,
     npwp: form.npwp,
     mou_number: form.mou_number,
@@ -494,6 +509,9 @@ async function handleSubmit() {
   form.program_name = '';
   form.category = 'Promosi';
   form.brand = 'SCM';
+  form.company_name = 'PT SCM Nusantara';
+  form.kode_gudang = '';
+  form.po_sj_number = '';
   form.supplier = '';
   form.npwp = '';
   form.mou_number = '';

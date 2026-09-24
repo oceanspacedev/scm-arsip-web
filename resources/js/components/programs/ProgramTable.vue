@@ -6,15 +6,15 @@
         <thead>
           <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
             <th class="py-2.5 px-3 font-bold min-w-[105px]">TANGGAL</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[95px]">BULAN</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[110px]">KATEGORI</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[100px]">BRAND</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[145px]">COMPANY NAME</th>
+            <th class="py-2.5 px-2.5 font-bold min-w-[120px]">KODE GUDANG</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[125px]">NO. PO/SJ</th>
             <th class="py-2.5 px-3 font-bold min-w-[160px]">PROGRAM</th>
             <th class="py-2.5 px-2.5 font-bold min-w-[130px]">SUPPLIER</th>
             <th class="py-2.5 px-2 font-bold min-w-[100px]">NO. INVOICE</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[125px]">TAX INVOICE DATE</th>
+            <th class="py-2.5 px-2.5 font-bold min-w-[130px]">FAKTUR PAJAK</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[90px]">DPP</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[85px]">PPN</th>
             <th class="py-2.5 px-2.5 font-bold text-right min-w-[105px]">TOTAL INVOICE</th>
@@ -35,11 +35,6 @@
               {{ formatDate(program.program_date) }}
             </td>
 
-            <!-- 1.5. BULAN -->
-            <td class="py-2.5 px-2.5 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
-              {{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}
-            </td>
-
             <!-- 2. KATEGORI -->
             <td class="py-2.5 px-2.5 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
               {{ program.category || 'Logistik' }}
@@ -54,6 +49,13 @@
             <td class="py-2.5 px-2.5 max-w-[160px]">
               <div class="truncate text-[11px] text-slate-700 dark:text-slate-300" :title="getProgramCompanyName(program)">
                 {{ getProgramCompanyName(program) }}
+              </div>
+            </td>
+
+            <!-- 3.5 KODE GUDANG -->
+            <td class="py-2.5 px-2.5 max-w-[120px]">
+              <div class="truncate font-mono text-[11px] text-slate-700 dark:text-slate-300 font-medium" :title="program.kode_gudang || '-'">
+                {{ program.kode_gudang || '-' }}
               </div>
             </td>
 
@@ -72,12 +74,9 @@
               >
                 {{ program.program_name }}
               </router-link>
-              <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                {{ formatDate(program.program_date) }}
-              </div>
             </td>
 
-            <!-- 2. SUPPLIER -->
+            <!-- 6. SUPPLIER -->
             <td class="py-2.5 px-2.5 max-w-[150px]">
               <div class="truncate text-[11px] text-slate-700 dark:text-slate-300" :title="program.supplier">
                 {{ program.supplier }}
@@ -87,21 +86,21 @@
               </div>
             </td>
 
-            <!-- 3. NO. INVOICE -->
+            <!-- 7. NO. INVOICE -->
             <td class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-600 dark:text-slate-400 tabular-nums">
               {{ program.invoice_number || '-' }}
             </td>
 
-            <!-- TAX INVOICE DATE -->
+            <!-- 8. FAKTUR PAJAK (Tanggal & Nomor) -->
             <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-600 dark:text-slate-400">
-              <div v-if="program.faktur_date">
+              <div v-if="program.faktur_date" class="font-medium text-slate-800 dark:text-slate-200">
                 {{ formatDate(program.faktur_date) }}
               </div>
               <div v-else class="text-slate-400 dark:text-slate-500">
                 -
               </div>
-              <div v-if="program.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums" :title="program.faktur_number">
-                {{ program.faktur_number }}
+              <div v-if="program.faktur_number" class="text-[10px] text-slate-500 dark:text-slate-400 truncate tabular-nums font-mono mt-0.5" :title="program.faktur_number">
+                No: {{ program.faktur_number }}
               </div>
             </td>
 
@@ -229,7 +228,7 @@
 
           <!-- Empty State Desktop -->
           <tr v-if="filteredPrograms.length === 0">
-            <td colspan="16" class="py-14 text-center">
+            <td colspan="15" class="py-14 text-center">
               <div class="flex flex-col items-center justify-center space-y-2">
                 <FolderArchive class="w-8 h-8 text-slate-300 dark:text-slate-600" />
                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada program ditemukan</p>
@@ -592,7 +591,7 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
                   <input
@@ -601,6 +600,16 @@
                     placeholder="Contoh: PT SCM Nusantara"
                     :disabled="!canEditPurchase"
                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kode Gudang</label>
+                  <input
+                    v-model="editForm.kode_gudang"
+                    type="text"
+                    placeholder="Contoh: GDG-JKT-01"
+                    :disabled="!canEditPurchase"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
                   />
                 </div>
                 <div>
@@ -896,6 +905,7 @@ const editForm = reactive({
   program_name: '',
   supplier: '',
   company_name: '',
+  kode_gudang: '',
   po_sj_number: '',
   npwp: '',
   invoice_number: '',
@@ -963,6 +973,7 @@ function openEditModal(program) {
   editForm.program_name = program.program_name || '';
   editForm.supplier = program.supplier || '';
   editForm.company_name = program.company_name || getProgramCompanyName(program);
+  editForm.kode_gudang = program.kode_gudang || '';
   editForm.po_sj_number = program.po_sj_number || getProgramPoSjNumber(program);
   editForm.npwp = program.npwp || '';
   editForm.invoice_number = program.invoice_number || '';
@@ -998,6 +1009,7 @@ async function saveEdit() {
       program_name: editForm.program_name,
       supplier: editForm.supplier,
       company_name: editForm.company_name,
+      kode_gudang: editForm.kode_gudang,
       po_sj_number: editForm.po_sj_number,
       npwp: editForm.npwp,
       invoice_number: editForm.invoice_number,

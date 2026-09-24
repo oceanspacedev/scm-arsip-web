@@ -271,9 +271,11 @@ class AuthController extends Controller
             ], 403);
         }
 
+        Auth::login($user);
+
         return response()->json([
             'success' => true,
-            'message' => 'Kredensial valid.',
+            'message' => 'Login berhasil.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

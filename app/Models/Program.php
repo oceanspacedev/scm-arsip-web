@@ -17,6 +17,7 @@ class Program extends Model
         'category',
         'brand',
         'company_name',
+        'kode_gudang',
         'po_sj_number',
         'invoice_no',
         'dpp_amount',
