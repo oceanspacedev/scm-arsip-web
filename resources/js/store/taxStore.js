@@ -1,6 +1,6 @@
 import { reactive, computed, ref } from 'vue';
-import { saveDocumentBlob, getDocumentBlob, deleteDocumentBlob, clearAllDocumentBlobs } from '../utils/documentDb';
-import { USER_STORAGE_KEY, userFromStorage } from './authSession';
+import { saveDocumentBlob, getDocumentBlob, deleteDocumentBlob, clearAllDocumentBlobs } from '../utils/documentDb.js';
+import { USER_STORAGE_KEY, userFromStorage } from './authSession.js';
 
 // Storage key synced with backend
 const STORAGE_KEY = 'scm_taxvault_programs_v2';
@@ -200,17 +200,40 @@ export function formatRupiah(number) {
 }
 
 export function formatDate(dateString) {
-    if (!dateString) return '-';
-    try {
-        const d = new Date(dateString);
-        return new Intl.DateTimeFormat('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        }).format(d);
-    } catch (e) {
-        return dateString;
+    if (!dateString || dateString === '-') return '-';
+    const s = String(dateString).trim();
+    if (!s) return '-';
+
+    // 1. If already DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+    const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (dmy) {
+        const day = String(dmy[1]).padStart(2, '0');
+        const month = String(dmy[2]).padStart(2, '0');
+        const year = dmy[3];
+        return `${day}-${month}-${year}`;
     }
+
+    // 2. If YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+    const ymd = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    if (ymd) {
+        const year = ymd[1];
+        const month = String(ymd[2]).padStart(2, '0');
+        const day = String(ymd[3]).padStart(2, '0');
+        return `${day}-${month}-${year}`;
+    }
+
+    // 3. Fallback to Date object parsing
+    try {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+    } catch (e) {}
+
+    return s;
 }
 
 export function formatUploadDate(dateString) {
@@ -274,14 +297,25 @@ export function getProgramMonth(dateString) {
         for (const m of months) {
             if (s.toLowerCase().includes(m.toLowerCase())) return m;
         }
-        const parts = s.split('-');
-        if (parts.length >= 2) {
-            const mIndex = parseInt(parts[1], 10) - 1;
-            if (mIndex >= 0 && mIndex < 12) {
-                return months[mIndex];
-            }
+        // DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+        const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+        if (dmy) {
+            const mIndex = parseInt(dmy[2], 10) - 1;
+            if (mIndex >= 0 && mIndex < 12) return months[mIndex];
         }
-        const d = new Date(dateString);
+        // YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+        const ymd = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+        if (ymd) {
+            const mIndex = parseInt(ymd[2], 10) - 1;
+            if (mIndex >= 0 && mIndex < 12) return months[mIndex];
+        }
+        // MM/YYYY or MM-YYYY
+        const my = s.match(/^(\d{1,2})[\/\-\.](\d{4})/);
+        if (my) {
+            const mIndex = parseInt(my[1], 10) - 1;
+            if (mIndex >= 0 && mIndex < 12) return months[mIndex];
+        }
+        const d = new Date(s);
         if (!isNaN(d.getTime())) {
             return new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(d);
         }
@@ -292,11 +326,12 @@ export function getProgramMonth(dateString) {
 export function getProgramYear(dateString) {
     if (!dateString) return '';
     try {
-        const parts = String(dateString).split('-');
-        if (parts.length >= 1 && parts[0].length === 4) {
-            return parts[0];
+        const s = String(dateString).trim();
+        const match = s.match(/(?:^|[\/\-\.\s])(\d{4})(?:$|[\/\-\.\sT])/);
+        if (match) {
+            return match[1];
         }
-        const d = new Date(dateString);
+        const d = new Date(s);
         if (!isNaN(d.getTime())) {
             return String(d.getFullYear());
         }
@@ -307,11 +342,23 @@ export function getProgramYear(dateString) {
 export function getProgramMonthNumber(dateString) {
     if (!dateString) return null;
     try {
-        const parts = String(dateString).split('-');
-        if (parts.length >= 2) {
-            return parseInt(parts[1], 10);
+        const s = String(dateString).trim();
+        const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+        if (dmy) {
+            const m = parseInt(dmy[2], 10);
+            if (m >= 1 && m <= 12) return m;
         }
-        const d = new Date(dateString);
+        const ymd = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+        if (ymd) {
+            const m = parseInt(ymd[2], 10);
+            if (m >= 1 && m <= 12) return m;
+        }
+        const my = s.match(/^(\d{1,2})[\/\-\.](\d{4})/);
+        if (my) {
+            const m = parseInt(my[1], 10);
+            if (m >= 1 && m <= 12) return m;
+        }
+        const d = new Date(s);
         if (!isNaN(d.getTime())) {
             return d.getMonth() + 1;
         }
@@ -1070,7 +1117,7 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => getDocTypeLabel(d.document_type)).join(', ') || 'Belum Ada';
                 return [
                     p.id,
-                    p.program_date ? String(p.program_date).slice(0, 10) : '-',
+                    p.program_date ? formatDate(p.program_date) : '-',
                     `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}`.trim() || '-',
                     p.category || '',
                     p.brand || getProgramBrand(p),
@@ -1085,7 +1132,7 @@ export const useTaxStore = () => {
                     Number(p.ppn) || 0,
                     Number(p.total_invoice) || 0,
                     p.faktur_number || '-',
-                    p.faktur_date ? String(p.faktur_date).slice(0, 10) : '-',
+                    p.faktur_date ? formatDate(p.faktur_date) : '-',
                     `${comp.count}/3 (${comp.status})`,
                     docs
                 ];
@@ -1164,7 +1211,7 @@ export const useTaxStore = () => {
                 const docs = (p.documents || []).map(d => d.document_type).join('; ');
                 return [
                     p.id,
-                    `"${p.program_date ? String(p.program_date).slice(0, 10) : '-'}"`,
+                    `"${p.program_date ? formatDate(p.program_date) : '-'}"`,
                     `"${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}"`,
                     `"${p.category || ''}"`,
                     `"${p.brand || getProgramBrand(p)}"`,
@@ -1179,7 +1226,7 @@ export const useTaxStore = () => {
                     p.ppn || 0,
                     p.total_invoice || 0,
                     `"${p.faktur_number || '-'}"`,
-                    `"${p.faktur_date ? String(p.faktur_date).slice(0, 10) : '-'}"`,
+                    `"${p.faktur_date ? formatDate(p.faktur_date) : '-'}"`,
                     `"${comp.count}/3 (${comp.status})"`,
                     `"${docs}"`
                 ].join(',');

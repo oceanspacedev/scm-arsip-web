@@ -70,15 +70,40 @@ class ProgramController extends Controller
 
         $str = trim((string) $val);
 
-        // Excel numeric serial date (e.g. 45367)
-        if (is_numeric($str) && (float)$str > 30000 && (float)$str < 60000) {
+        // 1. If already standard YYYY-MM-DD or YYYY/MM/DD
+        if (preg_match('/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/', $str, $matches)) {
+            $y = $matches[1];
+            $m = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $d = str_pad($matches[3], 2, '0', STR_PAD_LEFT);
+            return "{$y}-{$m}-{$d}";
+        }
+
+        // 2. If DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY (must check before generic Carbon::parse to prevent American m/d/Y month-day swap)
+        if (preg_match('/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/', $str, $matches)) {
+            $d = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $m = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $y = $matches[3];
+            return "{$y}-{$m}-{$d}";
+        }
+
+        // 2b. If DD-MM-YY or DD/MM/YY (2 digit year)
+        if (preg_match('/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/', $str, $matches)) {
+            $d = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $m = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $yy = (int) $matches[3];
+            $y = $yy < 50 ? (2000 + $yy) : (1900 + $yy);
+            return "{$y}-{$m}-{$d}";
+        }
+
+        // 3. Excel numeric serial date (e.g. 45367 or 37677)
+        if (is_numeric($str) && (float)$str > 1000 && (float)$str < 100000) {
             try {
                 $days = (int) $str;
                 return Carbon::create(1899, 12, 30)->addDays($days)->toDateString();
             } catch (\Throwable $e) {}
         }
 
-        // Map Indonesian month names to English
+        // 4. Map Indonesian month names to English
         $indoMonths = [
             'januari' => 'January',
             'februari' => 'February',
@@ -114,15 +139,6 @@ class ProgramController extends Controller
         // Try standard Carbon parsing (handles "March 2026", "2026-03-01", etc.)
         try {
             return Carbon::parse($normalized)->toDateString();
-        } catch (\Throwable $e) {}
-
-        // Try DD/MM/YYYY or DD-MM-YYYY
-        try {
-            return Carbon::createFromFormat('d/m/Y', $str)->toDateString();
-        } catch (\Throwable $e) {}
-
-        try {
-            return Carbon::createFromFormat('d-m-Y', $str)->toDateString();
         } catch (\Throwable $e) {}
 
         // If it's MM/YYYY or MM-YYYY

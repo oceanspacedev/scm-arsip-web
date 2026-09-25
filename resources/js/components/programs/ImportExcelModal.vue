@@ -194,7 +194,7 @@
                   >
                     <td class="py-2 px-3 text-slate-400 dark:text-slate-500 text-[10px] tabular-nums">{{ idx + 1 }}</td>
                     <td class="py-2 px-2.5 text-slate-900 dark:text-white whitespace-nowrap text-[11px] font-mono font-medium">
-                      {{ row.program_date }}
+                      {{ formatDate(row.program_date) }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                       {{ row.category }}
@@ -222,7 +222,7 @@
                     </td>
                     <td class="py-2 px-2.5 whitespace-nowrap text-[11px]">
                       <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-800 dark:text-slate-200">
-                        {{ row.tax_invoice_date || row.faktur_date }}
+                        {{ formatDate(row.tax_invoice_date || row.faktur_date) }}
                       </div>
                       <div v-else class="text-slate-400 dark:text-slate-500 text-[10px]">-</div>
                       <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-500 dark:text-slate-400 truncate tabular-nums font-mono mt-0.5" :title="row.tax_invoice_number || row.faktur_number">
@@ -289,7 +289,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next';
 import ExcelIcon from '../ui/ExcelIcon.vue';
-import { useTaxStore, formatRupiah, getProgramMonth } from '../../store/taxStore';
+import { useTaxStore, formatRupiah, getProgramMonth, formatDate, getProgramYear } from '../../store/taxStore';
 
 const router = useRouter();
 const store = useTaxStore();
@@ -360,53 +360,62 @@ function cleanNumber(val) {
 }
 
 function parseImportDate(val) {
-  if (!val) return new Date().toISOString().split('T')[0];
+  if (!val) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 
-  // If already YYYY-MM-DD
+  // 1. If already standard YYYY-MM-DD
   if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
     return val.trim();
   }
 
-  // Handle Excel Serial Number (e.g. 45367)
-  if (typeof val === 'number' && val > 30000 && val < 60000) {
-    const excelEpoch = new Date(1899, 11, 30);
-    const date = new Date(excelEpoch.getTime() + val * 86400000);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
+  // 2. Handle Excel Serial Number (e.g. 45367 or 37677)
+  // Must avoid local time toISOString() conversion because in positive timezones like UTC+7 (Indonesia),
+  // midnight local time converted to UTC becomes 17:00 of the previous day, shifting the day backwards (25 to 24)!
+  const numVal = typeof val === 'number' ? val : (typeof val === 'string' && /^\d+(\.\d+)?$/.test(val.trim()) ? Number(val) : NaN);
+  if (!isNaN(numVal) && numVal > 1000 && numVal < 100000) {
+    if (window.XLSX && window.XLSX.SSF && typeof window.XLSX.SSF.parse_date_code === 'function') {
+      try {
+        const parsed = window.XLSX.SSF.parse_date_code(numVal);
+        if (parsed && parsed.y && parsed.m && parsed.d) {
+          const y = String(parsed.y);
+          const m = String(parsed.m).padStart(2, '0');
+          const d = String(parsed.d).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+      } catch (e) {}
     }
+    // Mathematical epoch conversion without timezone shift
+    const utcDays = Math.floor(numVal - 25569);
+    const dateObj = new Date(utcDays * 86400 * 1000);
+    const y = dateObj.getUTCFullYear();
+    const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  // 3. Handle Date object if passed
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    if (val.getUTCHours() === 0 && val.getUTCMinutes() === 0) {
+      const y = val.getUTCFullYear();
+      const m = String(val.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(val.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   const str = String(val).trim();
 
-  // Check for Indonesian month names
-  const indoMonths = [
-    { name: 'januari', num: '01' },
-    { name: 'februari', num: '02' },
-    { name: 'maret', num: '03' },
-    { name: 'april', num: '04' },
-    { name: 'mei', num: '05' },
-    { name: 'juni', num: '06' },
-    { name: 'juli', num: '07' },
-    { name: 'agustus', num: '08' },
-    { name: 'september', num: '09' },
-    { name: 'oktober', num: '10' },
-    { name: 'november', num: '11' },
-    { name: 'desember', num: '12' }
-  ];
-
-  const lower = str.toLowerCase();
-  for (const m of indoMonths) {
-    if (lower.includes(m.name)) {
-      const yearMatch = str.match(/\b(20\d\d)\b/);
-      const year = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
-      const dayMatch = str.match(/\b(\d{1,2})\s+[a-zA-Z]/);
-      const day = dayMatch ? String(dayMatch[1]).padStart(2, '0') : '01';
-      return `${year}-${m.num}-${day}`;
-    }
-  }
-
-  // Check DD/MM/YYYY or DD-MM-YYYY
-  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  // 4. Check DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  const dmy = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
   if (dmy) {
     const day = String(dmy[1]).padStart(2, '0');
     const month = String(dmy[2]).padStart(2, '0');
@@ -414,22 +423,74 @@ function parseImportDate(val) {
     return `${year}-${month}-${day}`;
   }
 
-  // Check MM/YYYY
-  const my = str.match(/^(\d{1,2})[\/\-](\d{4})$/);
+  // 4b. Check DD-MM-YY or DD/MM/YY or DD.MM.YY (2-digit year)
+  const dmy2 = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/);
+  if (dmy2) {
+    const day = String(dmy2[1]).padStart(2, '0');
+    const month = String(dmy2[2]).padStart(2, '0');
+    const yy = parseInt(dmy2[3], 10);
+    const year = yy < 50 ? `20${dmy2[3]}` : `19${dmy2[3]}`;
+    return `${year}-${month}-${day}`;
+  }
+
+  // 5. Check YYYY/MM/DD or YYYY.MM.DD
+  const ymd = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (ymd) {
+    const year = ymd[1];
+    const month = String(ymd[2]).padStart(2, '0');
+    const day = String(ymd[3]).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // 6. Check for Indonesian month names
+  const indoMonths = [
+    { name: 'januari', short: 'jan', num: '01' },
+    { name: 'februari', short: 'feb', num: '02' },
+    { name: 'maret', short: 'mar', num: '03' },
+    { name: 'april', short: 'apr', num: '04' },
+    { name: 'mei', short: 'mei', num: '05' },
+    { name: 'juni', short: 'jun', num: '06' },
+    { name: 'juli', short: 'jul', num: '07' },
+    { name: 'agustus', short: 'agu', num: '08' },
+    { name: 'agustus', short: 'agt', num: '08' },
+    { name: 'september', short: 'sep', num: '09' },
+    { name: 'oktober', short: 'okt', num: '10' },
+    { name: 'november', short: 'nov', num: '11' },
+    { name: 'desember', short: 'des', num: '12' }
+  ];
+
+  const lower = str.toLowerCase();
+  for (const m of indoMonths) {
+    if (lower.includes(m.name) || lower.includes(m.short)) {
+      const yearMatch = str.match(/\b(19\d\d|20\d\d)\b/);
+      const year = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+      const dayMatch = str.match(/\b(\d{1,2})\s+[a-zA-Z]/);
+      const day = dayMatch ? String(dayMatch[1]).padStart(2, '0') : '01';
+      return `${year}-${m.num}-${day}`;
+    }
+  }
+
+  // 7. Check MM/YYYY or MM-YYYY
+  const my = str.match(/^(\d{1,2})[\/\-\.](\d{4})$/);
   if (my) {
     const month = String(my[1]).padStart(2, '0');
     const year = my[2];
     return `${year}-${month}-01`;
   }
 
+  // 8. Fallback date parsing using local components (never toISOString())
   try {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
   } catch (e) {}
 
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 function mapRawRow(raw) {
@@ -706,7 +767,7 @@ async function executeImport() {
     const yearCounts = {};
     parsedRows.value.forEach(row => {
       const dateStr = String(row.program_date || row.due_date || row.BULAN || '');
-      const yr = dateStr.slice(0, 4);
+      const yr = getProgramYear(dateStr);
       if (/^\d{4}$/.test(yr)) {
         yearCounts[yr] = (yearCounts[yr] || 0) + 1;
       }

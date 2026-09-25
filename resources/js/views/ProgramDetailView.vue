@@ -815,9 +815,25 @@ const statusBadgeText = computed(() => {
 function formatDueDate(dateStr) {
   if (!dateStr) return '-';
   try {
-    const d = new Date(dateStr);
+    const s = String(dateStr).trim();
+    let d;
+    const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (dmy) {
+      d = new Date(parseInt(dmy[3], 10), parseInt(dmy[2], 10) - 1, parseInt(dmy[1], 10));
+    } else {
+      const ymd = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+      if (ymd) {
+        d = new Date(parseInt(ymd[1], 10), parseInt(ymd[2], 10) - 1, parseInt(ymd[3], 10));
+      } else {
+        d = new Date(s);
+      }
+    }
+    if (isNaN(d.getTime())) return '-';
     d.setDate(d.getDate() + 30);
-    return formatDate(d.toISOString().split('T')[0]);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
   } catch (e) {
     return '-';
   }
