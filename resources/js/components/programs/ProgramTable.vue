@@ -2,7 +2,7 @@
   <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col w-full min-w-0">
     <!-- Desktop Table Container (hidden md:block) -->
     <div class="hidden md:block overflow-x-auto w-full max-w-full">
-      <table class="w-full text-left text-xs border-collapse min-w-[1340px]">
+      <table class="w-full text-left text-xs border-collapse min-w-[1460px]">
         <thead>
           <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
             <th class="py-2.5 px-3 font-bold min-w-[105px]">TANGGAL</th>
@@ -17,7 +17,8 @@
             <th class="py-2.5 px-2.5 font-bold min-w-[130px]">FAKTUR PAJAK</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[90px]">DPP</th>
             <th class="py-2.5 px-2 font-bold text-right min-w-[85px]">PPN</th>
-            <th class="py-2.5 px-2.5 font-bold text-right min-w-[105px]">TOTAL INVOICE</th>
+            <th class="py-2.5 px-2.5 font-bold text-right min-w-[105px]">TOTAL PAYMENT</th>
+            <th class="py-2.5 px-2.5 font-bold text-center min-w-[130px]">STATUS PAYMENT</th>
             <th class="py-2.5 px-2 font-bold text-center min-w-[95px]">DOKUMEN</th>
             <th class="py-2.5 px-2 font-bold text-center min-w-[100px]">STATUS</th>
             <th class="py-2.5 px-2 font-bold text-center w-20 sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10">AKSI</th>
@@ -114,9 +115,32 @@
               {{ formatRupiah(program.ppn) }}
             </td>
 
-            <!-- 6. TOTAL INVOICE -->
+            <!-- 6. TOTAL PAYMENT -->
             <td class="py-2.5 px-2.5 font-medium text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.total_invoice) }}
+            </td>
+
+            <!-- 6.5 STATUS PAYMENT -->
+            <td class="py-2.5 px-2.5 text-center whitespace-nowrap" @click.stop>
+              <div class="relative inline-flex items-center">
+                <select
+                  :value="normalizePayStatus(program.payment_status)"
+                  :disabled="!canEditFinance && !isAdmin"
+                  @change="handleSelectPaymentStatus(program.id, $event.target.value)"
+                  class="text-[10px] font-bold py-0.5 pl-2.5 pr-5 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none shadow-2xs"
+                  :class="[
+                    getPaymentBadgeClass(program.payment_status),
+                    (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90 active:scale-95'
+                  ]"
+                  title="Ubah Status Payment"
+                >
+                  <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold py-1">Waiting Payment</option>
+                  <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold py-1">CBD</option>
+                  <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold py-1">Tempo</option>
+                  <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold py-1">Paid</option>
+                </select>
+                <ChevronDown class="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60" />
+              </div>
             </td>
 
             <!-- 7. DOKUMEN -->
@@ -321,14 +345,34 @@
             </div>
           </div>
 
-          <!-- No. Invoice & Total -->
+          <!-- No. Invoice & Total Payment -->
           <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
             <div>
               <span class="text-slate-500 dark:text-slate-400 text-[11px] block">No. Invoice</span>
               <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 block tabular-nums">{{ program.invoice_number || '-' }}</span>
             </div>
             <div class="text-right">
-              <span class="text-slate-500 dark:text-slate-400 text-[11px] block">Total Invoice</span>
+              <div class="flex items-center justify-end gap-1.5 mb-0.5">
+                <span class="text-slate-500 dark:text-slate-400 text-[11px] block">Total Payment</span>
+                <div class="relative inline-flex items-center" @click.stop>
+                  <select
+                    :value="normalizePayStatus(program.payment_status)"
+                    :disabled="!canEditFinance && !isAdmin"
+                    @change="handleSelectPaymentStatus(program.id, $event.target.value)"
+                    class="text-[9px] font-bold py-0.2 pl-2 pr-4 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none"
+                    :class="[
+                      getPaymentBadgeClass(program.payment_status),
+                      (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90'
+                    ]"
+                  >
+                    <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold">Waiting Payment</option>
+                    <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold">CBD</option>
+                    <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold">Tempo</option>
+                    <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold">Paid</option>
+                  </select>
+                  <ChevronDown class="w-2 h-2 absolute right-1 pointer-events-none opacity-60" />
+                </div>
+              </div>
               <span class="font-bold text-xs sm:text-sm block text-slate-900 dark:text-slate-100 tabular-nums">
                 {{ formatRupiah(program.total_invoice) }}
               </span>
@@ -658,14 +702,29 @@
                 <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
               </div>
 
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
-                <input
-                  v-model="editForm.invoice_number"
-                  type="text"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                />
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
+                  <input
+                    v-model="editForm.invoice_number"
+                    type="text"
+                    :disabled="!canEditFinance"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
+                  <select
+                    v-model="editForm.payment_status"
+                    :disabled="!canEditFinance && !isAdmin"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
+                  >
+                    <option value="WAITING PAYMENT">Waiting Payment</option>
+                    <option value="cbd">CBD (Cash Before Delivery)</option>
+                    <option value="tempo">Tempo</option>
+                    <option value="PAID">Paid (Lunas)</option>
+                  </select>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -828,7 +887,7 @@
 <script setup>
 import { computed, ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { FolderArchive, Trash2, X, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-vue-next';
+import { FolderArchive, Trash2, X, ChevronLeft, ChevronRight, Eye, Pencil, ChevronDown } from 'lucide-vue-next';
 import {
   useTaxStore,
   formatRupiah,
@@ -854,6 +913,43 @@ const isScm = computed(() => store.isScm.value);
 const canEditProgram = computed(() => store.canEditProgram.value);
 const canEditPurchase = computed(() => store.canEditPurchase.value);
 const canEditFinance = computed(() => store.canEditFinance.value);
+
+// Payment Status Helpers
+function normalizePayStatus(status) {
+  if (!status) return 'WAITING PAYMENT';
+  const s = String(status).trim();
+  const lower = s.toLowerCase();
+  if (lower === 'cbd') return 'cbd';
+  if (lower === 'tempo') return 'tempo';
+  if (lower === 'paid' || lower === 'lunas') return 'PAID';
+  return 'WAITING PAYMENT';
+}
+
+function formatPaymentStatus(status) {
+  const norm = normalizePayStatus(status);
+  if (norm === 'cbd') return 'CBD';
+  if (norm === 'tempo') return 'Tempo';
+  if (norm === 'PAID') return 'Paid';
+  return 'Waiting Payment';
+}
+
+function getPaymentBadgeClass(status) {
+  const norm = normalizePayStatus(status);
+  if (norm === 'cbd') {
+    return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60';
+  }
+  if (norm === 'tempo') {
+    return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60';
+  }
+  if (norm === 'PAID') {
+    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60';
+  }
+  return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60';
+}
+
+async function handleSelectPaymentStatus(programId, newStatus) {
+  await store.updatePaymentStatus(programId, newStatus);
+}
 
 const filteredPrograms = computed(() => store.filteredPrograms.value);
 const totalCount = computed(() => store.programs.value.length);
@@ -913,6 +1009,7 @@ const editForm = reactive({
   faktur_date: '',
   category: 'Logistik',
   brand: 'SCM',
+  payment_status: 'WAITING PAYMENT',
   dpp: 0,
   ppn: 0,
   pph_type: 'NON_PPH',
@@ -979,6 +1076,7 @@ function openEditModal(program) {
   editForm.invoice_number = program.invoice_number || '';
   editForm.faktur_number = program.faktur_number || '';
   editForm.faktur_date = program.faktur_date ? String(program.faktur_date).slice(0, 10) : '';
+  editForm.payment_status = program.payment_status || 'WAITING PAYMENT';
   editForm.category = program.category || 'Logistik';
   editForm.brand = program.brand || getProgramBrand(program) || '';
   editForm.dpp = Number(program.dpp) || 0;
@@ -1011,14 +1109,15 @@ async function saveEdit() {
       company_name: editForm.company_name,
       kode_gudang: editForm.kode_gudang,
       po_sj_number: editForm.po_sj_number,
-      npwp: editForm.npwp,
-      invoice_number: editForm.invoice_number,
-      faktur_number: editForm.faktur_number,
+      invoice_number: editForm.invoice_number || '',
+      invoice_no: editForm.invoice_number || '',
+      faktur_number: editForm.faktur_number || '',
+      tax_invoice_number: editForm.faktur_number || '',
       faktur_date: editForm.faktur_date || null,
-      tax_invoice_number: editForm.faktur_number,
       tax_invoice_date: editForm.faktur_date || null,
       category: editForm.category,
       brand: editForm.brand,
+      payment_status: editForm.payment_status,
       dpp: editForm.dpp,
       ppn: editForm.ppn,
       total_invoice: editForm.dpp + editForm.ppn,

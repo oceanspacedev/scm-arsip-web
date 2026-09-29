@@ -10,7 +10,7 @@
       <!-- Drag & Drop Area -->
       <div
         class="border-2 border-dashed rounded-xl p-5 text-center transition-colors cursor-pointer"
-        :class="isDragging ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40'"
+        :class="isDragging ? 'border-slate-500 bg-slate-100/70 dark:bg-slate-800/70' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100/40 dark:hover:bg-slate-800/40'"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleFileDrop"
@@ -26,12 +26,12 @@
         />
 
         <div class="flex flex-col items-center justify-center space-y-2">
-          <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Upload class="w-5 h-5" />
+          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shadow-2xs">
+            <Upload class="w-5 h-5 stroke-[2]" />
           </div>
           <div>
             <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
-              Tarik berkas ke sini atau <span class="text-blue-600 dark:text-blue-400 underline">pilih dari komputer</span>
+              Tarik berkas ke sini atau <span class="text-slate-900 dark:text-slate-100 underline font-semibold hover:text-black dark:hover:text-white">pilih dari komputer</span>
             </p>
             <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
               Mendukung: <strong>PDF, JPG, PNG</strong> (bisa pilih banyak berkas, maks 15 MB)
@@ -87,7 +87,7 @@
           </div>
           <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
             <div
-              class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+              class="bg-slate-900 dark:bg-slate-100 h-1.5 rounded-full transition-all duration-300"
               :style="{ width: uploadProgress + '%' }"
             ></div>
           </div>
@@ -105,15 +105,24 @@
         >
           Batal
         </Button>
-        <Button
-          variant="default"
-          size="sm"
+        <button
+          type="button"
+          class="h-8 px-3.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold transition-colors shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           :disabled="selectedFiles.length === 0 || isUploading"
-          :loading="isUploading"
           @click="startUpload"
         >
-          Unggah {{ selectedFiles.length > 0 ? `(${selectedFiles.length}) Berkas` : 'Berkas' }}
-        </Button>
+          <svg
+            v-if="isUploading"
+            class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-current"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span>Unggah {{ selectedFiles.length > 0 ? `(${selectedFiles.length}) Berkas` : 'Berkas' }}</span>
+        </button>
       </div>
     </template>
   </Dialog>

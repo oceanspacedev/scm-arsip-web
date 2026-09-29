@@ -264,13 +264,34 @@
           </div>
         </div>
 
-        <!-- Total Invoice Summary Box (Clean Neutral) -->
+        <!-- Total Payment & Status Summary Box -->
         <div class="p-6 pt-4">
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <p class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Total Invoice
-              </p>
+              <div class="flex items-center gap-2">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Total Payment
+                </p>
+                <div class="relative inline-flex items-center">
+                  <select
+                    :value="normalizePayStatus(program.payment_status)"
+                    :disabled="!canEditFinance && !isAdmin"
+                    @change="handlePaymentStatusChange($event.target.value)"
+                    class="text-[10px] font-bold py-0.5 pl-2.5 pr-5 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none shadow-2xs"
+                    :class="[
+                      getPaymentBadgeClass(program.payment_status),
+                      (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90'
+                    ]"
+                    title="Ubah Status Payment"
+                  >
+                    <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold py-1">Waiting Payment</option>
+                    <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold py-1">CBD</option>
+                    <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold py-1">Tempo</option>
+                    <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold py-1">Paid</option>
+                  </select>
+                  <ChevronDown class="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60" />
+                </div>
+              </div>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                 DPP + PPN (Termasuk Pajak)
               </p>
@@ -466,15 +487,31 @@
               <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
             </div>
 
-            <div>
-              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
-              <input
-                v-model="editForm.invoice_number"
-                type="text"
-                required
-                :disabled="!canEditFinance"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-              />
+            <!-- No. Invoice & Status Payment -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
+                <input
+                  v-model="editForm.invoice_number"
+                  type="text"
+                  placeholder="Contoh: INV/2026/001"
+                  :disabled="!canEditFinance"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
+                <select
+                  v-model="editForm.payment_status"
+                  :disabled="!canEditFinance && !isAdmin"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option value="WAITING PAYMENT">Waiting Payment</option>
+                  <option value="cbd">CBD (Cash Before Delivery)</option>
+                  <option value="tempo">Tempo</option>
+                  <option value="PAID">Paid (Lunas)</option>
+                </select>
+              </div>
             </div>
 
             <div class="grid grid-cols-3 gap-3">
@@ -721,6 +758,7 @@ import {
   Eye,
   Download,
   Plus,
+  ChevronDown,
   X
 } from 'lucide-vue-next';
 import DocumentUploadModal from '../components/detail/DocumentUploadModal.vue';
@@ -862,6 +900,28 @@ async function handleDocumentUploaded(fileData) {
   } else {
     await store.uploadDocument(program.value.id, fileData.docType, fileData);
   }
+  // Refresh detail from store
+  const updated = store.getProgramById(program.value.id);
+  if (updated) {
+    program.value = updated;
+  }
+}
+
+const isAnalyzingDocId = ref(null);
+async function runAiAnalysis(doc) {
+  if (!doc?.id || !program.value?.id || isAnalyzingDocId.value) return;
+  isAnalyzingDocId.value = doc.id;
+  try {
+    const res = await store.analyzeDocumentAi(program.value.id, doc.id);
+    if (res?.success) {
+      const updated = store.getProgramById(program.value.id);
+      if (updated) {
+        program.value = updated;
+      }
+    }
+  } finally {
+    isAnalyzingDocId.value = null;
+  }
 }
 
 // Preview Sheet State
@@ -998,6 +1058,7 @@ const editForm = reactive({
   invoice_number: '',
   category: 'Logistik',
   brand: 'SCM',
+  payment_status: 'WAITING PAYMENT',
   dpp: 0,
   ppn: 0,
   pph_type: 'NON_PPH',
@@ -1005,6 +1066,43 @@ const editForm = reactive({
   faktur_number: '',
   faktur_date: ''
 });
+
+function normalizePayStatus(status) {
+  if (!status) return 'WAITING PAYMENT';
+  const s = String(status).trim();
+  const lower = s.toLowerCase();
+  if (lower === 'cbd') return 'cbd';
+  if (lower === 'tempo') return 'tempo';
+  if (lower === 'paid' || lower === 'lunas') return 'PAID';
+  return 'WAITING PAYMENT';
+}
+
+function formatPaymentStatus(status) {
+  const norm = normalizePayStatus(status);
+  if (norm === 'cbd') return 'CBD';
+  if (norm === 'tempo') return 'Tempo';
+  if (norm === 'PAID') return 'Paid';
+  return 'Waiting Payment';
+}
+
+function getPaymentBadgeClass(status) {
+  const norm = normalizePayStatus(status);
+  if (norm === 'cbd') {
+    return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60';
+  }
+  if (norm === 'tempo') {
+    return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60';
+  }
+  if (norm === 'PAID') {
+    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60';
+  }
+  return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60';
+}
+
+async function handlePaymentStatusChange(newStatus) {
+  if (!program.value?.id) return;
+  await store.updatePaymentStatus(program.value.id, newStatus);
+}
 
 function openEditModal() {
   if (!program.value) return;
@@ -1014,6 +1112,7 @@ function openEditModal() {
   editForm.npwp = program.value.npwp || '';
   editForm.po_sj_number = program.value.po_sj_number || getProgramPoSjNumber(program.value) || '';
   editForm.invoice_number = program.value.invoice_number || '';
+  editForm.payment_status = program.value.payment_status || 'WAITING PAYMENT';
   editForm.category = program.value.category || 'Logistik';
   editForm.brand = program.value.brand || getProgramBrand(program.value) || '';
   editForm.dpp = Number(program.value.dpp) || 0;
@@ -1048,17 +1147,21 @@ async function saveEditProgram() {
       company_name: editForm.company_name,
       npwp: editForm.npwp,
       po_sj_number: editForm.po_sj_number,
-      invoice_number: editForm.invoice_number,
+      invoice_number: editForm.invoice_number || '',
+      invoice_no: editForm.invoice_number || '',
       category: editForm.category,
       brand: editForm.brand,
+      payment_status: editForm.payment_status,
       dpp: editForm.dpp,
       ppn: editForm.ppn,
       total_invoice: editForm.dpp + editForm.ppn,
       pph_type: editForm.pph_type,
       pph: editForm.pph,
       pph_amount: editForm.pph,
-      faktur_number: editForm.faktur_number,
-      faktur_date: editForm.faktur_date || null
+      faktur_number: editForm.faktur_number || '',
+      tax_invoice_number: editForm.faktur_number || '',
+      faktur_date: editForm.faktur_date || null,
+      tax_invoice_date: editForm.faktur_date || null
     });
     if (res?.success) {
       isEditModalOpen.value = false;

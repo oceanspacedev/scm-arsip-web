@@ -38,6 +38,7 @@ Route::prefix('api')->group(function () {
     Route::put('/programs/{id}', [ProgramController::class, 'update']);
     Route::delete('/programs/{id}', [ProgramController::class, 'destroy']);
     Route::post('/programs/{id}/documents', [ProgramController::class, 'uploadDocument']);
+    Route::post('/programs/{id}/documents/{docId}/analyze', [ProgramController::class, 'analyzeDocumentAi']);
     Route::delete('/programs/{id}/documents/{docId}', [ProgramController::class, 'deleteDocument']);
     Route::post('/programs/import', [ProgramController::class, 'import']);
     Route::get('/programs/raw-imports', [ProgramController::class, 'rawImports']);

@@ -17,6 +17,7 @@ const sampleHeaders = [
   'DPP',
   'PPN',
   'TOTAL INVOICE',
+  'STATUS PAYMENT',
   'NO. FAKTUR PAJAK',
   'TAX INVOICE DATE'
 ];
@@ -37,6 +38,7 @@ const sampleRows = [
     45000000,
     4950000,
     49950000,
+    'PAID',
     '010.002-26.11029381',
     '05-03-2026'
   ],
@@ -55,6 +57,7 @@ const sampleRows = [
     120000000,
     13200000,
     133200000,
+    'tempo',
     '010.002-26.22910382',
     '08-03-2026'
   ],
@@ -73,6 +76,7 @@ const sampleRows = [
     75000000,
     8250000,
     83250000,
+    'WAITING PAYMENT',
     '010.002-26.33849102',
     '11-03-2026'
   ],
@@ -91,6 +95,7 @@ const sampleRows = [
     38500000,
     4235000,
     42735000,
+    'cbd',
     '010.002-26.44910293',
     '14-03-2026'
   ],
@@ -109,6 +114,7 @@ const sampleRows = [
     92000000,
     10120000,
     102120000,
+    'PAID',
     '010.002-26.55910294',
     '18-03-2026'
   ],
@@ -127,6 +133,7 @@ const sampleRows = [
     828828829,
     91171171,
     920000000,
+    'tempo',
     '010.002-26.66910295',
     '04-02-2026'
   ],
@@ -145,6 +152,7 @@ const sampleRows = [
     1126126126,
     123873874,
     1250000000,
+    'WAITING PAYMENT',
     '010.002-26.77910296',
     '09-02-2026'
   ],
@@ -163,6 +171,7 @@ const sampleRows = [
     648648649,
     71351351,
     720000000,
+    'PAID',
     '010.002-26.88910297',
     '15-02-2026'
   ],
@@ -181,6 +190,7 @@ const sampleRows = [
     495495495,
     54504505,
     550000000,
+    'cbd',
     '010.002-26.99910298',
     '20-02-2026'
   ],
@@ -199,44 +209,9 @@ const sampleRows = [
     315315315,
     34684685,
     350000000,
+    'WAITING PAYMENT',
     '010.002-26.10910299',
     '08-01-2026'
-  ],
-  [
-    '14-01-2026',
-    'Januari 2026',
-    'Packaging',
-    'Moji',
-    'PT SCM Solusi Indonesia',
-    'GDG-SBY-01',
-    'PO/2026/0112 / SJ-0112',
-    'Pengadaan Kemasan Corrugated Box & Stretch Film',
-    'PT Riau Sakti Packaging Industries',
-    '01.884.223.5-021.000',
-    'INV/RSP/2026/0991',
-    162162162,
-    17837838,
-    180000000,
-    '010.002-26.20910300',
-    '14-01-2026'
-  ],
-  [
-    '22-01-2026',
-    'Januari 2026',
-    'Promosi',
-    'Mentari TV',
-    'PT Surya Citra Media Tbk',
-    'GDG-JKT-03',
-    'PO/2026/0113 / SJ-0113',
-    'Pengadaan Booth Branding & Material Event SCM Expo',
-    'PT Mahaka Visual Integrasi',
-    '03.119.445.6-072.000',
-    'INV/MVI/2026/0219',
-    225225225,
-    24774775,
-    250000000,
-    '010.002-26.30910301',
-    '22-01-2026'
   ]
 ];
 
@@ -272,6 +247,7 @@ async function generateTemplates() {
     { header: 'DPP', key: 'dpp', width: 20 },
     { header: 'PPN', key: 'ppn', width: 18 },
     { header: 'TOTAL INVOICE', key: 'total', width: 22 },
+    { header: 'STATUS PAYMENT', key: 'payment_status', width: 20 },
     { header: 'NO. FAKTUR PAJAK', key: 'faktur_no', width: 24 },
     { header: 'TAX INVOICE DATE', key: 'faktur_date', width: 20 }
   ];
@@ -320,9 +296,9 @@ async function generateTemplates() {
       };
 
       // Alignment and Formatting
-      if ([1, 2, 3, 4, 6, 7, 10, 11, 15, 16].includes(colNumber)) {
+      if ([1, 2, 3, 4, 6, 7, 10, 11, 15, 16, 17].includes(colNumber)) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        if ([1, 16].includes(colNumber)) {
+        if ([1, 17].includes(colNumber)) {
           cell.numFmt = '@';
         }
       } else if ([12, 13, 14].includes(colNumber)) {
@@ -337,8 +313,8 @@ async function generateTemplates() {
     });
   });
 
-  // Enable AutoFilter on header row (A1 to P1)
-  worksheet.autoFilter = 'A1:P1';
+  // Enable AutoFilter on header row (A1 to Q1)
+  worksheet.autoFilter = 'A1:Q1';
 
   const xlsxPath = path.join(publicDir, 'Template_Import_Arsip_Program_SCM.xlsx');
   await workbook.xlsx.writeFile(xlsxPath);

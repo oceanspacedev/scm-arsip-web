@@ -183,7 +183,8 @@
                     <th class="py-2.5 px-2.5 whitespace-nowrap">FAKTUR PAJAK</th>
                     <th class="py-2.5 px-3 text-right">DPP</th>
                     <th class="py-2.5 px-3 text-right">PPN</th>
-                    <th class="py-2.5 px-3 text-right">TOTAL INVOICE</th>
+                    <th class="py-2.5 px-3 text-right">TOTAL PAYMENT</th>
+                    <th class="py-2.5 px-3 text-center whitespace-nowrap">STATUS PAYMENT</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#111827]">
@@ -237,6 +238,11 @@
                     </td>
                     <td class="py-2 px-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.total_invoice) }}
+                    </td>
+                    <td class="py-2 px-3 text-center whitespace-nowrap">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {{ row.payment_status || 'WAITING PAYMENT' }}
+                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -511,6 +517,7 @@ function mapRawRow(raw) {
   let program_date = new Date().toISOString().split('T')[0];
   let faktur_number = '';
   let faktur_date = null;
+  let payment_status = 'WAITING PAYMENT';
 
   for (const [key, val] of Object.entries(raw)) {
     const k = normalizeKey(key);
@@ -577,6 +584,21 @@ function mapRawRow(raw) {
       (k.includes('po') && k.includes('sj'))
     ) {
       po_sj_number = String(val || '').trim();
+    }
+    // 8.5 STATUS PAYMENT
+    else if (
+      k.includes('statuspay') ||
+      k.includes('paymentstatus') ||
+      k.includes('statuspembayaran') ||
+      k.includes('carabayar') ||
+      k === 'payment' ||
+      k === 'statuspayment'
+    ) {
+      const pVal = String(val || '').trim().toLowerCase();
+      if (pVal.includes('cbd')) payment_status = 'cbd';
+      else if (pVal.includes('tempo')) payment_status = 'tempo';
+      else if (pVal.includes('paid') || pVal.includes('lunas')) payment_status = 'PAID';
+      else payment_status = 'WAITING PAYMENT';
     }
     // 9. NPWP
     else if (k.includes('npwp')) {
@@ -656,6 +678,7 @@ function mapRawRow(raw) {
     npwp,
     category,
     brand: brand || 'SCM',
+    payment_status,
     program_date,
     faktur_number: faktur_number || null,
     faktur_date: faktur_date || null,

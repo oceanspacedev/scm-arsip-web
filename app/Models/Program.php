@@ -23,6 +23,7 @@ class Program extends Model
         'dpp_amount',
         'ppn_amount',
         'total_amount',
+        'payment_status',
         'pph_type',
         'pph_amount',
         'faktur_number',

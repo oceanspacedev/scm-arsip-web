@@ -7,6 +7,7 @@ use App\Models\Program;
 use App\Models\ProgramDocument;
 use App\Models\RawImport;
 use App\Services\SeaweedStorageService;
+use App\Services\DocumentAiAnalysisService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -222,6 +223,7 @@ class ProgramController extends Controller
             'dpp_amount' => $dpp,
             'ppn_amount' => $ppn,
             'total_amount' => $total,
+            'payment_status' => $request->input('payment_status') ?: 'WAITING PAYMENT',
             'pph_type' => $request->input('pph_type') ?: 'NON_PPH',
             'pph_amount' => (float) ($request->input('pph_amount') ?? $request->input('pph') ?? 0),
             'faktur_number' => $request->input('faktur_number') ?: $request->input('tax_invoice_number'),
@@ -261,53 +263,66 @@ class ProgramController extends Controller
 
         // Purchase & Vendor fields (Admin SCM, Staff SCM, Staff Gudang)
         if ($isAdmin || $isScm || $isGudang) {
-            if ($title) $data['title'] = $title;
-            if ($request->has('supplier')) $data['supplier'] = $request->input('supplier');
-            if ($request->has('npwp')) $data['npwp'] = $request->input('npwp');
-            if ($request->has('category')) $data['category'] = $request->input('category');
-            if ($request->has('brand')) $data['brand'] = $request->input('brand');
-            if ($request->has('company_name')) $data['company_name'] = $request->input('company_name');
-            if ($request->has('kode_gudang') || $request->has('warehouse_code')) {
+            if ($request->exists('title') || $request->exists('program_name')) {
+                $t = $request->input('title') ?? $request->input('program_name');
+                if (!empty($t)) $data['title'] = $t;
+            }
+            if ($request->exists('supplier')) $data['supplier'] = $request->input('supplier') ?: '';
+            if ($request->exists('npwp')) $data['npwp'] = $request->input('npwp') ?: '01.000.000.0-000.000';
+            if ($request->exists('category') && $request->input('category')) $data['category'] = $request->input('category');
+            if ($request->exists('brand')) $data['brand'] = $request->input('brand');
+            if ($request->exists('company_name')) $data['company_name'] = $request->input('company_name');
+            if ($request->exists('kode_gudang') || $request->exists('warehouse_code')) {
                 $data['kode_gudang'] = $request->input('kode_gudang') ?? $request->input('warehouse_code');
             }
-            if ($request->has('po_sj_number') || $request->has('no_po_sj')) {
+            if ($request->exists('po_sj_number') || $request->exists('no_po_sj')) {
                 $data['po_sj_number'] = $request->input('po_sj_number') ?? $request->input('no_po_sj');
             }
         }
 
         // Financial & Tax fields (Admin SCM, Staff SCM, & Finance)
         if ($isAdmin || $isScm || $isFinance) {
-            if ($invoiceNo !== null) $data['invoice_no'] = $invoiceNo;
-            if ($request->has('dpp_amount') || $request->has('dpp')) {
-                $data['dpp_amount'] = (float) ($request->input('dpp_amount') ?? $request->input('dpp'));
+            if ($request->exists('invoice_no') || $request->exists('invoice_number')) {
+                $data['invoice_no'] = $request->input('invoice_no') ?? $request->input('invoice_number');
             }
-            if ($request->has('ppn_amount') || $request->has('ppn')) {
-                $data['ppn_amount'] = (float) ($request->input('ppn_amount') ?? $request->input('ppn'));
+            if ($request->exists('dpp_amount') || $request->exists('dpp')) {
+                $data['dpp_amount'] = (float) ($request->input('dpp_amount') ?? $request->input('dpp') ?? 0);
             }
-            if ($request->has('total_amount') || $request->has('total_invoice')) {
-                $data['total_amount'] = (float) ($request->input('total_amount') ?? $request->input('total_invoice'));
+            if ($request->exists('ppn_amount') || $request->exists('ppn')) {
+                $data['ppn_amount'] = (float) ($request->input('ppn_amount') ?? $request->input('ppn') ?? 0);
             }
-            if ($request->has('pph_type')) {
+            if ($request->exists('total_amount') || $request->exists('total_invoice')) {
+                $data['total_amount'] = (float) ($request->input('total_amount') ?? $request->input('total_invoice') ?? 0);
+            }
+            if ($request->exists('payment_status')) {
+                $data['payment_status'] = $request->input('payment_status') ?: 'WAITING PAYMENT';
+            }
+            if ($request->exists('pph_type')) {
                 $data['pph_type'] = $request->input('pph_type') ?: 'NON_PPH';
             }
-            if ($request->has('pph_amount') || $request->has('pph')) {
-                $data['pph_amount'] = (float) ($request->input('pph_amount') ?? $request->input('pph'));
+            if ($request->exists('pph_amount') || $request->exists('pph')) {
+                $data['pph_amount'] = (float) ($request->input('pph_amount') ?? $request->input('pph') ?? 0);
             }
-            if ($request->has('faktur_number') || $request->has('tax_invoice_number')) {
+            if ($request->exists('faktur_number') || $request->exists('tax_invoice_number')) {
                 $data['faktur_number'] = $request->input('faktur_number') ?? $request->input('tax_invoice_number');
             }
-            if ($request->has('faktur_date') || $request->has('tax_invoice_date')) {
+            if ($request->exists('faktur_date') || $request->exists('tax_invoice_date')) {
                 $fDate = $request->input('faktur_date') ?? $request->input('tax_invoice_date');
                 $data['faktur_date'] = $fDate ? $this->parseSafeDate($fDate) : null;
             }
-            if ($request->has('tax_notes')) {
+            if ($request->exists('tax_notes')) {
                 $data['tax_notes'] = $request->input('tax_notes');
             }
-            if ($request->has('is_verified')) {
+            if ($request->exists('is_verified')) {
                 $data['is_verified'] = (bool) $request->input('is_verified');
             }
-            if ($dueDate) $data['due_date'] = $this->parseSafeDate($dueDate);
-            if ($request->has('status')) $data['status'] = $request->input('status');
+            if ($request->exists('due_date') || $request->exists('program_date')) {
+                $dDate = $request->input('due_date') ?? $request->input('program_date');
+                if (!empty($dDate)) $data['due_date'] = $this->parseSafeDate($dDate);
+            }
+            if ($request->exists('status') && $request->input('status')) {
+                $data['status'] = $request->input('status');
+            }
         }
 
         if (!empty($data)) {
@@ -416,6 +431,9 @@ class ProgramController extends Controller
             'uploaded_at' => Carbon::now()->isoFormat('D MMM Y, HH.mm')
         ];
 
+        $aiAnalysis = null;
+        $aiDetectedInfo = [];
+
         if ($program) {
             ProgramDocument::create([
                 'id' => $docId,
@@ -427,6 +445,67 @@ class ProgramController extends Controller
                 'uploaded_at' => Carbon::now()
             ]);
 
+            // AI Document Analysis for Invoice & Faktur Pajak
+            if ($filePath && file_exists(public_path($filePath))) {
+                try {
+                    $analysis = DocumentAiAnalysisService::analyzeFile(public_path($filePath), $backendType);
+                    if ($analysis['success']) {
+                        $aiAnalysis = $analysis;
+                        $aiUpdates = [];
+
+                        // 1. Nomor Invoice
+                        if (!empty($analysis['invoice_no'])) {
+                            // Update if document is invoice or invoice_no is generic/placeholder/empty
+                            $isPlaceholderInv = empty($program->invoice_no) || preg_match('/^INV\/\d{4}\/SCM\/\d+$/i', $program->invoice_no);
+                            if ($backendType === 'invoice' || $isPlaceholderInv) {
+                                $aiUpdates['invoice_no'] = $analysis['invoice_no'];
+                                $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
+                            }
+                        }
+
+                        // 2. Nomor Faktur Pajak
+                        if (!empty($analysis['faktur_number'])) {
+                            if ($backendType === 'faktur' || empty($program->faktur_number)) {
+                                $aiUpdates['faktur_number'] = $analysis['faktur_number'];
+                                $aiDetectedInfo[] = "No. Faktur: {$analysis['faktur_number']}";
+                            }
+                        }
+
+                        // 3. Tanggal Faktur Pajak
+                        if (!empty($analysis['faktur_date'])) {
+                            if ($backendType === 'faktur' || empty($program->faktur_date)) {
+                                $aiUpdates['faktur_date'] = $analysis['faktur_date'];
+                            }
+                        }
+
+                        // 4. Status Pembayaran jika terdeteksi dari dokumen
+                        if (!empty($analysis['payment_status'])) {
+                            if (empty($program->payment_status) || $program->payment_status === 'WAITING PAYMENT') {
+                                $aiUpdates['payment_status'] = $analysis['payment_status'];
+                                $aiDetectedInfo[] = "Status Payment: {$analysis['payment_status']}";
+                            }
+                        }
+
+                        // 5. Nominal jika sebelumnya kosong
+                        if (!empty($analysis['dpp_amount']) && ($program->dpp_amount == 0 || $backendType === 'invoice')) {
+                            $aiUpdates['dpp_amount'] = (float)$analysis['dpp_amount'];
+                        }
+                        if (!empty($analysis['ppn_amount']) && ($program->ppn_amount == 0 || $backendType === 'invoice')) {
+                            $aiUpdates['ppn_amount'] = (float)$analysis['ppn_amount'];
+                        }
+                        if (!empty($analysis['total_amount']) && ($program->total_amount == 0 || $backendType === 'invoice')) {
+                            $aiUpdates['total_amount'] = (float)$analysis['total_amount'];
+                        }
+
+                        if (!empty($aiUpdates)) {
+                            $program->update($aiUpdates);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('AI Analysis exception on upload: ' . $e->getMessage());
+                }
+            }
+
             // Check completeness across distinct document types
             $types = $program->documents()->pluck('type')->toArray();
             if (count(array_unique($types)) >= 3) {
@@ -434,11 +513,77 @@ class ProgramController extends Controller
             }
         }
 
+        $uploadMessage = 'Dokumen berhasil diunggah.';
+        if (!empty($aiDetectedInfo)) {
+            $uploadMessage .= ' AI mendeteksi & mengisi ' . implode(', ', $aiDetectedInfo) . '.';
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Dokumen berhasil diunggah.',
+            'message' => $uploadMessage,
             'document' => $docData,
+            'ai_analysis' => $aiAnalysis,
             'program' => $program ? $program->fresh()->load('documents') : null
+        ]);
+    }
+
+    /**
+     * Trigger manual AI document analysis for an already uploaded document
+     */
+    public function analyzeDocumentAi(Request $request, $id, $docId)
+    {
+        $program = Program::findOrFail($id);
+        $document = ProgramDocument::where('program_id', $id)->where('id', $docId)->firstOrFail();
+
+        $filePath = public_path($document->file_path);
+        if (!file_exists($filePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File fisik tidak ditemukan pada server.'
+            ], 404);
+        }
+
+        $analysis = DocumentAiAnalysisService::analyzeFile($filePath, $document->type);
+        if (!$analysis['success']) {
+            return response()->json($analysis, 422);
+        }
+
+        $updates = [];
+        $aiDetectedInfo = [];
+
+        if (!empty($analysis['invoice_no'])) {
+            $updates['invoice_no'] = $analysis['invoice_no'];
+            $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
+        }
+        if (!empty($analysis['faktur_number'])) {
+            $updates['faktur_number'] = $analysis['faktur_number'];
+            $aiDetectedInfo[] = "No. Faktur: {$analysis['faktur_number']}";
+        }
+        if (!empty($analysis['faktur_date'])) {
+            $updates['faktur_date'] = $analysis['faktur_date'];
+        }
+        if (!empty($analysis['payment_status'])) {
+            $updates['payment_status'] = $analysis['payment_status'];
+        }
+        if (!empty($analysis['dpp_amount'])) {
+            $updates['dpp_amount'] = (float)$analysis['dpp_amount'];
+        }
+        if (!empty($analysis['ppn_amount'])) {
+            $updates['ppn_amount'] = (float)$analysis['ppn_amount'];
+        }
+        if (!empty($analysis['total_amount'])) {
+            $updates['total_amount'] = (float)$analysis['total_amount'];
+        }
+
+        if (!empty($updates)) {
+            $program->update($updates);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Analisis AI selesai: ' . (implode(', ', $aiDetectedInfo) ?: 'data diperbarui'),
+            'ai_analysis' => $analysis,
+            'program' => $program->fresh()->load('documents')
         ]);
     }
 
@@ -576,6 +721,16 @@ class ProgramController extends Controller
                 $fakturNumber = $p['faktur_number'] ?? $p['tax_invoice_number'] ?? null;
                 $fakturDate = $p['faktur_date'] ?? $p['tax_invoice_date'] ?? null;
 
+                $rawPayStatus = $p['payment_status'] ?? $p['status_payment'] ?? 'WAITING PAYMENT';
+                $payStatus = 'WAITING PAYMENT';
+                if ($rawPayStatus) {
+                    $psLower = strtolower(trim((string)$rawPayStatus));
+                    if (str_contains($psLower, 'cbd')) $payStatus = 'cbd';
+                    elseif (str_contains($psLower, 'tempo')) $payStatus = 'tempo';
+                    elseif (str_contains($psLower, 'paid') || str_contains($psLower, 'lunas')) $payStatus = 'PAID';
+                    else $payStatus = 'WAITING PAYMENT';
+                }
+
                 $program = Program::updateOrCreate(
                     ['id' => $id],
                     [
@@ -591,6 +746,7 @@ class ProgramController extends Controller
                         'dpp_amount' => $dpp,
                         'ppn_amount' => $ppn,
                         'total_amount' => $total,
+                        'payment_status' => $payStatus,
                         'pph_type' => $p['pph_type'] ?? 'NON_PPH',
                         'pph_amount' => (float) ($p['pph_amount'] ?? $p['pph'] ?? 0),
                         'faktur_number' => $fakturNumber,

@@ -154,6 +154,7 @@ const state = reactive({
     selectedCategory: 'Semua Kategori',
     selectedBrand: 'all',
     selectedStatus: 'all',
+    selectedPaymentStatus: 'all',
     selectedSupplier: 'all',
     selectedMonth: 'all',
     selectedCompany: 'all',
@@ -462,14 +463,18 @@ export function mapBackendProgram(p) {
         kode_gudang: p.kode_gudang || p.warehouse_code || '',
         po_sj_number: p.po_sj_number || p.no_po_sj || getProgramPoSjNumber(p),
         npwp: p.npwp || '01.000.000.0-000.000',
-        invoice_number: p.invoice_no || p.invoice_number || '',
+        invoice_number: p.invoice_no !== undefined && p.invoice_no !== null ? p.invoice_no : (p.invoice_number || ''),
+        invoice_no: p.invoice_no !== undefined && p.invoice_no !== null ? p.invoice_no : (p.invoice_number || ''),
         dpp: Number(p.dpp_amount ?? p.dpp) || 0,
         ppn: Number(p.ppn_amount ?? p.ppn) || 0,
         total_invoice: Number(p.total_amount ?? p.total_invoice) || 0,
+        payment_status: p.payment_status || 'WAITING PAYMENT',
         pph_type: p.pph_type || 'NON_PPH',
         pph: Number(p.pph_amount ?? p.pph) || 0,
-        faktur_number: p.faktur_number || p.tax_invoice_number || '',
-        faktur_date: p.faktur_date ? String(p.faktur_date).slice(0, 10) : (p.tax_invoice_date || ''),
+        faktur_number: p.faktur_number !== undefined && p.faktur_number !== null ? p.faktur_number : (p.tax_invoice_number || ''),
+        tax_invoice_number: p.faktur_number !== undefined && p.faktur_number !== null ? p.faktur_number : (p.tax_invoice_number || ''),
+        faktur_date: p.faktur_date ? String(p.faktur_date).slice(0, 10) : (p.tax_invoice_date ? String(p.tax_invoice_date).slice(0, 10) : ''),
+        tax_invoice_date: p.faktur_date ? String(p.faktur_date).slice(0, 10) : (p.tax_invoice_date ? String(p.tax_invoice_date).slice(0, 10) : ''),
         tax_notes: p.tax_notes || '',
         is_verified: !!p.is_verified,
         program_date: p.due_date ? String(p.due_date).slice(0, 10) : (p.program_date || ''),
@@ -678,6 +683,15 @@ export const useTaxStore = () => {
                 }
             }
 
+            // Payment status filter
+            const payStatus = state.selectedPaymentStatus;
+            if (payStatus && payStatus !== 'all') {
+                const pPay = String(p.payment_status || 'WAITING PAYMENT').toUpperCase();
+                if (payStatus.toUpperCase() !== pPay) {
+                    return false;
+                }
+            }
+
             return true;
         }).sort((a, b) => {
             if (state.sortBy === 'date-desc') {
@@ -775,8 +789,18 @@ export const useTaxStore = () => {
         const ppnVal = Number(updatedData.ppn !== undefined ? updatedData.ppn : (updatedData.ppn_amount !== undefined ? updatedData.ppn_amount : (state.programs[index].ppn || 0)));
         const totalVal = dppVal + ppnVal;
 
+        const invVal = updatedData.invoice_number !== undefined ? updatedData.invoice_number : (updatedData.invoice_no !== undefined ? updatedData.invoice_no : '');
+        const fakVal = updatedData.faktur_number !== undefined ? updatedData.faktur_number : (updatedData.tax_invoice_number !== undefined ? updatedData.tax_invoice_number : '');
+        const fakDateVal = updatedData.faktur_date !== undefined ? updatedData.faktur_date : (updatedData.tax_invoice_date !== undefined ? updatedData.tax_invoice_date : null);
+
         const payload = {
             ...updatedData,
+            invoice_no: invVal,
+            invoice_number: invVal,
+            faktur_number: fakVal,
+            tax_invoice_number: fakVal,
+            faktur_date: fakDateVal,
+            tax_invoice_date: fakDateVal,
             dpp: dppVal,
             ppn: ppnVal,
             total_invoice: totalVal,
@@ -802,11 +826,20 @@ export const useTaxStore = () => {
                 if ((!mapped.documents || mapped.documents.length === 0) && state.programs[index]?.documents?.length) {
                     mapped.documents = state.programs[index].documents;
                 }
-                state.programs[index] = { ...state.programs[index], ...mapped };
+                state.programs[index] = {
+                    ...state.programs[index],
+                    ...mapped,
+                    invoice_no: mapped.invoice_no,
+                    invoice_number: mapped.invoice_number,
+                    faktur_number: mapped.faktur_number,
+                    tax_invoice_number: mapped.tax_invoice_number,
+                    faktur_date: mapped.faktur_date,
+                    tax_invoice_date: mapped.tax_invoice_date
+                };
                 state.programs = [...state.programs];
                 saveToStorage();
                 notify(`Data program "${mapped.program_name}" berhasil diperbarui.`);
-                return { success: true, program: mapped };
+                return { success: true, program: state.programs[index] };
             } else if (!res.ok) {
                 notify(data.message || 'Gagal menyimpan perubahan.', 'error');
                 return { success: false, message: data.message };
@@ -824,6 +857,39 @@ export const useTaxStore = () => {
         saveToStorage();
         notify(`Data program "${state.programs[index].program_name}" berhasil diperbarui.`);
         return { success: true, program: state.programs[index] };
+    }
+
+    async function updatePaymentStatus(id, paymentStatus) {
+        return await updateProgram(id, { payment_status: paymentStatus });
+    }
+
+    async function analyzeDocumentAi(id, docId) {
+        try {
+            const res = await fetch(`/api/programs/${id}/documents/${docId}/analyze`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            if (res.ok && data.success && data.program) {
+                const idx = state.programs.findIndex(p => String(p.id) === String(id));
+                if (idx !== -1) {
+                    state.programs[idx] = mapBackendProgram(data.program);
+                    state.programs = [...state.programs];
+                    saveToStorage();
+                }
+                notify(data.message || 'Analisis AI selesai.');
+                return { success: true, ai_analysis: data.ai_analysis, program: data.program };
+            } else {
+                notify(data.message || 'Gagal menganalisis dokumen dengan AI.', 'error');
+                return { success: false, message: data.message };
+            }
+        } catch (e) {
+            notify('Koneksi ke server AI gagal: ' + e.message, 'error');
+            return { success: false, message: e.message };
+        }
     }
 
     async function deleteProgram(id) {
@@ -892,7 +958,7 @@ export const useTaxStore = () => {
                                 saveDocumentBlob(docId, fileInfo.dataUrl, fileInfo.name, fileInfo.type);
                             }
                             saveToStorage();
-                            notify(`Dokumen ${getDocTypeLabel(docType)} berhasil diunggah.`);
+                            notify(data.message || `Dokumen ${getDocTypeLabel(docType)} berhasil diunggah.`);
                             return true;
                         }
                     }
@@ -1948,6 +2014,8 @@ export const useTaxStore = () => {
         getProgramById,
         addProgram,
         updateProgram,
+        updatePaymentStatus,
+        analyzeDocumentAi,
         deleteProgram,
         uploadDocument,
         deleteDocument,
