@@ -194,39 +194,39 @@
                     class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td class="py-2 px-3 text-slate-400 dark:text-slate-500 text-[10px] tabular-nums">{{ idx + 1 }}</td>
-                    <td class="py-2 px-2.5 text-slate-900 dark:text-white whitespace-nowrap text-[11px] font-mono font-medium">
+                    <td class="py-2 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px] tabular-nums">
                       {{ formatDate(row.program_date) }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                       {{ row.category }}
                     </td>
-                    <td class="py-2 px-2 text-slate-900 dark:text-slate-100 whitespace-nowrap text-[10px] font-bold">
+                    <td class="py-2 px-2 text-slate-800 dark:text-slate-200 whitespace-nowrap text-[10px] font-semibold">
                       {{ row.brand || 'SCM' }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.company_name">
                       {{ row.company_name }}
                     </td>
-                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 font-mono text-[10px] whitespace-nowrap">
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 text-[10px] whitespace-nowrap tabular-nums">
                       {{ row.kode_gudang || '-' }}
                     </td>
-                    <td class="py-2 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px] tabular-nums">
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px] tabular-nums">
                       {{ row.po_sj_number }}
                     </td>
-                    <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white max-w-[140px] truncate" :title="row.program_name">
+                    <td class="py-2 px-3 font-medium text-slate-800 dark:text-slate-200 max-w-[140px] truncate" :title="row.program_name">
                       {{ row.program_name }}
                     </td>
                     <td class="py-2 px-3 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.supplier">
                       {{ row.supplier }}
                     </td>
-                    <td class="py-2 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px] tabular-nums">
+                    <td class="py-2 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px] tabular-nums">
                       {{ row.invoice_number }}
                     </td>
-                    <td class="py-2 px-2.5 whitespace-nowrap text-[11px]">
-                      <div v-if="row.tax_invoice_date || row.faktur_date" class="font-medium text-slate-800 dark:text-slate-200">
+                    <td class="py-2 px-2.5 whitespace-nowrap text-[10px]">
+                      <div v-if="row.tax_invoice_date || row.faktur_date" class="text-slate-700 dark:text-slate-300 tabular-nums">
                         {{ formatDate(row.tax_invoice_date || row.faktur_date) }}
                       </div>
                       <div v-else class="text-slate-400 dark:text-slate-500 text-[10px]">-</div>
-                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-500 dark:text-slate-400 truncate tabular-nums font-mono mt-0.5" :title="row.tax_invoice_number || row.faktur_number">
+                      <div v-if="row.tax_invoice_number || row.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums mt-0.5" :title="row.tax_invoice_number || row.faktur_number">
                         No: {{ row.tax_invoice_number || row.faktur_number }}
                       </div>
                     </td>

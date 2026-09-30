@@ -145,11 +145,21 @@ class DocumentAiAnalysisService
                 ];
             }
 
-            // Normalize extracted fields
-            $invoiceNo = !empty($parsed['invoice_no']) ? trim((string)$parsed['invoice_no']) : null;
-            $fakturNumber = !empty($parsed['faktur_number']) ? trim((string)$parsed['faktur_number']) : null;
-            $fakturDate = !empty($parsed['faktur_date']) ? trim((string)$parsed['faktur_date']) : null;
-            $paymentStatus = !empty($parsed['payment_status']) ? trim((string)$parsed['payment_status']) : null;
+            // Normalize extracted fields with proper cleanup of literal "null", "-", "none", etc.
+            $cleanVal = function ($val) {
+                if ($val === null) return null;
+                $s = trim((string)$val);
+                $lower = strtolower($s);
+                if (in_array($lower, ['null', 'none', '-', '--', 'n/a', 'na', 'tidak ada', 'kosong', 'undefined', ''])) {
+                    return null;
+                }
+                return $s;
+            };
+
+            $invoiceNo = $cleanVal($parsed['invoice_no'] ?? null);
+            $fakturNumber = $cleanVal($parsed['faktur_number'] ?? null);
+            $fakturDate = $cleanVal($parsed['faktur_date'] ?? null);
+            $paymentStatus = $cleanVal($parsed['payment_status'] ?? null);
 
             // Validate date format YYYY-MM-DD
             if ($fakturDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fakturDate)) {

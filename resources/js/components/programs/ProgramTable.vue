@@ -2,26 +2,26 @@
   <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col w-full min-w-0">
     <!-- Desktop Table Container (hidden md:block) -->
     <div class="hidden md:block overflow-x-auto w-full max-w-full">
-      <table class="w-full text-left text-xs border-collapse min-w-[1460px]">
+      <table class="w-full text-left text-xs border-collapse min-w-[1520px]">
         <thead>
-          <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
-            <th class="py-2.5 px-3 font-bold min-w-[105px]">TANGGAL</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[110px]">KATEGORI</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[100px]">BRAND</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[145px]">COMPANY NAME</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[120px]">KODE GUDANG</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[125px]">NO. PO/SJ</th>
-            <th class="py-2.5 px-3 font-bold min-w-[160px]">PROGRAM</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[130px]">SUPPLIER</th>
-            <th class="py-2.5 px-2 font-bold min-w-[100px]">NO. INVOICE</th>
-            <th class="py-2.5 px-2.5 font-bold min-w-[130px]">FAKTUR PAJAK</th>
-            <th class="py-2.5 px-2 font-bold text-right min-w-[90px]">DPP</th>
-            <th class="py-2.5 px-2 font-bold text-right min-w-[85px]">PPN</th>
-            <th class="py-2.5 px-2.5 font-bold text-right min-w-[105px]">TOTAL PAYMENT</th>
-            <th class="py-2.5 px-2.5 font-bold text-center min-w-[130px]">STATUS PAYMENT</th>
-            <th class="py-2.5 px-2 font-bold text-center min-w-[95px]">DOKUMEN</th>
-            <th class="py-2.5 px-2 font-bold text-center min-w-[100px]">STATUS</th>
-            <th class="py-2.5 px-2 font-bold text-center w-20 sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10">AKSI</th>
+          <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
+            <th class="py-2.5 px-3 min-w-[105px]">TANGGAL</th>
+            <th class="py-2.5 px-2.5 min-w-[110px]">KATEGORI</th>
+            <th class="py-2.5 px-2.5 min-w-[100px]">BRAND</th>
+            <th class="py-2.5 px-2.5 min-w-[145px]">COMPANY NAME</th>
+            <th class="py-2.5 px-2.5 min-w-[120px]">KODE GUDANG</th>
+            <th class="py-2.5 px-2.5 min-w-[125px]">NO. PO/SJ</th>
+            <th class="py-2.5 px-3 min-w-[200px]">PROGRAM</th>
+            <th class="py-2.5 px-2.5 min-w-[150px]">SUPPLIER</th>
+            <th class="py-2.5 px-2 min-w-[100px]">NO. INVOICE</th>
+            <th class="py-2.5 px-2.5 min-w-[130px]">FAKTUR PAJAK</th>
+            <th class="py-2.5 px-2 text-right min-w-[90px]">DPP</th>
+            <th class="py-2.5 px-2 text-right min-w-[85px]">PPN</th>
+            <th class="py-2.5 px-2.5 text-right min-w-[105px]">TOTAL PAYMENT</th>
+            <th class="py-2.5 px-2.5 text-center min-w-[130px]">STATUS PAYMENT</th>
+            <th class="py-2.5 px-2 text-center min-w-[95px]">DOKUMEN</th>
+            <th class="py-2.5 px-2 text-center min-w-[100px]">STATUS</th>
+            <th class="py-2.5 px-2 text-center w-20 sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10">AKSI</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -32,44 +32,44 @@
             @click="goToDetail(program.id)"
           >
             <!-- 1. TANGGAL -->
-            <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px] tabular-nums font-medium">
+            <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px] tabular-nums">
               {{ formatDate(program.program_date) }}
             </td>
 
             <!-- 2. KATEGORI -->
-            <td class="py-2.5 px-2.5 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
+            <td class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
               {{ program.category || 'Logistik' }}
             </td>
 
             <!-- 2.5 BRAND -->
-            <td class="py-2.5 px-2.5 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
+            <td class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
               {{ program.brand || getProgramBrand(program) }}
             </td>
 
             <!-- 3. COMPANY NAME -->
-            <td class="py-2.5 px-2.5 max-w-[160px]">
-              <div class="truncate text-[11px] text-slate-700 dark:text-slate-300" :title="getProgramCompanyName(program)">
+            <td class="py-2.5 px-2.5 min-w-[140px] max-w-[200px]">
+              <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="getProgramCompanyName(program)">
                 {{ getProgramCompanyName(program) }}
               </div>
             </td>
 
             <!-- 3.5 KODE GUDANG -->
             <td class="py-2.5 px-2.5 max-w-[120px]">
-              <div class="truncate font-mono text-[11px] text-slate-700 dark:text-slate-300 font-medium" :title="program.kode_gudang || '-'">
+              <div class="truncate text-[11px] text-slate-700 dark:text-slate-300 tabular-nums" :title="program.kode_gudang || '-'">
                 {{ program.kode_gudang || '-' }}
               </div>
             </td>
 
             <!-- 4. NO. PO/SJ -->
-            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-600 dark:text-slate-400 tabular-nums">
+            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
               {{ getProgramPoSjNumber(program) }}
             </td>
 
             <!-- 5. PROGRAM -->
-            <td class="py-2.5 px-3 max-w-[210px]">
+            <td class="py-2.5 px-3 min-w-[200px] max-w-[280px]">
               <router-link
                 :to="`/programs/${program.id}`"
-                class="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate block text-[11px]"
+                class="font-normal text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 hover:underline transition-colors block text-[11px] leading-snug break-words"
                 :title="program.program_name"
                 @click.stop
               >
@@ -78,8 +78,8 @@
             </td>
 
             <!-- 6. SUPPLIER -->
-            <td class="py-2.5 px-2.5 max-w-[150px]">
-              <div class="truncate text-[11px] text-slate-700 dark:text-slate-300" :title="program.supplier">
+            <td class="py-2.5 px-2.5 min-w-[150px] max-w-[220px]">
+              <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="program.supplier">
                 {{ program.supplier }}
               </div>
               <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate tabular-nums">
@@ -88,30 +88,30 @@
             </td>
 
             <!-- 7. NO. INVOICE -->
-            <td class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-600 dark:text-slate-400 tabular-nums">
+            <td class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
               {{ program.invoice_number || '-' }}
             </td>
 
             <!-- 8. FAKTUR PAJAK (Tanggal & Nomor) -->
-            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-600 dark:text-slate-400">
-              <div v-if="program.faktur_date" class="font-medium text-slate-800 dark:text-slate-200">
+            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px]">
+              <div v-if="program.faktur_date" class="text-slate-700 dark:text-slate-300 tabular-nums">
                 {{ formatDate(program.faktur_date) }}
               </div>
               <div v-else class="text-slate-400 dark:text-slate-500">
                 -
               </div>
-              <div v-if="program.faktur_number" class="text-[10px] text-slate-500 dark:text-slate-400 truncate tabular-nums font-mono mt-0.5" :title="program.faktur_number">
+              <div v-if="program.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums mt-0.5" :title="program.faktur_number">
                 No: {{ program.faktur_number }}
               </div>
             </td>
 
             <!-- 4. DPP -->
-            <td class="py-2.5 px-2 text-slate-600 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
+            <td class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.dpp) }}
             </td>
 
             <!-- 5. PPN -->
-            <td class="py-2.5 px-2 text-slate-600 dark:text-slate-300 font-medium text-right whitespace-nowrap text-[11px] tabular-nums">
+            <td class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.ppn) }}
             </td>
 
@@ -122,24 +122,30 @@
 
             <!-- 6.5 STATUS PAYMENT -->
             <td class="py-2.5 px-2.5 text-center whitespace-nowrap" @click.stop>
-              <div class="relative inline-flex items-center">
+              <div class="relative inline-flex items-center group">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-all select-none shadow-2xs"
+                  :class="[
+                    getPaymentBadgeClass(program.payment_status),
+                    (!canEditFinance && !isAdmin) ? 'opacity-85' : 'group-hover:shadow-xs'
+                  ]"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
+                  <span>{{ formatPaymentStatus(program.payment_status) }}</span>
+                  <ChevronDown v-if="canEditFinance || isAdmin" class="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-0.5 shrink-0" />
+                </span>
                 <select
                   :value="normalizePayStatus(program.payment_status)"
                   :disabled="!canEditFinance && !isAdmin"
                   @change="handleSelectPaymentStatus(program.id, $event.target.value)"
-                  class="text-[10px] font-bold py-0.5 pl-2.5 pr-5 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none shadow-2xs"
-                  :class="[
-                    getPaymentBadgeClass(program.payment_status),
-                    (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90 active:scale-95'
-                  ]"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                   title="Ubah Status Payment"
                 >
-                  <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold py-1">Waiting Payment</option>
-                  <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold py-1">CBD</option>
-                  <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold py-1">Tempo</option>
-                  <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold py-1">Paid</option>
+                  <option value="WAITING PAYMENT">Waiting Payment</option>
+                  <option value="cbd">CBD</option>
+                  <option value="tempo">Tempo</option>
+                  <option value="PAID">Paid</option>
                 </select>
-                <ChevronDown class="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60" />
               </div>
             </td>
 
@@ -149,52 +155,52 @@
                 <!-- INVOICE -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
                   :class="[
                     hasDoc(program, 'invoice')
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                       : (store.canUploadDoc('invoice')
-                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                        ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
                   ]"
                   :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
                   @click="handlePillClick(program, 'invoice', 'Invoice')"
                 >
-                  <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 text-[8px] font-normal">+</span>IN
+                  <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>IN
                 </button>
 
                 <!-- FAKTUR PAJAK -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
                   :class="[
                     hasDoc(program, 'faktur_pajak')
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                       : (store.canUploadDoc('faktur_pajak')
-                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                        ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
                   ]"
                   :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
                   @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
                 >
-                  <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 text-[8px] font-normal">+</span>FP
+                  <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>FP
                 </button>
 
                 <!-- MEMO / DO -->
                 <button
                   type="button"
-                  class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all select-none active:scale-95"
+                  class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
                   :class="[
                     hasDoc(program, 'mou')
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                       : (store.canUploadDoc('mou')
-                        ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                        ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
                   ]"
                   :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
                   @click="handlePillClick(program, 'mou', 'Memo/DO')"
                 >
-                  <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[8px] font-normal">+</span>DO
+                  <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>DO
                 </button>
               </div>
             </td>
@@ -202,7 +208,7 @@
             <!-- 8. STATUS KELENGKAPAN -->
             <td class="py-2.5 px-2 text-center whitespace-nowrap">
               <span
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border shadow-2xs select-none"
                 :class="getStatusBadgeClass(program)"
               >
                 <span
@@ -306,12 +312,12 @@
           <!-- Status Badge -->
           <span
             :class="[
-              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0',
+              'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0',
               getStatusBadgeClass(program)
             ]"
           >
             <span
-              class="w-1.5 h-1.5 rounded-full"
+              class="w-1.5 h-1.5 rounded-full shrink-0"
               :class="{
                 'bg-emerald-500': getStatusText(program) === 'Lengkap',
                 'bg-rose-500': getStatusText(program) === 'Belum Lengkap',
@@ -354,23 +360,29 @@
             <div class="text-right">
               <div class="flex items-center justify-end gap-1.5 mb-0.5">
                 <span class="text-slate-500 dark:text-slate-400 text-[11px] block">Total Payment</span>
-                <div class="relative inline-flex items-center" @click.stop>
+                <div class="relative inline-flex items-center group" @click.stop>
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-all select-none"
+                    :class="[
+                      getPaymentBadgeClass(program.payment_status),
+                      (!canEditFinance && !isAdmin) ? 'opacity-85' : 'group-hover:opacity-90'
+                    ]"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
+                    <span>{{ formatPaymentStatus(program.payment_status) }}</span>
+                    <ChevronDown v-if="canEditFinance || isAdmin" class="w-2 h-2 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 ml-0.5 shrink-0" />
+                  </span>
                   <select
                     :value="normalizePayStatus(program.payment_status)"
                     :disabled="!canEditFinance && !isAdmin"
                     @change="handleSelectPaymentStatus(program.id, $event.target.value)"
-                    class="text-[9px] font-bold py-0.2 pl-2 pr-4 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none"
-                    :class="[
-                      getPaymentBadgeClass(program.payment_status),
-                      (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90'
-                    ]"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                   >
-                    <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold">Waiting Payment</option>
-                    <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold">CBD</option>
-                    <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold">Tempo</option>
-                    <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold">Paid</option>
+                    <option value="WAITING PAYMENT">Waiting Payment</option>
+                    <option value="cbd">CBD</option>
+                    <option value="tempo">Tempo</option>
+                    <option value="PAID">Paid</option>
                   </select>
-                  <ChevronDown class="w-2 h-2 absolute right-1 pointer-events-none opacity-60" />
                 </div>
               </div>
               <span class="font-bold text-xs sm:text-sm block text-slate-900 dark:text-slate-100 tabular-nums">
@@ -414,52 +426,52 @@
             <!-- INVOICE -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              class="px-2 py-1 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
               :class="[
                 hasDoc(program, 'invoice')
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                   : (store.canUploadDoc('invoice')
-                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                    ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
               ]"
               :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
               @click="handlePillClick(program, 'invoice', 'Invoice')"
             >
-              <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 font-normal">+</span>IN
+              <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>IN
             </button>
 
             <!-- FAKTUR PAJAK -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              class="px-2 py-1 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
               :class="[
                 hasDoc(program, 'faktur_pajak')
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                   : (store.canUploadDoc('faktur_pajak')
-                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                    ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
               ]"
               :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
               @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
             >
-              <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 font-normal">+</span>FP
+              <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>FP
             </button>
 
             <!-- Memo / DO -->
             <button
               type="button"
-              class="px-2 py-1 rounded text-[10px] font-mono font-bold transition-all select-none active:scale-95"
+              class="px-2 py-1 rounded-md text-[10px] font-semibold transition-all select-none active:scale-95"
               :class="[
                 hasDoc(program, 'mou')
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer'
                   : (store.canUploadDoc('mou')
-                    ? 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800/60 cursor-not-allowed opacity-60')
+                    ? 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 text-slate-300 dark:text-slate-600 border border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed opacity-60')
               ]"
               :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
               @click="handlePillClick(program, 'mou', 'Memo/DO')"
             >
-              <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal">+</span>DO
+              <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>DO
             </button>
           </div>
 
@@ -515,7 +527,7 @@
         </span>
 
         <!-- Mobile Total Nilai Badge -->
-        <span v-if="filteredPrograms.length > 0" class="sm:hidden font-mono text-slate-800 dark:text-slate-200 font-bold text-[11px]">
+        <span v-if="filteredPrograms.length > 0" class="sm:hidden tabular-nums text-slate-800 dark:text-slate-200 font-semibold text-[11px]">
           {{ formatRupiah(totalSum) }}
         </span>
       </div>
@@ -567,7 +579,7 @@
 
       <div class="hidden sm:flex items-center gap-4 text-xs">
         <span v-if="filteredPrograms.length > 0">
-          Total Nilai: <strong class="font-mono text-slate-800 dark:text-slate-200 font-bold ml-1">{{ formatRupiah(totalSum) }}</strong>
+          Total Nilai: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(totalSum) }}</strong>
         </span>
       </div>
     </div>
@@ -934,17 +946,15 @@ function formatPaymentStatus(status) {
 }
 
 function getPaymentBadgeClass(status) {
+  return 'bg-slate-50/90 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200/90 dark:border-slate-700/80 hover:bg-slate-100/90 dark:hover:bg-slate-700/70 hover:border-slate-300 dark:hover:border-slate-600';
+}
+
+function getPaymentDotClass(status) {
   const norm = normalizePayStatus(status);
-  if (norm === 'cbd') {
-    return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60';
-  }
-  if (norm === 'tempo') {
-    return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60';
-  }
-  if (norm === 'PAID') {
-    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60';
-  }
-  return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60';
+  if (norm === 'cbd') return 'bg-amber-500';
+  if (norm === 'tempo') return 'bg-blue-500';
+  if (norm === 'PAID') return 'bg-emerald-500';
+  return 'bg-rose-500';
 }
 
 async function handleSelectPaymentStatus(programId, newStatus) {
@@ -1158,13 +1168,6 @@ function getStatusText(program) {
 }
 
 function getStatusBadgeClass(program) {
-  const docTypes = new Set((program.documents || []).map(d => d.document_type));
-  if (docTypes.size >= 3) {
-    return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60';
-  }
-  if (docTypes.size === 0) {
-    return 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60';
-  }
-  return 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60';
+  return 'bg-slate-50/90 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200/90 dark:border-slate-700/80';
 }
 </script>

@@ -789,9 +789,22 @@ export const useTaxStore = () => {
         const ppnVal = Number(updatedData.ppn !== undefined ? updatedData.ppn : (updatedData.ppn_amount !== undefined ? updatedData.ppn_amount : (state.programs[index].ppn || 0)));
         const totalVal = dppVal + ppnVal;
 
-        const invVal = updatedData.invoice_number !== undefined ? updatedData.invoice_number : (updatedData.invoice_no !== undefined ? updatedData.invoice_no : '');
-        const fakVal = updatedData.faktur_number !== undefined ? updatedData.faktur_number : (updatedData.tax_invoice_number !== undefined ? updatedData.tax_invoice_number : '');
-        const fakDateVal = updatedData.faktur_date !== undefined ? updatedData.faktur_date : (updatedData.tax_invoice_date !== undefined ? updatedData.tax_invoice_date : null);
+        const currentProg = state.programs[index] || {};
+        const invVal = updatedData.invoice_number !== undefined 
+            ? updatedData.invoice_number 
+            : (updatedData.invoice_no !== undefined 
+                ? updatedData.invoice_no 
+                : (currentProg.invoice_number || currentProg.invoice_no || ''));
+        const fakVal = updatedData.faktur_number !== undefined 
+            ? updatedData.faktur_number 
+            : (updatedData.tax_invoice_number !== undefined 
+                ? updatedData.tax_invoice_number 
+                : (currentProg.faktur_number || currentProg.tax_invoice_number || ''));
+        const fakDateVal = updatedData.faktur_date !== undefined 
+            ? updatedData.faktur_date 
+            : (updatedData.tax_invoice_date !== undefined 
+                ? updatedData.tax_invoice_date 
+                : (currentProg.faktur_date || currentProg.tax_invoice_date || null));
 
         const payload = {
             ...updatedData,
@@ -863,7 +876,10 @@ export const useTaxStore = () => {
         return await updateProgram(id, { payment_status: paymentStatus });
     }
 
-    async function analyzeDocumentAi(id, docId) {
+    async function analyzeDocumentAi(id, docId, isBackground = false) {
+        if (isBackground) {
+            notify('AI sedang membaca berkas dokumen untuk mengekstrak data...', 'info');
+        }
         try {
             const res = await fetch(`/api/programs/${id}/documents/${docId}/analyze`, {
                 method: 'POST',
@@ -883,11 +899,19 @@ export const useTaxStore = () => {
                 notify(data.message || 'Analisis AI selesai.');
                 return { success: true, ai_analysis: data.ai_analysis, program: data.program };
             } else {
-                notify(data.message || 'Gagal menganalisis dokumen dengan AI.', 'error');
+                if (!isBackground) {
+                    notify(data.message || 'Gagal menganalisis dokumen dengan AI.', 'error');
+                } else {
+                    console.info('Background AI info:', data.message);
+                }
                 return { success: false, message: data.message };
             }
         } catch (e) {
-            notify('Koneksi ke server AI gagal: ' + e.message, 'error');
+            if (!isBackground) {
+                notify('Koneksi ke server AI gagal: ' + e.message, 'error');
+            } else {
+                console.warn('Background AI error:', e);
+            }
             return { success: false, message: e.message };
         }
     }
@@ -933,6 +957,7 @@ export const useTaxStore = () => {
                 formData.append('file_name', fileInfo.name);
                 formData.append('uploaded_by', uploader);
                 formData.append('user_role', state.currentUser?.role || '');
+                formData.append('async_ai', '1');
 
                 const res = await fetch(`/api/programs/${programId}/documents`, {
                     method: 'POST',
@@ -959,6 +984,13 @@ export const useTaxStore = () => {
                             }
                             saveToStorage();
                             notify(data.message || `Dokumen ${getDocTypeLabel(docType)} berhasil diunggah.`);
+
+                            // Auto-trigger background AI extraction for invoice & faktur pajak
+                            if (docId && (docType === 'invoice' || docType === 'faktur_pajak' || docType === 'faktur')) {
+                                setTimeout(() => {
+                                    analyzeDocumentAi(programId, docId, true);
+                                }, 150);
+                            }
                             return true;
                         }
                     }
@@ -1003,11 +1035,27 @@ export const useTaxStore = () => {
         const index = prog.documents.findIndex(d => d.id === docIdentifier || d.document_type === docIdentifier);
         if (index !== -1) {
             const removed = prog.documents[index];
+            const rawType = removed.document_type || removed.type;
             if (removed?.id) {
                 deleteDocumentBlob(removed.id);
             }
             const deletedIdOrType = removed.id || docIdentifier;
             prog.documents.splice(index, 1);
+
+            // Bersihkan nomor invoice jika dokumen invoice yang dihapus
+            if (rawType === 'invoice') {
+                prog.invoice_no = '';
+                prog.invoice_number = '';
+            }
+            // Bersihkan nomor & tanggal faktur pajak jika dokumen FP yang dihapus
+            if (rawType === 'faktur_pajak' || rawType === 'faktur') {
+                prog.faktur_number = '';
+                prog.tax_invoice_number = '';
+                prog.faktur_date = '';
+                prog.tax_invoice_date = '';
+            }
+
+            checkProgramCompleteness(prog);
             saveToStorage();
             notify(`Dokumen ${removed.file_name || getDocTypeLabel(removed.document_type)} berhasil dihapus.`, 'warning');
 

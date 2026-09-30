@@ -305,15 +305,15 @@
           </div>
           <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
           <div>
-            Total Invoice: <strong class="font-mono text-slate-900 dark:text-slate-100 font-bold ml-1">{{ formatRupiah(filteredSummary.totalInvoice) }}</strong>
+            Total Invoice: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalInvoice) }}</strong>
           </div>
           <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
           <div>
-            DPP: <strong class="font-mono text-slate-900 dark:text-slate-100 font-bold ml-1">{{ formatRupiah(filteredSummary.totalDpp) }}</strong>
+            DPP: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalDpp) }}</strong>
           </div>
           <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
           <div>
-            PPN: <strong class="font-mono text-slate-900 dark:text-slate-100 font-bold ml-1">{{ formatRupiah(filteredSummary.totalPpn) }}</strong>
+            PPN: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalPpn) }}</strong>
           </div>
         </div>
 

@@ -272,24 +272,30 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Total Payment
                 </p>
-                <div class="relative inline-flex items-center">
+                <div class="relative inline-flex items-center group">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all select-none shadow-2xs"
+                    :class="[
+                      getPaymentBadgeClass(program.payment_status),
+                      (!canEditFinance && !isAdmin) ? 'opacity-85' : 'group-hover:shadow-xs'
+                    ]"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
+                    <span>{{ formatPaymentStatus(program.payment_status) }}</span>
+                    <ChevronDown v-if="canEditFinance || isAdmin" class="w-3 h-3 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-0.5 shrink-0" />
+                  </span>
                   <select
                     :value="normalizePayStatus(program.payment_status)"
                     :disabled="!canEditFinance && !isAdmin"
                     @change="handlePaymentStatusChange($event.target.value)"
-                    class="text-[10px] font-bold py-0.5 pl-2.5 pr-5 rounded-full border cursor-pointer focus:outline-none appearance-none transition-all tracking-wide select-none shadow-2xs"
-                    :class="[
-                      getPaymentBadgeClass(program.payment_status),
-                      (!canEditFinance && !isAdmin) ? 'cursor-default pointer-events-none opacity-85' : 'hover:opacity-90'
-                    ]"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                     title="Ubah Status Payment"
                   >
-                    <option value="WAITING PAYMENT" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-semibold py-1">Waiting Payment</option>
-                    <option value="cbd" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold py-1">CBD</option>
-                    <option value="tempo" class="bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold py-1">Tempo</option>
-                    <option value="PAID" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-semibold py-1">Paid</option>
+                    <option value="WAITING PAYMENT">Waiting Payment</option>
+                    <option value="cbd">CBD</option>
+                    <option value="tempo">Tempo</option>
+                    <option value="PAID">Paid</option>
                   </select>
-                  <ChevronDown class="w-2.5 h-2.5 absolute right-1.5 pointer-events-none opacity-60" />
                 </div>
               </div>
               <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -900,11 +906,6 @@ async function handleDocumentUploaded(fileData) {
   } else {
     await store.uploadDocument(program.value.id, fileData.docType, fileData);
   }
-  // Refresh detail from store
-  const updated = store.getProgramById(program.value.id);
-  if (updated) {
-    program.value = updated;
-  }
 }
 
 const isAnalyzingDocId = ref(null);
@@ -912,13 +913,7 @@ async function runAiAnalysis(doc) {
   if (!doc?.id || !program.value?.id || isAnalyzingDocId.value) return;
   isAnalyzingDocId.value = doc.id;
   try {
-    const res = await store.analyzeDocumentAi(program.value.id, doc.id);
-    if (res?.success) {
-      const updated = store.getProgramById(program.value.id);
-      if (updated) {
-        program.value = updated;
-      }
-    }
+    await store.analyzeDocumentAi(program.value.id, doc.id);
   } finally {
     isAnalyzingDocId.value = null;
   }
@@ -1086,17 +1081,15 @@ function formatPaymentStatus(status) {
 }
 
 function getPaymentBadgeClass(status) {
+  return 'bg-slate-50/90 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200/90 dark:border-slate-700/80 hover:bg-slate-100/90 dark:hover:bg-slate-700/70 hover:border-slate-300 dark:hover:border-slate-600';
+}
+
+function getPaymentDotClass(status) {
   const norm = normalizePayStatus(status);
-  if (norm === 'cbd') {
-    return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60';
-  }
-  if (norm === 'tempo') {
-    return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60';
-  }
-  if (norm === 'PAID') {
-    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60';
-  }
-  return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60';
+  if (norm === 'cbd') return 'bg-amber-500';
+  if (norm === 'tempo') return 'bg-blue-500';
+  if (norm === 'PAID') return 'bg-emerald-500';
+  return 'bg-rose-500';
 }
 
 async function handlePaymentStatusChange(newStatus) {

@@ -445,19 +445,25 @@ class ProgramController extends Controller
                 'uploaded_at' => Carbon::now()
             ]);
 
-            // AI Document Analysis for Invoice & Faktur Pajak
-            if ($filePath && file_exists(public_path($filePath))) {
+            // Check completeness across distinct document types
+            $types = $program->documents()->pluck('type')->toArray();
+            if (count(array_unique($types)) >= 3) {
+                $program->update(['status' => 'Lengkap']);
+            }
+
+            // Synchronous AI analysis only if NOT async_ai requested
+            $isAsyncAi = $request->boolean('async_ai', false);
+            if (!$isAsyncAi && $filePath && file_exists(public_path($filePath)) && in_array($backendType, ['invoice', 'faktur'])) {
                 try {
                     $analysis = DocumentAiAnalysisService::analyzeFile(public_path($filePath), $backendType);
                     if ($analysis['success']) {
                         $aiAnalysis = $analysis;
                         $aiUpdates = [];
 
-                        // 1. Nomor Invoice
+                        // 1. Nomor Invoice - Lindungi nomor invoice yang sudah diinput/ada sebelumnya
                         if (!empty($analysis['invoice_no'])) {
-                            // Update if document is invoice or invoice_no is generic/placeholder/empty
                             $isPlaceholderInv = empty($program->invoice_no) || preg_match('/^INV\/\d{4}\/SCM\/\d+$/i', $program->invoice_no);
-                            if ($backendType === 'invoice' || $isPlaceholderInv) {
+                            if ($isPlaceholderInv || (empty($program->invoice_no) && $backendType === 'invoice')) {
                                 $aiUpdates['invoice_no'] = $analysis['invoice_no'];
                                 $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
                             }
@@ -505,12 +511,6 @@ class ProgramController extends Controller
                     \Illuminate\Support\Facades\Log::warning('AI Analysis exception on upload: ' . $e->getMessage());
                 }
             }
-
-            // Check completeness across distinct document types
-            $types = $program->documents()->pluck('type')->toArray();
-            if (count(array_unique($types)) >= 3) {
-                $program->update(['status' => 'Lengkap']);
-            }
         }
 
         $uploadMessage = 'Dokumen berhasil diunggah.';
@@ -552,8 +552,11 @@ class ProgramController extends Controller
         $aiDetectedInfo = [];
 
         if (!empty($analysis['invoice_no'])) {
-            $updates['invoice_no'] = $analysis['invoice_no'];
-            $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
+            $isPlaceholderInv = empty($program->invoice_no) || preg_match('/^INV\/\d{4}\/SCM\/\d+$/i', $program->invoice_no);
+            if ($isPlaceholderInv || (empty($program->invoice_no) && $document->type === 'invoice')) {
+                $updates['invoice_no'] = $analysis['invoice_no'];
+                $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
+            }
         }
         if (!empty($analysis['faktur_number'])) {
             $updates['faktur_number'] = $analysis['faktur_number'];
@@ -619,7 +622,9 @@ class ProgramController extends Controller
                   ->orWhere('type', $docId === 'faktur_pajak' ? 'faktur' : ($docId === 'mou' ? 'memo' : $docId));
             })->first();
 
+        $docType = null;
         if ($doc) {
+            $docType = $doc->type;
             if ($doc->file_path && file_exists(public_path($doc->file_path))) {
                 @unlink(public_path($doc->file_path));
             }
@@ -628,9 +633,25 @@ class ProgramController extends Controller
 
         $program = Program::find($programId);
         if ($program) {
+            $updates = [];
+
+            // Jika dokumen invoice dihapus, bersihkan nomor invoice
+            if ($docType === 'invoice') {
+                $updates['invoice_no'] = null;
+            }
+            // Jika dokumen faktur pajak dihapus, bersihkan nomor & tanggal faktur
+            if ($docType === 'faktur' || $docType === 'faktur_pajak') {
+                $updates['faktur_number'] = null;
+                $updates['faktur_date'] = null;
+            }
+
             $types = $program->documents()->pluck('type')->toArray();
             if (count(array_unique($types)) < 3) {
-                $program->update(['status' => 'Perlu Tindakan']);
+                $updates['status'] = 'Perlu Tindakan';
+            }
+
+            if (!empty($updates)) {
+                $program->update($updates);
             }
         }
 
