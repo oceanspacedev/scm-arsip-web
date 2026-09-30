@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-5 select-none">
+  <div class="space-y-3 select-none">
     <!-- Page Header matching screenshot -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
       <div class="min-w-0">

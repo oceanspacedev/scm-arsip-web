@@ -965,8 +965,8 @@ const filteredPrograms = computed(() => store.filteredPrograms.value);
 const totalCount = computed(() => store.programs.value.length);
 const categoriesList = computed(() => store.categoriesList.value.filter(c => c !== 'Semua Kategori'));
 
-// Pagination state (10 data per halaman)
-const itemsPerPage = 10;
+// Pagination state (15 data per halaman)
+const itemsPerPage = 15;
 const currentPage = ref(1);
 
 const totalPages = computed(() => {
