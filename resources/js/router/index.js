@@ -55,6 +55,12 @@ const routes = [
                 meta: { title: 'Manajemen User - SCM TaxVault' }
             },
             {
+                path: 'permissions',
+                name: 'permissions',
+                component: () => import('../views/RolePermissionsView.vue'),
+                meta: { title: 'Hak Akses & Role - SCM TaxVault' }
+            },
+            {
                 path: 'settings',
                 name: 'settings',
                 component: SettingsView,

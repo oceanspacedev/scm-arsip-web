@@ -45,9 +45,11 @@ Route::prefix('api')->group(function () {
     Route::get('/programs/raw-imports/{id}/download', [ProgramController::class, 'downloadRawImport']);
     Route::delete('/programs/raw-imports/{id}', [ProgramController::class, 'deleteRawImport']);
 
-    // 4. System Settings & Reset Data (Admin Controls)
+    // 4. System Settings, Role Permissions & Reset Data (Admin Controls)
     Route::get('/settings', [AdminSettingController::class, 'getPublicSettings']);
     Route::post('/admin/settings', [AdminSettingController::class, 'updateSettings']);
+    Route::get('/admin/role-permissions', [AdminSettingController::class, 'getRolePermissions']);
+    Route::post('/admin/role-permissions', [AdminSettingController::class, 'updateRolePermissions']);
     Route::post('/admin/reset-data', [AdminSettingController::class, 'resetData']);
 });
 

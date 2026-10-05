@@ -11,11 +11,19 @@
         </p>
       </div>
 
-      <!-- Action: + Tambah User Button -->
-      <div class="flex items-center gap-3 w-full sm:w-auto">
+      <!-- Action: + Tambah User Button & Role Permission Shortcut -->
+      <div class="flex items-center gap-2.5 w-full sm:w-auto">
+        <router-link
+          to="/permissions"
+          class="h-8.5 px-3 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+        >
+          <ShieldCheck class="w-3.5 h-3.5 text-slate-400" />
+          <span>Atur Hak Akses Role</span>
+        </router-link>
+
         <button
           type="button"
-          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
           @click="openAddModal"
         >
           <Plus class="w-4 h-4" />
@@ -55,7 +63,7 @@
             :aria-checked="showDemoAccounts"
             @click="handleToggleDemoAccounts"
             class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
-            :class="showDemoAccounts ? 'bg-slate-900 dark:bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'"
+            :class="showDemoAccounts ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'"
             title="Nyalakan / Matikan Akun Demo di Login"
           >
             <span
@@ -86,7 +94,7 @@
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'all' ? 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'all' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('all')"
         >
           <span>Semua User</span>
@@ -98,7 +106,7 @@
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'pending' ? 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'pending' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('pending')"
         >
           <span>Menunggu ACC</span>
@@ -113,7 +121,7 @@
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'approved' ? 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'approved' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('approved')"
         >
           <span>Aktif</span>
@@ -213,7 +221,7 @@
                     v-if="user.status === 'pending'"
                     type="button"
                     :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                    class="h-7 px-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
                     @click="handleApprove(user)"
                   >
                     <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -381,7 +389,7 @@
                 v-if="user.status === 'pending'"
                 type="button"
                 :disabled="processingId === user.id"
-                class="h-7 px-3 rounded-md bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                class="h-7 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
                 @click="handleApprove(user)"
               >
                 <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -545,7 +553,7 @@
 
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                 :disabled="isSubmitting"
               >
                 <span v-if="isSubmitting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -691,7 +699,7 @@
 
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                 :disabled="isEditing"
               >
                 <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -806,7 +814,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Plus, Search, Trash2, X, AlertCircle, Users, RotateCcw, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil } from 'lucide-vue-next';
+import { Plus, Search, Trash2, X, AlertCircle, Users, RotateCcw, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil, ShieldCheck } from 'lucide-vue-next';
 import { useTaxStore } from '../store/taxStore';
 
 const route = useRoute();

@@ -6,19 +6,19 @@
         <thead>
           <tr class="bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-sans">
             <th class="py-2.5 px-3 min-w-[105px]">TANGGAL</th>
-            <th class="py-2.5 px-2.5 min-w-[110px]">KATEGORI</th>
-            <th class="py-2.5 px-2.5 min-w-[100px]">BRAND</th>
-            <th class="py-2.5 px-2.5 min-w-[145px]">COMPANY NAME</th>
-            <th class="py-2.5 px-2.5 min-w-[120px]">KODE GUDANG</th>
-            <th class="py-2.5 px-2.5 min-w-[125px]">NO. PO/SJ</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[110px]">KATEGORI</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[100px]">BRAND</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[145px]">COMPANY NAME</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[120px]">KODE GUDANG</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[125px]">NO. PO/SJ</th>
             <th class="py-2.5 px-3 min-w-[200px]">PROGRAM</th>
-            <th class="py-2.5 px-2.5 min-w-[150px]">SUPPLIER</th>
-            <th class="py-2.5 px-2 min-w-[100px]">NO. INVOICE</th>
-            <th class="py-2.5 px-2.5 min-w-[130px]">FAKTUR PAJAK</th>
-            <th class="py-2.5 px-2 text-right min-w-[90px]">DPP</th>
-            <th class="py-2.5 px-2 text-right min-w-[85px]">PPN</th>
-            <th class="py-2.5 px-2.5 text-right min-w-[105px]">TOTAL PAYMENT</th>
-            <th class="py-2.5 px-2.5 text-center min-w-[130px]">STATUS PAYMENT</th>
+            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[150px]">SUPPLIER</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 min-w-[100px]">NO. INVOICE</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 min-w-[130px]">FAKTUR PAJAK</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 text-right min-w-[90px]">DPP</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 text-right min-w-[85px]">PPN</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-right min-w-[105px]">TOTAL PAYMENT</th>
+            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-center min-w-[130px]">STATUS PAYMENT</th>
             <th class="py-2.5 px-2 text-center min-w-[95px]">DOKUMEN</th>
             <th class="py-2.5 px-2 text-center min-w-[100px]">STATUS</th>
             <th class="py-2.5 px-2 text-center w-20 sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10">AKSI</th>
@@ -37,31 +37,31 @@
             </td>
 
             <!-- 2. KATEGORI -->
-            <td class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
               {{ program.category || 'Logistik' }}
             </td>
 
             <!-- 2.5 BRAND -->
-            <td class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
               {{ program.brand || getProgramBrand(program) }}
             </td>
 
             <!-- 3. COMPANY NAME -->
-            <td class="py-2.5 px-2.5 min-w-[140px] max-w-[200px]">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[140px] max-w-[200px]">
               <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="getProgramCompanyName(program)">
                 {{ getProgramCompanyName(program) }}
               </div>
             </td>
 
             <!-- 3.5 KODE GUDANG -->
-            <td class="py-2.5 px-2.5 max-w-[120px]">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 max-w-[120px]">
               <div class="truncate text-[11px] text-slate-700 dark:text-slate-300 tabular-nums" :title="program.kode_gudang || '-'">
                 {{ program.kode_gudang || '-' }}
               </div>
             </td>
 
             <!-- 4. NO. PO/SJ -->
-            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
               {{ getProgramPoSjNumber(program) }}
             </td>
 
@@ -78,7 +78,7 @@
             </td>
 
             <!-- 6. SUPPLIER -->
-            <td class="py-2.5 px-2.5 min-w-[150px] max-w-[220px]">
+            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[150px] max-w-[220px]">
               <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="program.supplier">
                 {{ program.supplier }}
               </div>
@@ -88,12 +88,12 @@
             </td>
 
             <!-- 7. NO. INVOICE -->
-            <td class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
               {{ program.invoice_number || '-' }}
             </td>
 
             <!-- 8. FAKTUR PAJAK (Tanggal & Nomor) -->
-            <td class="py-2.5 px-2.5 whitespace-nowrap text-[11px]">
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 whitespace-nowrap text-[11px]">
               <div v-if="program.faktur_date" class="text-slate-700 dark:text-slate-300 tabular-nums">
                 {{ formatDate(program.faktur_date) }}
               </div>
@@ -106,22 +106,22 @@
             </td>
 
             <!-- 4. DPP -->
-            <td class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.dpp) }}
             </td>
 
             <!-- 5. PPN -->
-            <td class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.ppn) }}
             </td>
 
             <!-- 6. TOTAL PAYMENT -->
-            <td class="py-2.5 px-2.5 font-medium text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] tabular-nums">
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 font-medium text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] tabular-nums">
               {{ formatRupiah(program.total_invoice) }}
             </td>
 
             <!-- 6.5 STATUS PAYMENT -->
-            <td class="py-2.5 px-2.5 text-center whitespace-nowrap" @click.stop>
+            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-center whitespace-nowrap" @click.stop>
               <div class="relative inline-flex items-center group">
                 <span
                   class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-all select-none shadow-2xs"
@@ -329,9 +329,9 @@
         </div>
 
         <!-- Supplier & Financial Box (Clean compact card) -->
-        <div class="bg-slate-50/80 dark:bg-slate-900/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+        <div v-if="canViewMasterColumns || canViewFinanceColumns" class="bg-slate-50/80 dark:bg-slate-900/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
           <!-- Supplier -->
-          <div class="flex items-center justify-between gap-2">
+          <div v-if="canViewMasterColumns" class="flex items-center justify-between gap-2">
             <span class="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Supplier:</span>
             <div class="text-right min-w-0">
               <span class="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[210px]">{{ program.supplier }}</span>
@@ -340,7 +340,7 @@
           </div>
 
           <!-- No. PO/SJ & Company -->
-          <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
+          <div v-if="canViewMasterColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
             <div>
               <span class="text-slate-500 dark:text-slate-400 block">No. PO/SJ:</span>
               <span class="font-medium text-slate-700 dark:text-slate-300 block tabular-nums">{{ getProgramPoSjNumber(program) }}</span>
@@ -352,7 +352,7 @@
           </div>
 
           <!-- No. Invoice & Total Payment -->
-          <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
+          <div v-if="canViewFinanceColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
             <div>
               <span class="text-slate-500 dark:text-slate-400 text-[11px] block">No. Invoice</span>
               <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 block tabular-nums">{{ program.invoice_number || '-' }}</span>
@@ -392,7 +392,7 @@
           </div>
 
           <!-- Tax Invoice Date & No. FP -->
-          <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
+          <div v-if="canViewFinanceColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
             <div>
               <span class="text-slate-500 dark:text-slate-400 block">Tax Invoice Date:</span>
               <span class="font-medium text-slate-700 dark:text-slate-300 block">
@@ -406,7 +406,7 @@
           </div>
 
           <!-- DPP & PPN Breakdown -->
-          <div class="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
+          <div v-if="canViewFinanceColumns" class="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
             <div>
               <span class="text-slate-400 dark:text-slate-500 text-[10px]">DPP:</span>
               <span class="text-slate-700 dark:text-slate-300 ml-1 tabular-nums">{{ formatRupiah(program.dpp) }}</span>
@@ -925,6 +925,8 @@ const isScm = computed(() => store.isScm.value);
 const canEditProgram = computed(() => store.canEditProgram.value);
 const canEditPurchase = computed(() => store.canEditPurchase.value);
 const canEditFinance = computed(() => store.canEditFinance.value);
+const canViewMasterColumns = computed(() => store.canViewMasterColumns.value);
+const canViewFinanceColumns = computed(() => store.canViewFinanceColumns.value);
 
 // Payment Status Helpers
 function normalizePayStatus(status) {

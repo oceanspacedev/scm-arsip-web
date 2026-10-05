@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   FolderArchive,
   Users,
+  ShieldCheck,
   Settings2,
   LogOut,
   ChevronRight,
@@ -224,6 +225,20 @@ async function handleLogout() {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
+            </SidebarMenuItem>
+
+            <!-- Hak Akses & Role Permission -->
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                as-child
+                :is-active="route.path === '/permissions'"
+                tooltip="Hak Akses & Role"
+              >
+                <router-link to="/permissions">
+                  <ShieldCheck />
+                  <span>Hak Akses & Role</span>
+                </router-link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
 
             <!-- Pengaturan -->

@@ -108,6 +108,102 @@ export const demoUsers = defaultUsers.filter(u => u.status === 'approved');
 
 const USERS_LIST_STORAGE_KEY = 'scm_taxvault_users_list_v2';
 const DEMO_ACCOUNTS_STORAGE_KEY = 'scm_show_demo_accounts';
+export const ROLE_PERMISSIONS_STORAGE_KEY = 'scm_taxvault_role_permissions_v2';
+
+export const DEFAULT_ROLE_PERMISSIONS = {
+    'Admin SCM': {
+        view_dashboard: true,
+        view_programs: true,
+        view_master_columns: true,
+        view_finance_columns: true,
+        add_program: true,
+        edit_purchase: true,
+        edit_finance: true,
+        delete_program: true,
+        import_program: true,
+        export_program: true,
+        upload_memo: true,
+        upload_invoice: true,
+        upload_faktur: true,
+        delete_memo: true,
+        delete_finance_doc: true,
+    },
+    'Staff SCM': {
+        view_dashboard: true,
+        view_programs: true,
+        view_master_columns: true,
+        view_finance_columns: true,
+        add_program: true,
+        edit_purchase: true,
+        edit_finance: true,
+        delete_program: false,
+        import_program: true,
+        export_program: true,
+        upload_memo: true,
+        upload_invoice: true,
+        upload_faktur: true,
+        delete_memo: true,
+        delete_finance_doc: true,
+    },
+    'Staff Gudang': {
+        view_dashboard: true,
+        view_programs: true,
+        view_master_columns: true,
+        view_finance_columns: false,
+        add_program: false,
+        edit_purchase: false,
+        edit_finance: false,
+        delete_program: false,
+        import_program: false,
+        export_program: false,
+        upload_memo: true,
+        upload_invoice: false,
+        upload_faktur: false,
+        delete_memo: true,
+        delete_finance_doc: false,
+    },
+    'Staff Finance': {
+        view_dashboard: true,
+        view_programs: true,
+        view_master_columns: true,
+        view_finance_columns: true,
+        add_program: false,
+        edit_purchase: false,
+        edit_finance: true,
+        delete_program: false,
+        import_program: false,
+        export_program: false,
+        upload_memo: false,
+        upload_invoice: true,
+        upload_faktur: true,
+        delete_memo: false,
+        delete_finance_doc: true,
+    },
+};
+
+export function normalizeRoleKey(role) {
+    const r = (role || '').toLowerCase();
+    if (r.includes('admin')) return 'Admin SCM';
+    if (r.includes('gudang')) return 'Staff Gudang';
+    if (r.includes('finance') || r.includes('pajak')) return 'Staff Finance';
+    if (r.includes('scm')) return 'Staff SCM';
+    return 'Staff SCM';
+}
+
+function loadStoredRolePermissions() {
+    try {
+        const raw = localStorage.getItem(ROLE_PERMISSIONS_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load role permissions", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+}
 
 function loadStoredDemoAccounts() {
     try {
@@ -147,6 +243,8 @@ const state = reactive({
     users: loadStoredUsersList(),
     currentUser: loadStoredUser(),
     showDemoAccounts: loadStoredDemoAccounts(),
+    rolePermissions: loadStoredRolePermissions(),
+    isSavingPermissions: false,
     isResetting: false,
     isMobileSidebarOpen: false,
     activeOtp: null,
@@ -1371,6 +1469,7 @@ export const useTaxStore = () => {
                     }
                 }
             }
+            await fetchRolePermissions();
         } catch (e) {
             console.warn('Failed to fetch settings from backend:', e);
         }
@@ -1940,57 +2039,123 @@ export const useTaxStore = () => {
         return role.includes('scm') && !role.includes('admin');
     });
 
+    function hasPermission(permissionKey, customRole = null) {
+        const userRole = customRole || state.currentUser?.role || '';
+        const roleKey = normalizeRoleKey(userRole);
+        if (roleKey === 'Admin SCM') return true;
+        const perms = state.rolePermissions?.[roleKey] || DEFAULT_ROLE_PERMISSIONS[roleKey];
+        if (!perms) return false;
+        return Boolean(perms[permissionKey]);
+    }
+
+    const canViewMasterColumns = computed(() => {
+        return hasPermission('view_master_columns');
+    });
+
+    const canViewFinanceColumns = computed(() => {
+        return hasPermission('view_finance_columns');
+    });
+
     function canUploadDoc(docType) {
-        if (isAdmin.value || isScm.value) return true;
+        if (isAdmin.value) return true;
         const normalized = (docType || '').toLowerCase();
-        if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
-            return true;
+        if (normalized === 'mou' || normalized === 'memo' || normalized === 'do') {
+            return hasPermission('upload_memo');
         }
-        if (isFinance.value && (normalized === 'invoice' || normalized === 'faktur' || normalized === 'faktur_pajak')) {
-            return true;
+        if (normalized === 'invoice') {
+            return hasPermission('upload_invoice');
+        }
+        if (normalized === 'faktur' || normalized === 'faktur_pajak') {
+            return hasPermission('upload_faktur');
         }
         return false;
     }
 
     function canDeleteDoc(docType) {
-        if (isAdmin.value || isScm.value) return true;
+        if (isAdmin.value) return true;
         const normalized = (docType || '').toLowerCase();
-        if (isGudang.value && (normalized === 'mou' || normalized === 'memo' || normalized === 'do')) {
-            return true;
+        if (normalized === 'mou' || normalized === 'memo' || normalized === 'do') {
+            return hasPermission('delete_memo');
         }
-        if (isFinance.value && (normalized === 'invoice' || normalized === 'faktur' || normalized === 'faktur_pajak')) {
-            return true;
+        if (normalized === 'invoice' || normalized === 'faktur' || normalized === 'faktur_pajak') {
+            return hasPermission('delete_finance_doc');
         }
         return false;
     }
 
     const canEditPurchase = computed(() => {
-        return isAdmin.value || isScm.value || isGudang.value;
+        return hasPermission('edit_purchase');
     });
 
     const canEditFinance = computed(() => {
-        return isAdmin.value || isScm.value || isFinance.value;
+        return hasPermission('edit_finance');
     });
 
     const canEditProgram = computed(() => {
-        return isAdmin.value || isScm.value || isFinance.value || isGudang.value;
+        return canEditPurchase.value || canEditFinance.value;
     });
 
     const canAddProgram = computed(() => {
-        return isAdmin.value || isScm.value;
+        return hasPermission('add_program');
     });
 
     const canImportProgram = computed(() => {
-        return isAdmin.value || isScm.value;
+        return hasPermission('import_program');
     });
 
     const canExportProgram = computed(() => {
-        return isAdmin.value || isScm.value;
+        return hasPermission('export_program');
     });
 
     const canDeleteProgram = computed(() => {
-        return isAdmin.value;
+        return hasPermission('delete_program');
     });
+
+    async function fetchRolePermissions() {
+        try {
+            const resp = await fetch('/api/admin/role-permissions');
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.success && data.permissions) {
+                    state.rolePermissions = data.permissions;
+                    localStorage.setItem(ROLE_PERMISSIONS_STORAGE_KEY, JSON.stringify(data.permissions));
+                }
+            }
+        } catch (e) {
+            console.warn('Gagal memuat role permissions dari server:', e);
+        }
+    }
+
+    async function saveRolePermissions(newPermissions) {
+        state.isSavingPermissions = true;
+        try {
+            state.rolePermissions = JSON.parse(JSON.stringify(newPermissions));
+            localStorage.setItem(ROLE_PERMISSIONS_STORAGE_KEY, JSON.stringify(state.rolePermissions));
+
+            const resp = await fetch('/api/admin/role-permissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ permissions: newPermissions })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                notify(data.message || 'Hak akses role berhasil disimpan.');
+                return { success: true };
+            }
+            notify(data.message || 'Gagal menyimpan ke server, disimpan di sesi lokal.', 'info');
+            return { success: false, message: data.message };
+        } catch (e) {
+            notify('Perubahan hak akses berhasil disimpan di lokal browser.', 'info');
+            return { success: true };
+        } finally {
+            state.isSavingPermissions = false;
+        }
+    }
+
+    async function resetRolePermissions() {
+        const defaults = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+        return await saveRolePermissions(defaults);
+    }
 
     function openImportModal() {
         if (!canImportProgram.value) {
@@ -2026,6 +2191,14 @@ export const useTaxStore = () => {
         isGudang,
         isFinance,
         isScm,
+        hasPermission,
+        rolePermissions: computed(() => state.rolePermissions),
+        isSavingPermissions: computed(() => state.isSavingPermissions),
+        fetchRolePermissions,
+        saveRolePermissions,
+        resetRolePermissions,
+        canViewMasterColumns,
+        canViewFinanceColumns,
         canUploadDoc,
         canDeleteDoc,
         canEditPurchase,

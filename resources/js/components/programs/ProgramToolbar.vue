@@ -65,7 +65,7 @@
       </div>
 
       <!-- 3. STATUS PAYMENT -->
-      <div class="relative" ref="paymentDropdownRef">
+      <div v-if="canViewFinanceColumns" class="relative" ref="paymentDropdownRef">
         <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
           STATUS PAYMENT
         </label>
@@ -139,7 +139,7 @@
       </div>
 
       <!-- 5. KATEGORI -->
-      <div class="relative" ref="categoryDropdownRef">
+      <div v-if="canViewMasterColumns" class="relative" ref="categoryDropdownRef">
         <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
           KATEGORI
         </label>
@@ -175,7 +175,7 @@
       </div>
 
       <!-- 6. BRAND -->
-      <div class="relative" ref="brandDropdownRef">
+      <div v-if="canViewMasterColumns" class="relative" ref="brandDropdownRef">
         <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
           BRAND
         </label>
@@ -211,7 +211,7 @@
       </div>
 
       <!-- 7. COMPANY NAME -->
-      <div class="relative" ref="companyDropdownRef">
+      <div v-if="canViewMasterColumns" class="relative" ref="companyDropdownRef">
         <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
           COMPANY NAME
         </label>
@@ -247,7 +247,7 @@
       </div>
 
       <!-- 8. SUPPLIER -->
-      <div class="relative" ref="supplierDropdownRef">
+      <div v-if="canViewMasterColumns" class="relative" ref="supplierDropdownRef">
         <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
           SUPPLIER
         </label>
@@ -303,18 +303,20 @@
           <div>
             Menampilkan <strong class="text-slate-900 dark:text-slate-100 font-semibold">{{ filteredSummary.count }}</strong> program
           </div>
-          <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-          <div>
-            Total Invoice: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalInvoice) }}</strong>
-          </div>
-          <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-          <div>
-            DPP: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalDpp) }}</strong>
-          </div>
-          <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-          <div>
-            PPN: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalPpn) }}</strong>
-          </div>
+          <template v-if="canViewFinanceColumns">
+            <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+            <div>
+              Total Invoice: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalInvoice) }}</strong>
+            </div>
+            <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+            <div>
+              DPP: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalDpp) }}</strong>
+            </div>
+            <span class="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+            <div>
+              PPN: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(filteredSummary.totalPpn) }}</strong>
+            </div>
+          </template>
         </div>
 
         <!-- Filter Count & Reset Button -->
@@ -343,6 +345,9 @@ import { Search, ChevronDown, X, Check, RotateCcw } from 'lucide-vue-next';
 import { useTaxStore, formatRupiah } from '../../store/taxStore';
 
 const store = useTaxStore();
+
+const canViewMasterColumns = computed(() => store.canViewMasterColumns.value);
+const canViewFinanceColumns = computed(() => store.canViewFinanceColumns.value);
 
 const openDropdown = ref(null);
 const statusDropdownRef = ref(null);

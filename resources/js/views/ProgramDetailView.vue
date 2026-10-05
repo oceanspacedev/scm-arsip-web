@@ -6,7 +6,7 @@
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
           {{ program.program_name }}
         </h1>
-        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+        <p v-if="canViewMasterColumns" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
           {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
         </p>
       </div>
@@ -210,9 +210,13 @@
     </div>
 
     <!-- Bottom Section: Two Columns Grid matching screenshot -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div
+      v-if="canViewFinanceColumns || canViewMasterColumns"
+      class="grid grid-cols-1 gap-6"
+      :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
+    >
       <!-- Left Card: Rekonsiliasi Nilai & Perpajakan -->
-      <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
+      <div v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
         <div>
           <!-- Title -->
           <div class="p-6 pb-4">
@@ -310,7 +314,7 @@
       </div>
 
       <!-- Right Card: Data Program & Supplier -->
-      <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
+      <div v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
         <div>
           <!-- Title -->
           <div class="p-6 pb-4">
@@ -796,6 +800,8 @@ const isScm = computed(() => store.isScm.value);
 const canEditPurchase = computed(() => store.canEditPurchase.value);
 const canEditFinance = computed(() => store.canEditFinance.value);
 const canEditProgram = computed(() => store.canEditProgram.value);
+const canViewMasterColumns = computed(() => store.canViewMasterColumns.value);
+const canViewFinanceColumns = computed(() => store.canViewFinanceColumns.value);
 
 function canUploadDoc(docType) {
   return store.canUploadDoc(docType);
