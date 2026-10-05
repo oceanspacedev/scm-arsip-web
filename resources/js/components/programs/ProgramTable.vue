@@ -141,10 +141,9 @@
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                   title="Ubah Status Payment"
                 >
-                  <option value="WAITING PAYMENT">Waiting Payment</option>
-                  <option value="cbd">CBD</option>
-                  <option value="tempo">Tempo</option>
-                  <option value="PAID">Paid</option>
+                  <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </td>
@@ -378,10 +377,9 @@
                     @change="handleSelectPaymentStatus(program.id, $event.target.value)"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                   >
-                    <option value="WAITING PAYMENT">Waiting Payment</option>
-                    <option value="cbd">CBD</option>
-                    <option value="tempo">Tempo</option>
-                    <option value="PAID">Paid</option>
+                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -628,12 +626,25 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Supplier / Vendor</label>
-                  <input
+                  <select
                     v-model="editForm.supplier"
-                    type="text"
                     required
+                    @change="onEditSupplierChange"
                     :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
+                  >
+                    <option v-for="s in editSupplierOptions" :key="s.name" :value="s.name">
+                      {{ s.name }}
+                    </option>
+                    <option value="__custom__">+ Ketik Supplier Lain...</option>
+                  </select>
+                  <input
+                    v-if="editForm.supplier === '__custom__'"
+                    v-model="customEditSupplier"
+                    type="text"
+                    placeholder="Ketik nama supplier baru..."
+                    required
+                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
                   />
                 </div>
                 <div>
@@ -650,22 +661,43 @@
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-                  <input
+                  <select
                     v-model="editForm.company_name"
-                    type="text"
-                    placeholder="Contoh: PT SCM Nusantara"
                     :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
+                  >
+                    <option v-for="c in editCompanyOptions" :key="c" :value="c">
+                      {{ c }}
+                    </option>
+                    <option value="__custom__">+ Ketik Company Lain...</option>
+                  </select>
+                  <input
+                    v-if="editForm.company_name === '__custom__'"
+                    v-model="customEditCompany"
+                    type="text"
+                    placeholder="Ketik nama company baru..."
+                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
                   />
                 </div>
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kode Gudang</label>
-                  <input
+                  <select
                     v-model="editForm.kode_gudang"
-                    type="text"
-                    placeholder="Contoh: GDG-JKT-01"
                     :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-mono cursor-pointer"
+                  >
+                    <option value="">-- Pilih Kode Gudang --</option>
+                    <option v-for="w in editWarehouseOptions" :key="w.code" :value="w.code">
+                      {{ w.code }} - {{ w.name }}
+                    </option>
+                    <option value="__custom__">+ Ketik Kode Gudang Lain...</option>
+                  </select>
+                  <input
+                    v-if="editForm.kode_gudang === '__custom__'"
+                    v-model="customEditWarehouse"
+                    type="text"
+                    placeholder="Contoh: GDG-JKT-03"
+                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
                   />
                 </div>
                 <div>
@@ -686,22 +718,41 @@
                   <select
                     v-model="editForm.category"
                     :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
                   >
-                    <option v-for="cat in categoriesList" :key="cat" :value="cat">
+                    <option v-for="cat in editCategoryOptions" :key="cat" :value="cat">
                       {{ cat }}
                     </option>
+                    <option value="__custom__">+ Ketik Kategori Lain...</option>
                   </select>
+                  <input
+                    v-if="editForm.category === '__custom__'"
+                    v-model="customEditCategory"
+                    type="text"
+                    placeholder="Ketik kategori baru..."
+                    required
+                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                  />
                 </div>
 
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
-                  <input
+                  <select
                     v-model="editForm.brand"
-                    type="text"
-                    placeholder="Contoh: SCTV, Indosiar, Vidio, dll."
                     :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
+                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
+                  >
+                    <option v-for="b in editBrandOptions" :key="b" :value="b">
+                      {{ b }}
+                    </option>
+                    <option value="__custom__">+ Ketik Brand Lain...</option>
+                  </select>
+                  <input
+                    v-if="editForm.brand === '__custom__'"
+                    v-model="customEditBrand"
+                    type="text"
+                    placeholder="Ketik nama brand baru..."
+                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
                   />
                 </div>
               </div>
@@ -727,14 +778,14 @@
                 <div>
                   <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
                   <select
-                    v-model="editForm.payment_status"
+                    :value="normalizePayStatus(editForm.payment_status)"
+                    @change="editForm.payment_status = $event.target.value"
                     :disabled="!canEditFinance && !isAdmin"
                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
                   >
-                    <option value="WAITING PAYMENT">Waiting Payment</option>
-                    <option value="cbd">CBD (Cash Before Delivery)</option>
-                    <option value="tempo">Tempo</option>
-                    <option value="PAID">Paid (Lunas)</option>
+                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -933,18 +984,22 @@ function normalizePayStatus(status) {
   if (!status) return 'WAITING PAYMENT';
   const s = String(status).trim();
   const lower = s.toLowerCase();
-  if (lower === 'cbd') return 'cbd';
+  if (lower === 'cbd' || lower === 'cbd (cash before delivery)') return 'cbd';
   if (lower === 'tempo') return 'tempo';
-  if (lower === 'paid' || lower === 'lunas') return 'PAID';
-  return 'WAITING PAYMENT';
+  if (lower === 'paid' || lower === 'lunas' || lower === 'paid (lunas)') return 'PAID';
+  if (lower === 'waiting payment') return 'WAITING PAYMENT';
+  return s;
 }
 
 function formatPaymentStatus(status) {
-  const norm = normalizePayStatus(status);
-  if (norm === 'cbd') return 'CBD';
-  if (norm === 'tempo') return 'Tempo';
-  if (norm === 'PAID') return 'Paid';
-  return 'Waiting Payment';
+  if (!status) return 'Waiting Payment';
+  const s = String(status).trim();
+  const lower = s.toLowerCase();
+  if (lower === 'cbd' || lower === 'cbd (cash before delivery)') return 'CBD';
+  if (lower === 'tempo') return 'Tempo';
+  if (lower === 'paid' || lower === 'lunas' || lower === 'paid (lunas)') return 'Paid';
+  if (lower === 'waiting payment') return 'Waiting Payment';
+  return s;
 }
 
 function getPaymentBadgeClass(status) {
@@ -953,11 +1008,47 @@ function getPaymentBadgeClass(status) {
 
 function getPaymentDotClass(status) {
   const norm = normalizePayStatus(status);
-  if (norm === 'cbd') return 'bg-amber-500';
-  if (norm === 'tempo') return 'bg-blue-500';
-  if (norm === 'PAID') return 'bg-emerald-500';
-  return 'bg-rose-500';
+  const s = String(norm).toLowerCase();
+  if (s === 'cbd') return 'bg-amber-500';
+  if (s === 'tempo') return 'bg-blue-500';
+  if (s === 'paid' || s === 'lunas') return 'bg-emerald-500';
+  if (s === 'waiting payment' || s.includes('waiting')) return 'bg-rose-500';
+  return 'bg-blue-500';
 }
+
+const masterPaymentStatuses = computed(() => store.masterPaymentStatuses.value);
+
+const editPaymentStatusOptions = computed(() => {
+  const list = [];
+  const master = masterPaymentStatuses.value.length > 0
+    ? masterPaymentStatuses.value
+    : ['Waiting Payment', 'CBD (Cash Before Delivery)', 'Tempo', 'Paid (Lunas)'];
+
+  master.forEach(m => {
+    list.push({
+      value: normalizePayStatus(m),
+      label: m
+    });
+  });
+
+  if (editForm.payment_status) {
+    const curNorm = normalizePayStatus(editForm.payment_status);
+    if (!list.some(item => item.value === curNorm)) {
+      list.unshift({
+        value: curNorm,
+        label: formatPaymentStatus(editForm.payment_status)
+      });
+    }
+  }
+
+  // Deduplicate by value
+  const seen = new Set();
+  return list.filter(item => {
+    if (seen.has(item.value)) return false;
+    seen.add(item.value);
+    return true;
+  });
+});
 
 async function handleSelectPaymentStatus(programId, newStatus) {
   await store.updatePaymentStatus(programId, newStatus);
@@ -1028,6 +1119,70 @@ const editForm = reactive({
   pph: 0
 });
 
+const masterCategories = computed(() => store.masterCategories.value);
+const masterBrands = computed(() => store.masterBrands.value);
+const masterCompanies = computed(() => store.masterCompanies.value);
+const masterWarehouses = computed(() => store.masterWarehouses.value);
+const masterSuppliers = computed(() => store.masterSuppliers.value);
+
+const customEditCategory = ref('');
+const customEditBrand = ref('');
+const customEditCompany = ref('');
+const customEditWarehouse = ref('');
+const customEditSupplier = ref('');
+
+const editCategoryOptions = computed(() => {
+  const set = new Set(masterCategories.value);
+  if (editForm.category && editForm.category !== '__custom__') {
+    set.add(editForm.category);
+  }
+  return Array.from(set);
+});
+
+const editBrandOptions = computed(() => {
+  const set = new Set(masterBrands.value);
+  if (editForm.brand && editForm.brand !== '__custom__') {
+    set.add(editForm.brand);
+  }
+  return Array.from(set);
+});
+
+const editCompanyOptions = computed(() => {
+  const set = new Set(masterCompanies.value);
+  if (editForm.company_name && editForm.company_name !== '__custom__') {
+    set.add(editForm.company_name);
+  }
+  return Array.from(set);
+});
+
+const editWarehouseOptions = computed(() => {
+  const list = [...masterWarehouses.value];
+  if (editForm.kode_gudang && editForm.kode_gudang !== '__custom__') {
+    if (!list.some(w => w.code === editForm.kode_gudang)) {
+      list.unshift({ code: editForm.kode_gudang, name: editForm.kode_gudang });
+    }
+  }
+  return list;
+});
+
+const editSupplierOptions = computed(() => {
+  const list = [...masterSuppliers.value];
+  if (editForm.supplier && editForm.supplier !== '__custom__') {
+    if (!list.some(s => s.name === editForm.supplier)) {
+      list.unshift({ name: editForm.supplier, npwp: editForm.npwp || '' });
+    }
+  }
+  return list;
+});
+
+function onEditSupplierChange() {
+  if (editForm.supplier === '__custom__') return;
+  const match = masterSuppliers.value.find(s => s.name === editForm.supplier);
+  if (match && match.npwp) {
+    editForm.npwp = match.npwp;
+  }
+}
+
 // Delete Modal State
 const programToDelete = ref(null);
 
@@ -1077,7 +1232,8 @@ async function handleUploaded(fileData) {
   }
 }
 
-function openEditModal(program) {
+async function openEditModal(program) {
+  await store.fetchMasterData();
   editProgramId.value = program.id;
   editForm.program_name = program.program_name || '';
   editForm.supplier = program.supplier || '';
@@ -1089,12 +1245,19 @@ function openEditModal(program) {
   editForm.faktur_number = program.faktur_number || '';
   editForm.faktur_date = program.faktur_date ? String(program.faktur_date).slice(0, 10) : '';
   editForm.payment_status = program.payment_status || 'WAITING PAYMENT';
-  editForm.category = program.category || 'Logistik';
-  editForm.brand = program.brand || getProgramBrand(program) || '';
+  editForm.category = program.category || masterCategories.value[0] || 'Promosi';
+  editForm.brand = program.brand || getProgramBrand(program) || masterBrands.value[0] || '';
   editForm.dpp = Number(program.dpp) || 0;
   editForm.ppn = Number(program.ppn) || Math.round((Number(program.dpp) || 0) * 0.11);
   editForm.pph_type = program.pph_type || 'NON_PPH';
   editForm.pph = Number(program.pph) || calculatePphAmount(editForm.dpp, editForm.pph_type);
+
+  customEditCategory.value = '';
+  customEditBrand.value = '';
+  customEditCompany.value = '';
+  customEditWarehouse.value = '';
+  customEditSupplier.value = '';
+
   isEditModalOpen.value = true;
 }
 
@@ -1113,13 +1276,33 @@ function onPphTypeChange() {
 
 async function saveEdit() {
   if (!editProgramId.value || isSavingEdit.value) return;
+
+  const finalCategory = editForm.category === '__custom__' ? customEditCategory.value.trim() : editForm.category;
+  const finalBrand = editForm.brand === '__custom__' ? customEditBrand.value.trim() : editForm.brand;
+  const finalCompany = editForm.company_name === '__custom__' ? customEditCompany.value.trim() : editForm.company_name;
+  const finalWarehouse = editForm.kode_gudang === '__custom__' ? customEditWarehouse.value.trim() : editForm.kode_gudang;
+  const finalSupplier = editForm.supplier === '__custom__' ? customEditSupplier.value.trim() : editForm.supplier;
+
   isSavingEdit.value = true;
   try {
+    if (editForm.brand === '__custom__' && finalBrand && !masterBrands.value.includes(finalBrand)) {
+      store.addMasterItem('brands', finalBrand);
+    }
+    if (editForm.category === '__custom__' && finalCategory && !masterCategories.value.includes(finalCategory)) {
+      store.addMasterItem('categories', finalCategory);
+    }
+    if (editForm.company_name === '__custom__' && finalCompany && !masterCompanies.value.includes(finalCompany)) {
+      store.addMasterItem('companies', finalCompany);
+    }
+    if (editForm.supplier === '__custom__' && finalSupplier && !masterSuppliers.value.some(s => s.name === finalSupplier)) {
+      store.addMasterItem('suppliers', { name: finalSupplier, npwp: editForm.npwp || '' });
+    }
+
     const res = await store.updateProgram(editProgramId.value, {
       program_name: editForm.program_name,
-      supplier: editForm.supplier,
-      company_name: editForm.company_name,
-      kode_gudang: editForm.kode_gudang,
+      supplier: finalSupplier,
+      company_name: finalCompany,
+      kode_gudang: finalWarehouse,
       po_sj_number: editForm.po_sj_number,
       invoice_number: editForm.invoice_number || '',
       invoice_no: editForm.invoice_number || '',
@@ -1127,8 +1310,8 @@ async function saveEdit() {
       tax_invoice_number: editForm.faktur_number || '',
       faktur_date: editForm.faktur_date || null,
       tax_invoice_date: editForm.faktur_date || null,
-      category: editForm.category,
-      brand: editForm.brand,
+      category: finalCategory,
+      brand: finalBrand,
       payment_status: editForm.payment_status,
       dpp: editForm.dpp,
       ppn: editForm.ppn,

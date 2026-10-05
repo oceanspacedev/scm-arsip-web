@@ -61,6 +61,12 @@ const routes = [
                 meta: { title: 'Hak Akses & Role - SCM TaxVault' }
             },
             {
+                path: 'master-data',
+                name: 'master-data',
+                component: () => import('../views/MasterDataView.vue'),
+                meta: { title: 'Data Master - SCM TaxVault' }
+            },
+            {
                 path: 'settings',
                 name: 'settings',
                 component: SettingsView,

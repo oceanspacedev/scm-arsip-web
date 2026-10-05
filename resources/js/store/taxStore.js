@@ -205,6 +205,98 @@ function loadStoredRolePermissions() {
     return JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
 }
 
+export const DEFAULT_MASTER_DATA = {
+    categories: [
+        'Promosi',
+        'Rebate',
+        'Cashback',
+        'Sewa Display',
+        'Listing Fee',
+        'Digital Promo',
+        'Distribusi',
+        'Insentif',
+        'Bundling',
+        'Sampling',
+        'Branding',
+        'Loyalty',
+        'Diskon',
+        'Event',
+        'Logistik',
+        'Kemitraan',
+        'Pengadaan',
+        'Operasional',
+    ],
+    brands: [
+        'SCM',
+        'SCTV',
+        'Indosiar',
+        'Vidio',
+        'Mentari TV',
+        'Moji',
+        'SinemArt',
+        'Rans Entertainment',
+    ],
+    companies: [
+        'PT SCM Nusantara',
+        'PT Surya Citra Media Tbk',
+        'PT Indonesia Entertainment Group',
+        'PT Surya Citra Televisi',
+        'PT Indosiar Visual Mandiri',
+    ],
+    warehouses: [
+        { code: 'GDG-JKT-01', name: 'Gudang Utama Jakarta', location: 'Jakarta Barat' },
+        { code: 'GDG-JKT-02', name: 'Gudang Transit Ancol', location: 'Jakarta Utara' },
+        { code: 'GDG-BDG-01', name: 'Gudang Regional Bandung', location: 'Bandung' },
+        { code: 'GDG-SBY-01', name: 'Gudang Regional Surabaya', location: 'Surabaya' },
+        { code: 'GDG-SMG-01', name: 'Gudang Semarang', location: 'Semarang' },
+    ],
+    suppliers: [
+        { name: 'PT Unilever Indonesia Tbk', npwp: '01.234.567.8-901.000', phone: '021-52995299' },
+        { name: 'PT Indofood CBP Sukses Makmur', npwp: '01.345.678.9-012.000', phone: '021-57958822' },
+        { name: 'PT Mayora Indah Tbk', npwp: '01.456.789.0-123.000', phone: '021-5655320' },
+        { name: 'PT Nestle Indonesia', npwp: '01.567.890.1-234.000', phone: '021-78836000' },
+        { name: 'PT Sumber Alfaria Trijaya Tbk', npwp: '01.678.901.2-345.000', phone: '021-55755960' },
+    ],
+    payment_statuses: [
+        'Waiting Payment',
+        'CBD (Cash Before Delivery)',
+        'Tempo',
+        'Paid (Lunas)',
+    ],
+};
+
+const MASTER_DATA_STORAGE_KEY = 'scm_master_data_cache_v1';
+
+function loadStoredMasterData() {
+    try {
+        const raw = localStorage.getItem(MASTER_DATA_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                return {
+                    categories: Array.isArray(parsed.categories) ? parsed.categories : DEFAULT_MASTER_DATA.categories,
+                    brands: Array.isArray(parsed.brands) ? parsed.brands : DEFAULT_MASTER_DATA.brands,
+                    companies: Array.isArray(parsed.companies) ? parsed.companies : DEFAULT_MASTER_DATA.companies,
+                    warehouses: Array.isArray(parsed.warehouses) ? parsed.warehouses : DEFAULT_MASTER_DATA.warehouses,
+                    suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : DEFAULT_MASTER_DATA.suppliers,
+                    payment_statuses: Array.isArray(parsed.payment_statuses) ? parsed.payment_statuses : DEFAULT_MASTER_DATA.payment_statuses,
+                };
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load master data cache", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
+}
+
+function saveMasterDataToStorage(data) {
+    try {
+        localStorage.setItem(MASTER_DATA_STORAGE_KEY, JSON.stringify(data || state.masterData));
+    } catch (e) {
+        console.error("Failed to save master data cache", e);
+    }
+}
+
 function loadStoredDemoAccounts() {
     try {
         const val = localStorage.getItem(DEMO_ACCOUNTS_STORAGE_KEY);
@@ -244,6 +336,7 @@ const state = reactive({
     currentUser: loadStoredUser(),
     showDemoAccounts: loadStoredDemoAccounts(),
     rolePermissions: loadStoredRolePermissions(),
+    masterData: loadStoredMasterData(),
     isSavingPermissions: false,
     isResetting: false,
     isMobileSidebarOpen: false,
@@ -664,8 +757,18 @@ export const useTaxStore = () => {
         } catch (e) {}
     }
 
+    const masterCategories = computed(() => state.masterData?.categories || []);
+    const masterBrands = computed(() => state.masterData?.brands || []);
+    const masterCompanies = computed(() => state.masterData?.companies || []);
+    const masterWarehouses = computed(() => state.masterData?.warehouses || []);
+    const masterSuppliers = computed(() => state.masterData?.suppliers || []);
+    const masterPaymentStatuses = computed(() => state.masterData?.payment_statuses || []);
+
     const suppliersList = computed(() => {
         const set = new Set();
+        (state.masterData?.suppliers || []).forEach(s => {
+            if (s.name) set.add(s.name);
+        });
         state.programs.forEach(p => {
             if (p.supplier) set.add(p.supplier);
         });
@@ -674,6 +777,7 @@ export const useTaxStore = () => {
 
     const categoriesList = computed(() => {
         const set = new Set();
+        (state.masterData?.categories || []).forEach(c => set.add(c));
         state.programs.forEach(p => {
             if (p.category) set.add(p.category);
         });
@@ -682,6 +786,7 @@ export const useTaxStore = () => {
 
     const companiesList = computed(() => {
         const set = new Set();
+        (state.masterData?.companies || []).forEach(c => set.add(c));
         state.programs.forEach(p => {
             const c = getProgramCompanyName(p);
             if (c) set.add(c);
@@ -691,11 +796,23 @@ export const useTaxStore = () => {
 
     const brandsList = computed(() => {
         const set = new Set();
+        (state.masterData?.brands || []).forEach(b => set.add(b));
         state.programs.forEach(p => {
             const b = p.brand || getProgramBrand(p);
             if (b) set.add(b);
         });
         return ['Semua Brand', ...Array.from(set).sort()];
+    });
+
+    const warehousesList = computed(() => {
+        const set = new Set();
+        (state.masterData?.warehouses || []).forEach(w => {
+            if (w.code) set.add(w.code);
+        });
+        state.programs.forEach(p => {
+            if (p.kode_gudang) set.add(p.kode_gudang);
+        });
+        return Array.from(set).sort();
     });
 
     const filteredPrograms = computed(() => {
@@ -2157,6 +2274,111 @@ export const useTaxStore = () => {
         return await saveRolePermissions(defaults);
     }
 
+    async function fetchMasterData() {
+        try {
+            const resp = await fetch('/api/master-data');
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    state.masterData = data.data;
+                    saveMasterDataToStorage(data.data);
+                }
+            }
+        } catch (e) {
+            console.warn('Gagal memuat data master dari server, menggunakan cache lokal:', e);
+        }
+    }
+
+    async function addMasterItem(type, item) {
+        try {
+            const resp = await fetch('/api/master-data/item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ type, item })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                state.masterData = data.data;
+                saveMasterDataToStorage(data.data);
+                notify(data.message || 'Item data master berhasil ditambahkan.');
+                return { success: true, data: data.data };
+            }
+            notify(data.message || 'Gagal menambahkan item.', 'error');
+            return { success: false, message: data.message };
+        } catch (e) {
+            if (!state.masterData[type]) state.masterData[type] = [];
+            state.masterData[type].push(item);
+            saveMasterDataToStorage();
+            notify('Item data master berhasil disimpan secara lokal.');
+            return { success: true, data: state.masterData };
+        }
+    }
+
+    async function updateMasterItem(type, oldValue, item) {
+        try {
+            const resp = await fetch('/api/master-data/update-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ type, oldValue, item })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                state.masterData = data.data;
+                saveMasterDataToStorage(data.data);
+                notify(data.message || 'Item data master berhasil diperbarui.');
+                return { success: true, data: data.data };
+            }
+            notify(data.message || 'Gagal memperbarui item.', 'error');
+            return { success: false, message: data.message };
+        } catch (e) {
+            console.error('Gagal memperbarui item data master', e);
+            return { success: false };
+        }
+    }
+
+    async function deleteMasterItem(type, value) {
+        try {
+            const resp = await fetch('/api/master-data/delete-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ type, value })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                state.masterData = data.data;
+                saveMasterDataToStorage(data.data);
+                notify(data.message || 'Item data master berhasil dihapus.');
+                return { success: true, data: data.data };
+            }
+            notify(data.message || 'Gagal menghapus item.', 'error');
+            return { success: false };
+        } catch (e) {
+            console.error('Gagal menghapus item data master', e);
+            return { success: false };
+        }
+    }
+
+    async function resetMasterData() {
+        try {
+            const resp = await fetch('/api/master-data/reset', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                state.masterData = data.data;
+                saveMasterDataToStorage(data.data);
+                notify(data.message || 'Data master berhasil dikembalikan ke default.');
+                return { success: true };
+            }
+        } catch (e) {
+            state.masterData = JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
+            saveMasterDataToStorage();
+            notify('Data master direset ke default.');
+            return { success: true };
+        }
+    }
+
     function openImportModal() {
         if (!canImportProgram.value) {
             notify('Role Anda tidak memiliki wewenang untuk mengimpor data.', 'error');
@@ -2256,6 +2478,19 @@ export const useTaxStore = () => {
         categoriesList,
         brandsList,
         companiesList,
+        warehousesList,
+        masterData: computed(() => state.masterData),
+        masterCategories,
+        masterBrands,
+        masterCompanies,
+        masterWarehouses,
+        masterSuppliers,
+        masterPaymentStatuses,
+        fetchMasterData,
+        addMasterItem,
+        updateMasterItem,
+        deleteMasterItem,
+        resetMasterData,
         monthsList,
         getProgramMonth,
         getProgramYear,

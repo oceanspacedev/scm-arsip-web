@@ -37,21 +37,40 @@
               required
               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
             >
-              <option v-for="cat in categoriesList" :key="cat" :value="cat">
+              <option v-for="cat in masterCategories" :key="cat" :value="cat">
                 {{ cat }}
               </option>
+              <option value="__custom__">+ Ketik Kategori Lain...</option>
             </select>
+            <input
+              v-if="form.category === '__custom__'"
+              v-model="customCategory"
+              type="text"
+              placeholder="Ketik kategori baru"
+              required
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+            />
           </div>
 
           <div class="md:col-span-3">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               BRAND
             </label>
-            <input
+            <select
               v-model="form.brand"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+            >
+              <option v-for="b in masterBrands" :key="b" :value="b">
+                {{ b }}
+              </option>
+              <option value="__custom__">+ Ketik Brand Lain...</option>
+            </select>
+            <input
+              v-if="form.brand === '__custom__'"
+              v-model="customBrand"
               type="text"
-              placeholder="Contoh: SCTV, Indosiar, Vidio, dll."
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              placeholder="Ketik nama brand baru"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
             />
           </div>
         </div>
@@ -62,11 +81,21 @@
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               COMPANY NAME
             </label>
-            <input
+            <select
               v-model="form.company_name"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+            >
+              <option v-for="c in masterCompanies" :key="c" :value="c">
+                {{ c }}
+              </option>
+              <option value="__custom__">+ Ketik Company Lain...</option>
+            </select>
+            <input
+              v-if="form.company_name === '__custom__'"
+              v-model="customCompany"
               type="text"
-              placeholder="Contoh: PT SCM Nusantara"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              placeholder="Ketik nama company baru"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
             />
           </div>
 
@@ -74,11 +103,22 @@
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               KODE GUDANG
             </label>
-            <input
+            <select
               v-model="form.kode_gudang"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer font-mono"
+            >
+              <option value="">-- Pilih Kode Gudang --</option>
+              <option v-for="w in masterWarehouses" :key="w.code" :value="w.code">
+                {{ w.code }} - {{ w.name }}
+              </option>
+              <option value="__custom__">+ Ketik Kode Gudang Lain...</option>
+            </select>
+            <input
+              v-if="form.kode_gudang === '__custom__'"
+              v-model="customWarehouse"
               type="text"
-              placeholder="Contoh: GDG-JKT-01"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              placeholder="Contoh: GDG-JKT-03"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors uppercase font-mono"
             />
           </div>
 
@@ -101,12 +141,25 @@
             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
               NAMA SUPPLIER <span class="text-red-500">*</span>
             </label>
-            <input
+            <select
               v-model="form.supplier"
-              type="text"
-              placeholder="Contoh: PT Unilever Indonesia Tbk"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              @change="onSupplierChange"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+            >
+              <option value="" disabled>-- Pilih Supplier --</option>
+              <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
+                {{ s.name }}
+              </option>
+              <option value="__custom__">+ Ketik Supplier Lain...</option>
+            </select>
+            <input
+              v-if="form.supplier === '__custom__'"
+              v-model="customSupplier"
+              type="text"
+              placeholder="Ketik nama supplier baru"
+              required
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
             />
           </div>
 
@@ -383,11 +436,11 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import Dialog from '../ui/Dialog.vue';
 import { useTaxStore, formatRupiah } from '../../store/taxStore';
 
-defineProps({
+const props = defineProps({
   open: {
     type: Boolean,
     default: false
@@ -398,30 +451,58 @@ const emit = defineEmits(['update:open', 'created']);
 
 const store = useTaxStore();
 
-// 16 categories from the user's screenshot dropdown
-const categoriesList = [
-  'Promosi',
-  'Rebate',
-  'Cashback',
-  'Sewa Display',
-  'Listing Fee',
-  'Digital Promo',
-  'Distribusi',
-  'Insentif',
-  'Bundling',
-  'Sampling',
-  'Branding',
-  'Loyalty',
-  'Diskon',
-  'Event',
-  'Logistik',
-  'Kemitraan'
-];
+const masterCategories = computed(() => store.masterCategories.value);
+const masterBrands = computed(() => store.masterBrands.value);
+const masterCompanies = computed(() => store.masterCompanies.value);
+const masterWarehouses = computed(() => store.masterWarehouses.value);
+const masterSuppliers = computed(() => store.masterSuppliers.value);
+
+const customCategory = ref('');
+const customBrand = ref('');
+const customCompany = ref('');
+const customWarehouse = ref('');
+const customSupplier = ref('');
+
+function onSupplierChange() {
+  if (form.supplier === '__custom__') {
+    return;
+  }
+  const match = masterSuppliers.value.find(
+    s => (s.name || '').toLowerCase() === (form.supplier || '').toLowerCase().trim()
+  );
+  if (match && match.npwp) {
+    form.npwp = match.npwp;
+  }
+}
+
+async function syncDefaults() {
+  await store.fetchMasterData();
+
+  if (masterCategories.value.length > 0 && (!form.category || form.category === '__custom__' || !masterCategories.value.includes(form.category))) {
+    form.category = masterCategories.value[0];
+  }
+  if (masterBrands.value.length > 0 && (!form.brand || form.brand === '__custom__' || !masterBrands.value.includes(form.brand))) {
+    form.brand = masterBrands.value[0];
+  }
+  if (masterCompanies.value.length > 0 && (!form.company_name || form.company_name === '__custom__' || !masterCompanies.value.includes(form.company_name))) {
+    form.company_name = masterCompanies.value[0];
+  }
+}
+
+watch(() => props.open, (isOpen) => {
+  if (isOpen) {
+    syncDefaults();
+  }
+});
+
+onMounted(() => {
+  syncDefaults();
+});
 
 const form = reactive({
   program_name: '',
   category: 'Promosi',
-  brand: 'SCM',
+  brand: '',
   company_name: 'PT SCM Nusantara',
   kode_gudang: '',
   po_sj_number: '',
@@ -473,19 +554,39 @@ const calculatedPph = computed(() => {
 });
 
 async function handleSubmit() {
-  if (!form.program_name || !form.supplier || !form.invoice_number) {
+  const finalCategory = form.category === '__custom__' ? customCategory.value.trim() : form.category;
+  const finalBrand = form.brand === '__custom__' ? customBrand.value.trim() : form.brand;
+  const finalCompany = form.company_name === '__custom__' ? customCompany.value.trim() : form.company_name;
+  const finalWarehouse = form.kode_gudang === '__custom__' ? customWarehouse.value.trim() : form.kode_gudang;
+  const finalSupplier = form.supplier === '__custom__' ? customSupplier.value.trim() : form.supplier;
+
+  if (!form.program_name || !finalSupplier || !form.invoice_number) {
     store.notify('Mohon lengkapi data yang bertanda bintang (*)', 'warning');
     return;
   }
 
+  // Auto-save newly typed custom items to Master Data in background
+  if (form.brand === '__custom__' && finalBrand && !masterBrands.value.includes(finalBrand)) {
+    store.addMasterItem('brands', finalBrand);
+  }
+  if (form.category === '__custom__' && finalCategory && !masterCategories.value.includes(finalCategory)) {
+    store.addMasterItem('categories', finalCategory);
+  }
+  if (form.company_name === '__custom__' && finalCompany && !masterCompanies.value.includes(finalCompany)) {
+    store.addMasterItem('companies', finalCompany);
+  }
+  if (form.supplier === '__custom__' && finalSupplier && !masterSuppliers.value.some(s => s.name === finalSupplier)) {
+    store.addMasterItem('suppliers', { name: finalSupplier, npwp: form.npwp || '' });
+  }
+
   const created = await store.addProgram({
     program_name: form.program_name,
-    category: form.category,
-    brand: form.brand || 'SCM',
-    company_name: form.company_name,
-    kode_gudang: form.kode_gudang,
+    category: finalCategory || 'Promosi',
+    brand: finalBrand || masterBrands.value[0] || 'SCM',
+    company_name: finalCompany || 'PT SCM Nusantara',
+    kode_gudang: finalWarehouse,
     po_sj_number: form.po_sj_number,
-    supplier: form.supplier,
+    supplier: finalSupplier,
     npwp: form.npwp,
     mou_number: form.mou_number,
     start_date: form.start_date,
@@ -507,9 +608,9 @@ async function handleSubmit() {
 
   // Reset form to defaults
   form.program_name = '';
-  form.category = 'Promosi';
-  form.brand = 'SCM';
-  form.company_name = 'PT SCM Nusantara';
+  form.category = masterCategories.value[0] || 'Promosi';
+  form.brand = masterBrands.value[0] || '';
+  form.company_name = masterCompanies.value[0] || 'PT SCM Nusantara';
   form.kode_gudang = '';
   form.po_sj_number = '';
   form.supplier = '';
@@ -527,6 +628,12 @@ async function handleSubmit() {
   form.tax_invoice_date = '';
   form.tax_notes = '';
   form.is_verified = false;
+
+  customCategory.value = '';
+  customBrand.value = '';
+  customCompany.value = '';
+  customWarehouse.value = '';
+  customSupplier.value = '';
 
   emit('update:open', false);
   emit('created', created);

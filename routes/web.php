@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\AdminSettingController;
+use App\Http\Controllers\Api\MasterDataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,14 @@ Route::prefix('api')->group(function () {
     Route::get('/admin/role-permissions', [AdminSettingController::class, 'getRolePermissions']);
     Route::post('/admin/role-permissions', [AdminSettingController::class, 'updateRolePermissions']);
     Route::post('/admin/reset-data', [AdminSettingController::class, 'resetData']);
+
+    // 5. Master Data Management (Kategori, Brand, Company, Gudang, Supplier)
+    Route::get('/master-data', [MasterDataController::class, 'index']);
+    Route::post('/master-data', [MasterDataController::class, 'update']);
+    Route::post('/master-data/item', [MasterDataController::class, 'addItem']);
+    Route::post('/master-data/update-item', [MasterDataController::class, 'updateItem']);
+    Route::post('/master-data/delete-item', [MasterDataController::class, 'deleteItem']);
+    Route::post('/master-data/reset', [MasterDataController::class, 'reset']);
 });
 
 /*

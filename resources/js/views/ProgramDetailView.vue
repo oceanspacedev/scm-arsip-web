@@ -295,10 +295,9 @@
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
                     title="Ubah Status Payment"
                   >
-                    <option value="WAITING PAYMENT">Waiting Payment</option>
-                    <option value="cbd">CBD</option>
-                    <option value="tempo">Tempo</option>
-                    <option value="PAID">Paid</option>
+                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -421,13 +420,17 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Supplier</label>
-                <input
+                <select
                   v-model="editForm.supplier"
-                  type="text"
                   required
+                  @change="onEditSupplierChange"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
+                    {{ s.name }}
+                  </option>
+                </select>
               </div>
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">NPWP Supplier</label>
@@ -443,13 +446,15 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-                <input
+                <select
                   v-model="editForm.company_name"
-                  type="text"
-                  placeholder="Contoh: PT SCM Nusantara"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option v-for="c in availableCompanies" :key="c" :value="c">
+                    {{ c }}
+                  </option>
+                </select>
               </div>
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. PO / SJ</label>
@@ -479,13 +484,15 @@
 
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
-                <input
+                <select
                   v-model="editForm.brand"
-                  type="text"
-                  placeholder="Contoh: SCTV, Indosiar, Vidio, dll."
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option v-for="b in availableBrands" :key="b" :value="b">
+                    {{ b }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
@@ -512,14 +519,14 @@
               <div>
                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
                 <select
-                  v-model="editForm.payment_status"
+                  :value="normalizePayStatus(editForm.payment_status)"
+                  @change="editForm.payment_status = $event.target.value"
                   :disabled="!canEditFinance && !isAdmin"
                   class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
-                  <option value="WAITING PAYMENT">Waiting Payment</option>
-                  <option value="cbd">CBD (Cash Before Delivery)</option>
-                  <option value="tempo">Tempo</option>
-                  <option value="PAID">Paid (Lunas)</option>
+                  <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -1017,35 +1024,39 @@ async function confirmDeleteDoc() {
 
 // Available Categories for Edit Modal (inclusive of all system categories)
 const availableCategories = computed(() => {
-  const defaults = [
-    'Promosi',
-    'Rebate',
-    'Cashback',
-    'Sewa Display',
-    'Listing Fee',
-    'Digital Promo',
-    'Distribusi',
-    'Insentif',
-    'Bundling',
-    'Sampling',
-    'Branding',
-    'Loyalty',
-    'Diskon',
-    'Event',
-    'Logistik',
-    'Kemitraan',
-    'Pipa & Tubing',
-    'Sewa Alat Berat',
-    'Inspeksi & Sertifikasi',
-    'Mekanikal & Valve',
-    'Bahan Kimia',
-    'Operasional'
-  ];
-  if (program.value?.category && !defaults.includes(program.value.category)) {
-    return [program.value.category, ...defaults];
+  const list = [...store.masterCategories.value];
+  if (program.value?.category && !list.includes(program.value.category)) {
+    list.unshift(program.value.category);
   }
-  return defaults;
+  return list;
 });
+
+const masterBrands = computed(() => store.masterBrands.value);
+const masterCompanies = computed(() => store.masterCompanies.value);
+const masterSuppliers = computed(() => store.masterSuppliers.value);
+
+const availableBrands = computed(() => {
+  const list = [...store.masterBrands.value];
+  if (editForm.brand && !list.includes(editForm.brand)) {
+    list.unshift(editForm.brand);
+  }
+  return list;
+});
+
+const availableCompanies = computed(() => {
+  const list = [...store.masterCompanies.value];
+  if (editForm.company_name && !list.includes(editForm.company_name)) {
+    list.unshift(editForm.company_name);
+  }
+  return list;
+});
+
+function onEditSupplierChange() {
+  const match = masterSuppliers.value.find(s => s.name === editForm.supplier);
+  if (match && match.npwp) {
+    editForm.npwp = match.npwp;
+  }
+}
 
 // Edit Modal State & Handling
 const isEditModalOpen = ref(false);
@@ -1072,18 +1083,22 @@ function normalizePayStatus(status) {
   if (!status) return 'WAITING PAYMENT';
   const s = String(status).trim();
   const lower = s.toLowerCase();
-  if (lower === 'cbd') return 'cbd';
+  if (lower === 'cbd' || lower === 'cbd (cash before delivery)') return 'cbd';
   if (lower === 'tempo') return 'tempo';
-  if (lower === 'paid' || lower === 'lunas') return 'PAID';
-  return 'WAITING PAYMENT';
+  if (lower === 'paid' || lower === 'lunas' || lower === 'paid (lunas)') return 'PAID';
+  if (lower === 'waiting payment') return 'WAITING PAYMENT';
+  return s;
 }
 
 function formatPaymentStatus(status) {
-  const norm = normalizePayStatus(status);
-  if (norm === 'cbd') return 'CBD';
-  if (norm === 'tempo') return 'Tempo';
-  if (norm === 'PAID') return 'Paid';
-  return 'Waiting Payment';
+  if (!status) return 'Waiting Payment';
+  const s = String(status).trim();
+  const lower = s.toLowerCase();
+  if (lower === 'cbd' || lower === 'cbd (cash before delivery)') return 'CBD';
+  if (lower === 'tempo') return 'Tempo';
+  if (lower === 'paid' || lower === 'lunas' || lower === 'paid (lunas)') return 'Paid';
+  if (lower === 'waiting payment') return 'Waiting Payment';
+  return s;
 }
 
 function getPaymentBadgeClass(status) {
@@ -1092,19 +1107,55 @@ function getPaymentBadgeClass(status) {
 
 function getPaymentDotClass(status) {
   const norm = normalizePayStatus(status);
-  if (norm === 'cbd') return 'bg-amber-500';
-  if (norm === 'tempo') return 'bg-blue-500';
-  if (norm === 'PAID') return 'bg-emerald-500';
-  return 'bg-rose-500';
+  const s = String(norm).toLowerCase();
+  if (s === 'cbd') return 'bg-amber-500';
+  if (s === 'tempo') return 'bg-blue-500';
+  if (s === 'paid' || s === 'lunas') return 'bg-emerald-500';
+  if (s === 'waiting payment' || s.includes('waiting')) return 'bg-rose-500';
+  return 'bg-blue-500';
 }
+
+const masterPaymentStatuses = computed(() => store.masterPaymentStatuses.value);
+
+const editPaymentStatusOptions = computed(() => {
+  const list = [];
+  const master = masterPaymentStatuses.value.length > 0
+    ? masterPaymentStatuses.value
+    : ['Waiting Payment', 'CBD (Cash Before Delivery)', 'Tempo', 'Paid (Lunas)'];
+
+  master.forEach(m => {
+    list.push({
+      value: normalizePayStatus(m),
+      label: m
+    });
+  });
+
+  if (editForm.payment_status) {
+    const curNorm = normalizePayStatus(editForm.payment_status);
+    if (!list.some(item => item.value === curNorm)) {
+      list.unshift({
+        value: curNorm,
+        label: formatPaymentStatus(editForm.payment_status)
+      });
+    }
+  }
+
+  const seen = new Set();
+  return list.filter(item => {
+    if (seen.has(item.value)) return false;
+    seen.add(item.value);
+    return true;
+  });
+});
 
 async function handlePaymentStatusChange(newStatus) {
   if (!program.value?.id) return;
   await store.updatePaymentStatus(program.value.id, newStatus);
 }
 
-function openEditModal() {
+async function openEditModal() {
   if (!program.value) return;
+  await store.fetchMasterData();
   editForm.program_name = program.value.program_name || '';
   editForm.supplier = program.value.supplier || '';
   editForm.company_name = program.value.company_name || getProgramCompanyName(program.value) || '';

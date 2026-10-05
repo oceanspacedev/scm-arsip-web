@@ -6,6 +6,7 @@ import {
   FolderArchive,
   Users,
   ShieldCheck,
+  Database,
   Settings2,
   LogOut,
   ChevronRight,
@@ -237,6 +238,20 @@ async function handleLogout() {
                 <router-link to="/permissions">
                   <ShieldCheck />
                   <span>Hak Akses & Role</span>
+                </router-link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <!-- Data Master (Kategori, Brand, Company, Gudang, Supplier) -->
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                as-child
+                :is-active="route.path === '/master-data'"
+                tooltip="Data Master"
+              >
+                <router-link to="/master-data">
+                  <Database />
+                  <span>Data Master</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
