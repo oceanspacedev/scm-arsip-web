@@ -57,6 +57,30 @@ class ProgramController extends Controller
     }
 
     /**
+     * Determine if a category or program name belongs to Non-PPN (PPN 0%)
+     * Price Protection, Bonus, Rebate -> PPN 0
+     * Marketing Service Fee, Branding, Purchase Order, and others -> PPN Ke isi (11%)
+     */
+    public static function isNonPpnCategory(?string $category, ?string $title = ''): bool
+    {
+        $cat = strtolower(trim((string)$category));
+        $t = strtolower(trim((string)$title));
+        $combined = $cat . ' ' . $t;
+
+        if (
+            str_contains($combined, 'price protection') ||
+            str_contains($combined, 'price_protection') ||
+            str_contains($combined, 'priceprotect') ||
+            str_contains($combined, 'bonus') ||
+            str_contains($combined, 'rebate')
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Safely parse various date/month formats (including Indonesian month strings like 'Maret 2026')
      */
     private function parseSafeDate($val): string
@@ -193,9 +217,24 @@ class ProgramController extends Controller
             ], 422);
         }
 
+        $category = $request->input('category') ?: 'Logistik';
+        $isNonPpn = self::isNonPpnCategory($category, $title);
+
         $dpp = (float) ($request->input('dpp_amount') ?? $request->input('dpp') ?? 0);
-        $ppn = (float) ($request->input('ppn_amount') ?? $request->input('ppn') ?? ($dpp * 0.11));
+        if ($isNonPpn) {
+            $ppn = 0.0;
+        } elseif ($request->has('ppn_amount') && is_numeric($request->input('ppn_amount'))) {
+            $ppn = (float) $request->input('ppn_amount');
+        } elseif ($request->has('ppn') && is_numeric($request->input('ppn'))) {
+            $ppn = (float) $request->input('ppn');
+        } else {
+            $ppn = round($dpp * 0.11);
+        }
+
         $total = (float) ($request->input('total_amount') ?? $request->input('total_invoice') ?? ($dpp + $ppn));
+        if ($isNonPpn && ($total == 0 || $total > $dpp)) {
+            $total = $dpp;
+        }
 
         try {
             $existingMax = Program::whereRaw('id REGEXP "^[0-9]+$"')
@@ -497,7 +536,9 @@ class ProgramController extends Controller
                             $aiUpdates['dpp_amount'] = (float)$analysis['dpp_amount'];
                         }
                         if (!empty($analysis['ppn_amount']) && ($program->ppn_amount == 0 || $backendType === 'invoice')) {
-                            $aiUpdates['ppn_amount'] = (float)$analysis['ppn_amount'];
+                            if (!self::isNonPpnCategory($program->category, $program->title)) {
+                                $aiUpdates['ppn_amount'] = (float)$analysis['ppn_amount'];
+                            }
                         }
                         if (!empty($analysis['total_amount']) && ($program->total_amount == 0 || $backendType === 'invoice')) {
                             $aiUpdates['total_amount'] = (float)$analysis['total_amount'];
@@ -572,7 +613,9 @@ class ProgramController extends Controller
             $updates['dpp_amount'] = (float)$analysis['dpp_amount'];
         }
         if (!empty($analysis['ppn_amount'])) {
-            $updates['ppn_amount'] = (float)$analysis['ppn_amount'];
+            if (!self::isNonPpnCategory($program->category, $program->title)) {
+                $updates['ppn_amount'] = (float)$analysis['ppn_amount'];
+            }
         }
         if (!empty($analysis['total_amount'])) {
             $updates['total_amount'] = (float)$analysis['total_amount'];
@@ -595,54 +638,105 @@ class ProgramController extends Controller
      */
     public function deleteDocument(Request $request, $programId, $docId)
     {
+        $decodedDocId = urldecode($docId);
+        $cleanDocId = basename($decodedDocId);
+
+        $matchingDocs = ProgramDocument::where(function ($q) use ($programId) {
+                $q->where('program_id', $programId)
+                  ->orWhereNull('program_id');
+            })
+            ->where(function ($q) use ($docId, $decodedDocId, $cleanDocId) {
+                $q->where('id', $docId)
+                  ->orWhere('id', $decodedDocId)
+                  ->orWhere('file_name', $docId)
+                  ->orWhere('file_name', $decodedDocId)
+                  ->orWhere('file_name', $cleanDocId)
+                  ->orWhere('file_name', 'like', '%' . $cleanDocId . '%')
+                  ->orWhere('type', $docId)
+                  ->orWhere('type', $docId === 'faktur_pajak' ? 'faktur' : ($docId === 'mou' ? 'memo' : $docId));
+            })->get();
+
+        if ($matchingDocs->isEmpty()) {
+            $matchingDocs = ProgramDocument::where('id', $docId)
+                ->orWhere('id', $decodedDocId)
+                ->orWhere('file_name', $docId)
+                ->orWhere('file_name', $decodedDocId)
+                ->orWhere('file_name', $cleanDocId)
+                ->orWhere('file_name', 'like', '%' . $cleanDocId . '%')
+                ->get();
+        }
+
+        $docType = $matchingDocs->first() ? $matchingDocs->first()->type : $docId;
+
         $userRole = $request->header('X-User-Role') ?: $request->input('user_role');
         if ($userRole) {
             $isGudang = str_contains(strtolower($userRole), 'gudang');
             $isFinance = str_contains(strtolower($userRole), 'finance') || str_contains(strtolower($userRole), 'pajak');
+            $isAdmin = str_contains(strtolower($userRole), 'admin');
 
-            if ($isGudang && in_array($docId, ['invoice', 'faktur', 'faktur_pajak'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role Gudang tidak diizinkan menghapus dokumen Invoice atau Faktur Pajak.'
-                ], 403);
-            }
+            if (!$isAdmin) {
+                if ($isGudang && in_array($docType, ['invoice', 'faktur', 'faktur_pajak'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role Gudang tidak diizinkan menghapus dokumen Invoice atau Faktur Pajak.'
+                    ], 403);
+                }
 
-            if ($isFinance && in_array($docId, ['mou', 'memo', 'do'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role Finance tidak diizinkan menghapus dokumen DO / Surat Jalan.'
-                ], 403);
+                if ($isFinance && in_array($docType, ['mou', 'memo', 'do'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role Finance tidak diizinkan menghapus dokumen DO / Surat Jalan.'
+                    ], 403);
+                }
             }
         }
 
-        $doc = ProgramDocument::where('program_id', $programId)
-            ->where(function ($q) use ($docId) {
-                $q->where('id', $docId)
-                  ->orWhere('type', $docId)
-                  ->orWhere('type', $docId === 'faktur_pajak' ? 'faktur' : ($docId === 'mou' ? 'memo' : $docId));
-            })->first();
-
-        $docType = null;
-        if ($doc) {
-            $docType = $doc->type;
-            if ($doc->file_path && file_exists(public_path($doc->file_path))) {
-                @unlink(public_path($doc->file_path));
+        foreach ($matchingDocs as $d) {
+            if ($d->file_path && file_exists(public_path($d->file_path))) {
+                @unlink(public_path($d->file_path));
             }
-            $doc->delete();
+            $d->delete();
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('incoming_email_documents')) {
+            try {
+                \Illuminate\Support\Facades\DB::table('incoming_email_documents')
+                    ->where(function ($q) use ($programId) {
+                        $q->where('program_id', $programId)
+                          ->orWhereNull('program_id');
+                    })
+                    ->where(function ($q) use ($docId, $decodedDocId, $cleanDocId) {
+                        $q->where('id', $docId)
+                          ->orWhere('id', $decodedDocId)
+                          ->orWhere('file_name', $docId)
+                          ->orWhere('file_name', $decodedDocId)
+                          ->orWhere('file_name', $cleanDocId)
+                          ->orWhere('file_name', 'like', '%' . $cleanDocId . '%');
+                    })
+                    ->delete();
+            } catch (\Throwable $e) {
+                // ignore
+            }
         }
 
         $program = Program::find($programId);
         if ($program) {
             $updates = [];
 
-            // Jika dokumen invoice dihapus, bersihkan nomor invoice
+            // Bersihkan nomor invoice HANYA jika tidak ada lagi dokumen invoice yang tersisa
             if ($docType === 'invoice') {
-                $updates['invoice_no'] = null;
+                $hasOtherInvoice = $program->documents()->where('type', 'invoice')->exists();
+                if (!$hasOtherInvoice) {
+                    $updates['invoice_no'] = null;
+                }
             }
-            // Jika dokumen faktur pajak dihapus, bersihkan nomor & tanggal faktur
+            // Bersihkan nomor & tanggal faktur pajak HANYA jika tidak ada lagi dokumen FP yang tersisa
             if ($docType === 'faktur' || $docType === 'faktur_pajak') {
-                $updates['faktur_number'] = null;
-                $updates['faktur_date'] = null;
+                $hasOtherFaktur = $program->documents()->whereIn('type', ['faktur', 'faktur_pajak'])->exists();
+                if (!$hasOtherFaktur) {
+                    $updates['faktur_number'] = null;
+                    $updates['faktur_date'] = null;
+                }
             }
 
             $types = $program->documents()->pluck('type')->toArray();
@@ -732,8 +826,24 @@ class ProgramController extends Controller
                 $id = isset($p['id']) && !empty($p['id']) ? (string) $p['id'] : (string) $nextNumericId;
 
                 $dpp = (float) ($p['dpp_amount'] ?? $p['dpp'] ?? 0);
-                $ppn = (float) ($p['ppn_amount'] ?? $p['ppn'] ?? ($dpp * 0.11));
+                $title = $p['title'] ?? $p['program_name'] ?? 'Program Pengadaan SCM';
+                $category = $p['category'] ?? 'Logistik';
+
+                $isNonPpn = self::isNonPpnCategory($category, $title);
+                if ($isNonPpn) {
+                    $ppn = 0.0;
+                } elseif (isset($p['ppn_amount']) && is_numeric($p['ppn_amount'])) {
+                    $ppn = (float) $p['ppn_amount'];
+                } elseif (isset($p['ppn']) && is_numeric($p['ppn'])) {
+                    $ppn = (float) $p['ppn'];
+                } else {
+                    $ppn = round($dpp * 0.11);
+                }
+
                 $total = (float) ($p['total_amount'] ?? $p['total_invoice'] ?? ($dpp + $ppn));
+                if ($isNonPpn && ($total == 0 || $total > $dpp)) {
+                    $total = $dpp;
+                }
 
                 $dueDate = $this->parseSafeDate($p['due_date'] ?? $p['program_date'] ?? null);
                 $companyName = $p['company_name'] ?? $p['company'] ?? 'PT SCM Nusantara';

@@ -118,8 +118,8 @@
           <!-- Card Body: Uploaded Files List -->
           <div v-if="getDocs(cat.type).length > 0" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 flex-1">
             <div
-              v-for="doc in getDocs(cat.type)"
-              :key="doc.id"
+              v-for="(doc, dIdx) in getDocs(cat.type)"
+              :key="doc.id || doc.file_name || dIdx"
               class="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 group"
             >
               <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -544,23 +544,40 @@
                 />
               </div>
               <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">PPN 11% (IDR)</label>
-                <input
-                  v-model.number="editForm.ppn"
-                  type="number"
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tarif PPN</label>
+                <select
+                  v-model="editForm.ppn_rate"
                   :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
+                  @change="calculateTaxes"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option value="0.11">11% (Standar)</option>
+                  <option value="0.12">12%</option>
+                  <option value="0">0% (Non-PPN)</option>
+                </select>
+                <p v-if="editForm.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">Non-PPN (0%)</p>
+                <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">PPN {{ Number(editForm.ppn_rate) * 100 }}%</p>
               </div>
               <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice</label>
+                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPN (IDR)</label>
                 <input
-                  :value="editForm.dpp + editForm.ppn"
+                  :value="editForm.ppn"
                   type="number"
                   readonly
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-not-allowed"
                 />
               </div>
+            </div>
+            <!-- Total Invoice -->
+            <div>
+              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice (IDR)</label>
+              <input
+                :value="editForm.dpp + editForm.ppn"
+                type="number"
+                readonly
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
+              />
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{{ formatRupiah(editForm.dpp + editForm.ppn) }}</p>
             </div>
 
             <!-- Jenis PPh & Nilai PPh -->
@@ -660,7 +677,7 @@
     <Teleport to="body">
       <div
         v-if="docToDelete"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
       >
         <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
           <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto mb-3 border border-slate-200 dark:border-slate-700">
@@ -688,18 +705,21 @@
           <div class="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer"
+              :disabled="isDeletingDoc"
+              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               @click="docToDelete = null"
             >
               Batal
             </button>
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              :disabled="isDeletingDoc"
+              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               @click="confirmDeleteDoc"
             >
-              <Trash2 class="w-3.5 h-3.5" />
-              <span>Ya, Hapus</span>
+              <Loader2 v-if="isDeletingDoc" class="w-3.5 h-3.5 animate-spin" />
+              <Trash2 v-else class="w-3.5 h-3.5" />
+              <span>{{ isDeletingDoc ? 'Menghapus...' : 'Ya, Hapus' }}</span>
             </button>
           </div>
         </div>
@@ -762,7 +782,7 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ArrowLeft,
@@ -776,7 +796,8 @@ import {
   Download,
   Plus,
   ChevronDown,
-  X
+  X,
+  Loader2
 } from 'lucide-vue-next';
 import DocumentUploadModal from '../components/detail/DocumentUploadModal.vue';
 import DocumentPreviewSheet from '../components/detail/DocumentPreviewSheet.vue';
@@ -793,7 +814,8 @@ import {
   getProgramPoSjNumber,
   getPphLabel,
   calculatePphAmount,
-  PPH_OPTIONS
+  PPH_OPTIONS,
+  isNonPpnCategory
 } from '../store/taxStore';
 
 const route = useRoute();
@@ -994,13 +1016,14 @@ async function downloadDoc(docType) {
 }
 
 const docToDelete = ref(null);
+const isDeletingDoc = ref(false);
 const isDeleteProgramModalOpen = ref(false);
 
 function deleteDocItem(doc, typeLabel) {
   docToDelete.value = {
     id: doc.id,
-    type: doc.document_type,
-    label: typeLabel || store.getDocTypeLabel(doc.document_type),
+    type: doc.document_type || doc.type,
+    label: typeLabel || store.getDocTypeLabel(doc.document_type || doc.type),
     fileName: doc.file_name || ''
   };
 }
@@ -1017,9 +1040,15 @@ function deleteDoc(docType) {
 }
 
 async function confirmDeleteDoc() {
-  if (!docToDelete.value) return;
-  await store.deleteDocument(program.value.id, docToDelete.value.id || docToDelete.value.type);
-  docToDelete.value = null;
+  if (!docToDelete.value || isDeletingDoc.value) return;
+  isDeletingDoc.value = true;
+  try {
+    const targetIdentifier = docToDelete.value.id || docToDelete.value.fileName || docToDelete.value.type;
+    await store.deleteDocument(program.value.id, targetIdentifier);
+  } finally {
+    isDeletingDoc.value = false;
+    docToDelete.value = null;
+  }
 }
 
 // Available Categories for Edit Modal (inclusive of all system categories)
@@ -1073,10 +1102,21 @@ const editForm = reactive({
   payment_status: 'WAITING PAYMENT',
   dpp: 0,
   ppn: 0,
+  ppn_rate: '0.11',
   pph_type: 'NON_PPH',
   pph: 0,
   faktur_number: '',
   faktur_date: ''
+});
+
+// Auto-switch ppn_rate saat kategori di edit form berubah
+watch(() => editForm.category, (cat) => {
+  if (isNonPpnCategory(cat, editForm.program_name)) {
+    editForm.ppn_rate = '0';
+  } else {
+    editForm.ppn_rate = '0.11';
+  }
+  calculateTaxes();
 });
 
 function normalizePayStatus(status) {
@@ -1166,7 +1206,10 @@ async function openEditModal() {
   editForm.category = program.value.category || 'Logistik';
   editForm.brand = program.value.brand || getProgramBrand(program.value) || '';
   editForm.dpp = Number(program.value.dpp) || 0;
-  editForm.ppn = Number(program.value.ppn) || Math.round(editForm.dpp * 0.11);
+  // Tentukan ppn_rate berdasar kategori
+  const nonPpn = isNonPpnCategory(editForm.category, editForm.program_name);
+  editForm.ppn_rate = nonPpn ? '0' : '0.11';
+  editForm.ppn = nonPpn ? 0 : (Number(program.value.ppn) || Math.round(editForm.dpp * 0.11));
   editForm.pph_type = program.value.pph_type || 'NON_PPH';
   editForm.pph = Number(program.value.pph) || calculatePphAmount(editForm.dpp, editForm.pph_type);
   editForm.faktur_number = program.value.faktur_number || '';
@@ -1175,7 +1218,8 @@ async function openEditModal() {
 }
 
 function calculateTaxes() {
-  editForm.ppn = Math.round((Number(editForm.dpp) || 0) * 0.11);
+  const rate = Number(editForm.ppn_rate) || 0;
+  editForm.ppn = Math.round((Number(editForm.dpp) || 0) * rate);
   if (editForm.pph_type && editForm.pph_type !== 'NON_PPH') {
     editForm.pph = calculatePphAmount(editForm.dpp, editForm.pph_type);
   } else {

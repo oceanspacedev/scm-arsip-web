@@ -40,7 +40,7 @@ Route::prefix('api')->group(function () {
     Route::delete('/programs/{id}', [ProgramController::class, 'destroy']);
     Route::post('/programs/{id}/documents', [ProgramController::class, 'uploadDocument']);
     Route::post('/programs/{id}/documents/{docId}/analyze', [ProgramController::class, 'analyzeDocumentAi']);
-    Route::delete('/programs/{id}/documents/{docId}', [ProgramController::class, 'deleteDocument']);
+    Route::delete('/programs/{id}/documents/{docId}', [ProgramController::class, 'deleteDocument'])->where('docId', '.*');
     Route::post('/programs/import', [ProgramController::class, 'import']);
     Route::get('/programs/raw-imports', [ProgramController::class, 'rawImports']);
     Route::get('/programs/raw-imports/{id}/download', [ProgramController::class, 'downloadRawImport']);

@@ -19,8 +19,13 @@ class MasterDataController extends Controller
     {
         return [
             'categories' => [
-                'Promosi',
+                'Marketing Service Fee',
+                'Price Protection',
+                'Bonus',
+                'Branding',
+                'Purchase Order',
                 'Rebate',
+                'Promosi',
                 'Cashback',
                 'Sewa Display',
                 'Listing Fee',
@@ -29,7 +34,6 @@ class MasterDataController extends Controller
                 'Insentif',
                 'Bundling',
                 'Sampling',
-                'Branding',
                 'Loyalty',
                 'Diskon',
                 'Event',
@@ -67,6 +71,11 @@ class MasterDataController extends Controller
                 'CBD (Cash Before Delivery)',
                 'Tempo',
                 'Paid (Lunas)',
+            ],
+            'ppn_rules' => [
+                'Price Protection',
+                'Bonus',
+                'Rebate',
             ],
             'suppliers' => [
                 ['name' => 'PT Unilever Indonesia Tbk', 'npwp' => '01.234.567.8-901.000', 'phone' => '021-52995299'],
@@ -123,6 +132,7 @@ class MasterDataController extends Controller
             'warehouses' => 'nullable|array',
             'suppliers' => 'nullable|array',
             'payment_statuses' => 'nullable|array',
+            'ppn_rules' => 'nullable|array',
         ]);
 
         $current = $this->loadData();
@@ -144,13 +154,25 @@ class MasterDataController extends Controller
     public function addItem(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses',
+            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses,ppn_rules',
             'item' => 'required',
         ]);
 
         $type = $validated['type'];
         $item = $validated['item'];
         $current = $this->loadData();
+
+        // Special case: ppn_rules receives the full array directly
+        if ($type === 'ppn_rules') {
+            $rules = is_array($item) ? array_values(array_map('trim', $item)) : [];
+            $current['ppn_rules'] = $rules;
+            $this->saveData($current);
+            return response()->json([
+                'success' => true,
+                'message' => 'Aturan PPN berhasil diperbarui.',
+                'data' => $current,
+            ]);
+        }
 
         if (in_array($type, ['categories', 'brands', 'companies', 'payment_statuses'])) {
             $name = trim(is_string($item) ? $item : ($item['name'] ?? ''));
@@ -231,7 +253,7 @@ class MasterDataController extends Controller
     public function updateItem(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses',
+            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses,ppn_rules',
             'oldValue' => 'required',
             'item' => 'required',
         ]);
@@ -329,7 +351,7 @@ class MasterDataController extends Controller
     public function deleteItem(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses',
+            'type' => 'required|string|in:categories,brands,companies,warehouses,suppliers,payment_statuses,ppn_rules',
             'value' => 'required|string',
         ]);
 

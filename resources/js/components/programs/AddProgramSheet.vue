@@ -287,10 +287,16 @@
               v-model="form.ppn_rate"
               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
             >
-              <option value="0.11">11%</option>
+              <option value="0.11">11% (Standar)</option>
               <option value="0.12">12%</option>
-              <option value="0">0% (Non PPN)</option>
+              <option value="0">0% (Non-PPN)</option>
             </select>
+            <p v-if="form.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
+              Kategori Non-PPN (PPN 0%)
+            </p>
+            <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-1 font-medium">
+              Dikenakan PPN 11%
+            </p>
           </div>
         </div>
 
@@ -438,7 +444,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import Dialog from '../ui/Dialog.vue';
-import { useTaxStore, formatRupiah } from '../../store/taxStore';
+import { useTaxStore, formatRupiah, isNonPpnCategory } from '../../store/taxStore';
 
 const props = defineProps({
   open: {
@@ -521,6 +527,23 @@ const form = reactive({
   tax_invoice_date: '',
   tax_notes: '',
   is_verified: false,
+});
+
+// Auto-switch PPN rate based on Category & Program Name:
+// Price Protection, Bonus, Rebate -> 0% (Non-PPN)
+// Marketing Service Fee, Branding, Purchase Order -> 11%
+watch(() => [form.category, customCategory.value, form.program_name], ([cat, customCat, progName]) => {
+  const effectiveCat = cat === '__custom__' ? customCat : cat;
+  if (isNonPpnCategory(effectiveCat, progName)) {
+    form.ppn_rate = '0';
+  } else if (
+    effectiveCat === 'Marketing Service Fee' ||
+    effectiveCat === 'Branding' ||
+    effectiveCat === 'Purchase Order' ||
+    (form.ppn_rate === '0' && !isNonPpnCategory(effectiveCat, progName))
+  ) {
+    form.ppn_rate = '0.11';
+  }
 });
 
 // Automatic calculation of PPN from DPP

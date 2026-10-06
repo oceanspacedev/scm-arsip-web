@@ -294,8 +294,7 @@ import {
   Download,
   AlertCircle
 } from 'lucide-vue-next';
-import ExcelIcon from '../ui/ExcelIcon.vue';
-import { useTaxStore, formatRupiah, getProgramMonth, formatDate, getProgramYear } from '../../store/taxStore';
+import { useTaxStore, formatRupiah, getProgramMonth, formatDate, getProgramYear, isNonPpnCategory } from '../../store/taxStore';
 
 const router = useRouter();
 const store = useTaxStore();
@@ -651,11 +650,41 @@ function mapRawRow(raw) {
     program_date = parseImportDate(raw_bulan);
   }
 
+  // Deduce or normalize category if detected from program_name or column
+  let finalCategory = category || '';
+  const searchCorpus = `${program_name || ''} ${finalCategory}`.toLowerCase();
+  if (!finalCategory) {
+    if (searchCorpus.includes('price protection') || searchCorpus.includes('price_protection') || searchCorpus.includes('price protect')) {
+      finalCategory = 'Price Protection';
+    } else if (searchCorpus.includes('marketing service') || searchCorpus.includes('service fee') || searchCorpus.includes('msf')) {
+      finalCategory = 'Marketing Service Fee';
+    } else if (searchCorpus.includes('bonus')) {
+      finalCategory = 'Bonus';
+    } else if (searchCorpus.includes('branding')) {
+      finalCategory = 'Branding';
+    } else if (searchCorpus.includes('purchase order') || searchCorpus.includes('po ')) {
+      finalCategory = 'Purchase Order';
+    } else if (searchCorpus.includes('rebate')) {
+      finalCategory = 'Rebate';
+    }
+  }
+
   // Automatic Fallbacks & Calculations
-  if (dpp > 0 && ppn === 0) {
+  // PPN Rule:
+  // Price Protection: PPN 0
+  // Bonus: PPN 0
+  // Rebate: PPN 0
+  // Marketing Service Fee: PPN 11%
+  // Branding: PPN 11%
+  // Purchase Order: PPN 11%
+  const isNonPpn = isNonPpnCategory(finalCategory, program_name);
+  if (isNonPpn) {
+    ppn = 0;
+  } else if (dpp > 0 && (ppn === 0 || ppn === null || ppn === undefined)) {
     ppn = Math.round(dpp * 0.11);
   }
-  if (total_invoice === 0) {
+
+  if (total_invoice === 0 || (isNonPpn && total_invoice > dpp && ppn === 0)) {
     total_invoice = dpp + ppn;
   }
   if (!invoice_number) {
@@ -676,7 +705,7 @@ function mapRawRow(raw) {
     ppn,
     total_invoice,
     npwp,
-    category,
+    category: finalCategory || 'Logistik',
     brand: brand || 'SCM',
     payment_status,
     program_date,

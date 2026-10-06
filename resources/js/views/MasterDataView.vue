@@ -1,67 +1,65 @@
 <template>
-  <div class="space-y-4 sm:space-y-6 font-sans text-xs">
+  <div class="space-y-4 font-sans text-xs select-none">
     <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
           Data Master
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
-          Kelola referensi Kategori Program, Brand, Company, Kode Gudang, Supplier, dan Status Payment
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Kelola referensi Kategori Program, Brand, Company, Kode Gudang, Supplier, Status Payment, dan Aturan PPN
         </p>
       </div>
 
-      <div class="flex items-center gap-2 w-full sm:w-auto">
+      <div class="flex items-center gap-2">
         <button
           type="button"
-          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center shadow-2xs"
+          class="h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
           @click="openResetModal"
           title="Reset semua data master ke pengaturan default sistem"
         >
-          Reset Default
-        </button>
-
-        <button
-          type="button"
-          class="h-8.5 px-4 w-full sm:w-auto justify-center rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center shadow-2xs"
-          @click="openAddModal"
-        >
-          + Tambah {{ currentTabLabel }}
+          <RotateCcw class="w-3.5 h-3.5 text-slate-400" />
+          <span>Reset Default</span>
         </button>
       </div>
     </div>
 
-    <!-- Filter Tabs (Full Width - Tidak Akan Ketutupan di Ukuran 100%) -->
-    <div class="border-b border-slate-200 dark:border-slate-800 text-xs">
-      <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px scrollbar-none">
+    <!-- Horizontal Tabs Navigation -->
+    <div class="border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+      <nav class="flex items-center gap-1 -mb-px">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           type="button"
           @click="changeTab(tab.id)"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap text-xs"
+          class="group inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all cursor-pointer whitespace-nowrap"
           :class="activeTab === tab.id
-            ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-            : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+            ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
+            : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'"
         >
           <span>{{ tab.label }}</span>
-          <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+          <span
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-mono tabular-nums transition-colors"
+            :class="activeTab === tab.id
+              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-slate-200/70 dark:group-hover:bg-slate-700'"
+          >
             {{ getTabCount(tab.id) }}
           </span>
         </button>
-      </div>
+      </nav>
     </div>
 
     <!-- Main Card Container -->
     <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs">
-      <!-- Container Toolbar Bar (Title + Search + Action Button) -->
-      <div class="px-4 py-3 sm:px-5 sm:py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Toolbar Bar (Title + Search + Action Button) -->
+      <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 class="text-xs font-semibold text-slate-900 dark:text-slate-100">
-            Daftar {{ currentTabLabel }}
+            {{ currentTabLabel }}
           </h2>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            <span v-if="searchQuery">
+            <span v-if="searchQuery && activeTab !== 'ppn_rules'">
               Menampilkan <strong>{{ filteredList.length }}</strong> dari total {{ getTabCount(activeTab) }} data
             </span>
             <span v-else>
@@ -73,94 +71,85 @@
         <div class="flex items-center gap-2 w-full sm:w-auto">
           <!-- Search Input -->
           <div class="relative w-full sm:w-64">
+            <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               v-model="searchQuery"
               type="text"
               :placeholder="`Cari ${currentTabLabel.toLowerCase()}...`"
-              class="w-full h-8 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
             />
             <button
               v-if="searchQuery"
               type="button"
               @click="searchQuery = ''"
-              class="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer font-bold px-1"
-              title="Hapus pencarian"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
             >
-              ✕
+              <X class="w-3 h-3" />
             </button>
           </div>
 
           <button
+            v-if="activeTab !== 'ppn_rules'"
             type="button"
-            class="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center shrink-0 shadow-2xs whitespace-nowrap"
+            class="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs whitespace-nowrap"
             @click="openAddModal"
           >
-            + Tambah Data
+            <Plus class="w-3.5 h-3.5" />
+            <span>Tambah {{ currentTabLabel }}</span>
           </button>
         </div>
       </div>
 
-      <!-- 1. RESPONSIVE CARD GRID (Categories, Brands, Companies, Payment Statuses) -->
-      <div
-        v-if="isGridTab"
-        class="p-4 sm:p-5"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
-          <div
-            v-for="(item, idx) in filteredList"
-            :key="item"
-            class="group relative flex items-center justify-between gap-2.5 p-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:bg-slate-50/50 dark:hover:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 transition-colors text-xs"
-          >
-            <!-- Left: Number + Status Dot + Text -->
-            <div class="flex items-center gap-2.5 min-w-0 pr-1">
-              <span class="w-5.5 h-5.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono text-[11px] font-medium flex items-center justify-center shrink-0">
-                {{ idx + 1 }}
-              </span>
-
-              <!-- Status Dot for payment_statuses -->
-              <span
-                v-if="activeTab === 'payment_statuses'"
-                class="w-2 h-2 rounded-full shrink-0"
-                :class="getPaymentDotClass(item)"
-              ></span>
-
-              <span
-                class="font-medium text-slate-800 dark:text-slate-200 truncate select-all text-xs"
-                :title="item"
-              >
+      <!-- 1. DATA TABLE (Categories, Brands, Companies, Payment Statuses) -->
+      <div v-if="isGridTab" class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[560px]">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th class="py-3 px-4 w-14 text-center">NO</th>
+              <th class="py-3 px-4">{{ getColumnTitle(activeTab) }}</th>
+              <th v-if="activeTab === 'payment_statuses'" class="py-3 px-4 w-44">TIPE STATUS</th>
+              <th class="py-3 px-4 w-28 text-right">AKSI</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+            <tr
+              v-for="(item, idx) in filteredList"
+              :key="item"
+              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
+            >
+              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
+              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
                 {{ item }}
-              </span>
-            </div>
-
-            <!-- Right: Clean Text Actions (Edit & Hapus) -->
-            <div class="flex items-center gap-2 shrink-0 text-xs">
-              <button
-                type="button"
-                class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                @click="openEditModal(activeTab, item)"
-              >
-                Edit
-              </button>
-              <span class="text-slate-200 dark:text-slate-700">|</span>
-              <button
-                type="button"
-                class="text-xs font-medium text-slate-400 hover:text-red-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                @click="promptDelete(activeTab, item)"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Inline Add Card -->
-          <button
-            type="button"
-            @click="openAddModal"
-            class="flex items-center justify-center p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/40 hover:bg-blue-50/20 dark:bg-slate-900/20 dark:hover:bg-blue-950/20 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer font-medium text-xs min-h-[46px]"
-          >
-            + Tambah {{ currentTabLabel }} Baru
-          </button>
-        </div>
+              </td>
+              <td v-if="activeTab === 'payment_statuses'" class="py-3 px-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(item)"></span>
+                  {{ item }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    title="Edit"
+                    @click="openEditModal(activeTab, item)"
+                  >
+                    <Pencil class="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    title="Hapus"
+                    @click="promptDelete(activeTab, item)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- 2. KODE GUDANG TABLE -->
@@ -168,7 +157,7 @@
         <table class="w-full text-left text-xs border-collapse min-w-[560px]">
           <thead>
             <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-12 text-center">NO</th>
+              <th class="py-3 px-4 w-14 text-center">NO</th>
               <th class="py-3 px-4 w-44">KODE GUDANG</th>
               <th class="py-3 px-4">NAMA GUDANG</th>
               <th class="py-3 px-4 w-48">LOKASI / KOTA</th>
@@ -179,7 +168,7 @@
             <tr
               v-for="(w, idx) in filteredList"
               :key="w.code"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
             >
               <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
               <td class="py-3 px-4">
@@ -190,21 +179,22 @@
               <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ w.name }}</td>
               <td class="py-3 px-4 text-slate-500 dark:text-slate-400">{{ w.location || '-' }}</td>
               <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-2 text-xs">
+                <div class="flex items-center justify-end gap-1">
                   <button
                     type="button"
-                    class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    title="Edit"
                     @click="openEditModal('warehouses', w)"
                   >
-                    Edit
+                    <Pencil class="w-3.5 h-3.5" />
                   </button>
-                  <span class="text-slate-200 dark:text-slate-700">|</span>
                   <button
                     type="button"
-                    class="text-xs font-medium text-slate-400 hover:text-red-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    title="Hapus"
                     @click="promptDelete('warehouses', w)"
                   >
-                    Hapus
+                    <Trash2 class="w-3.5 h-3.5" />
                   </button>
                 </div>
               </td>
@@ -218,7 +208,7 @@
         <table class="w-full text-left text-xs border-collapse min-w-[620px]">
           <thead>
             <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-12 text-center">NO</th>
+              <th class="py-3 px-4 w-14 text-center">NO</th>
               <th class="py-3 px-4">NAMA SUPPLIER</th>
               <th class="py-3 px-4 w-52">NPWP SUPPLIER</th>
               <th class="py-3 px-4 w-40">KONTAK / TELP</th>
@@ -229,28 +219,29 @@
             <tr
               v-for="(s, idx) in filteredList"
               :key="s.name"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
             >
               <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
               <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ s.name }}</td>
               <td class="py-3 px-4 font-mono text-slate-600 dark:text-slate-300 text-[11px]">{{ s.npwp || '-' }}</td>
               <td class="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px]">{{ s.phone || '-' }}</td>
               <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-2 text-xs">
+                <div class="flex items-center justify-end gap-1">
                   <button
                     type="button"
-                    class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    title="Edit"
                     @click="openEditModal('suppliers', s)"
                   >
-                    Edit
+                    <Pencil class="w-3.5 h-3.5" />
                   </button>
-                  <span class="text-slate-200 dark:text-slate-700">|</span>
                   <button
                     type="button"
-                    class="text-xs font-medium text-slate-400 hover:text-red-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    title="Hapus"
                     @click="promptDelete('suppliers', s)"
                   >
-                    Hapus
+                    <Trash2 class="w-3.5 h-3.5" />
                   </button>
                 </div>
               </td>
@@ -259,8 +250,56 @@
         </table>
       </div>
 
+      <!-- 4. ATURAN PPN TABLE -->
+      <div v-else-if="activeTab === 'ppn_rules'" class="overflow-x-auto">
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-900/20">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Atur tarif PPN per kategori. Klik tombol aksi untuk beralih antara <strong class="text-slate-700 dark:text-slate-300">0% Non-PPN</strong> dan <strong class="text-slate-700 dark:text-slate-300">11% PPN</strong>.
+          </p>
+        </div>
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th class="py-3 px-4 w-14 text-center">NO</th>
+              <th class="py-3 px-4">KATEGORI PROGRAM</th>
+              <th class="py-3 px-4 w-36 text-center">TARIF PPN</th>
+              <th class="py-3 px-4 w-32 text-center">AKSI</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+            <tr
+              v-for="(cat, idx) in masterCategoriesForPpn"
+              :key="cat"
+              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+            >
+              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
+              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ cat }}</td>
+              <td class="py-3 px-4 text-center">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border"
+                  :class="isCategoryNonPpn(cat)
+                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50'"
+                >
+                  {{ isCategoryNonPpn(cat) ? '0% Non-PPN' : '11% PPN' }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                <button
+                  type="button"
+                  @click="togglePpnRule(cat)"
+                  class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  {{ isCategoryNonPpn(cat) ? 'Ubah ke 11%' : 'Ubah ke 0%' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Empty State -->
-      <div v-if="filteredList.length === 0" class="py-12 px-4 text-center">
+      <div v-if="filteredList.length === 0 && activeTab !== 'ppn_rules'" class="py-12 px-4 text-center">
         <p class="font-medium text-slate-700 dark:text-slate-300 text-xs">
           <span v-if="searchQuery">Tidak ditemukan data untuk kata kunci "{{ searchQuery }}"</span>
           <span v-else>Belum ada data {{ currentTabLabel.toLowerCase() }}.</span>
@@ -304,10 +343,10 @@
             </h3>
             <button
               type="button"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-semibold px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               @click="isAddModalOpen = false"
             >
-              ✕
+              <X class="w-4 h-4" />
             </button>
           </div>
 
@@ -492,10 +531,10 @@
             </h3>
             <button
               type="button"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-semibold px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               @click="isEditModalOpen = false"
             >
-              ✕
+              <X class="w-4 h-4" />
             </button>
           </div>
 
@@ -693,7 +732,8 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
-import { useTaxStore } from '../store/taxStore';
+import { Search, Plus, Pencil, Trash2, RotateCcw, X } from 'lucide-vue-next';
+import { useTaxStore, isNonPpnCategory } from '../store/taxStore';
 
 const store = useTaxStore();
 
@@ -712,6 +752,7 @@ const tabs = [
   { id: 'warehouses', label: 'Kode Gudang' },
   { id: 'suppliers', label: 'Supplier & NPWP' },
   { id: 'payment_statuses', label: 'Status Payment' },
+  { id: 'ppn_rules', label: 'Aturan PPN' },
 ];
 
 const addForm = reactive({
@@ -750,8 +791,19 @@ function changeTab(tabId) {
   searchQuery.value = '';
 }
 
+function getColumnTitle(tabId) {
+  if (tabId === 'categories') return 'NAMA KATEGORI PROGRAM';
+  if (tabId === 'brands') return 'NAMA BRAND';
+  if (tabId === 'companies') return 'NAMA PERUSAHAAN (COMPANY)';
+  if (tabId === 'payment_statuses') return 'NAMA STATUS PAYMENT';
+  return 'NAMA REFERENSI';
+}
+
 function getTabCount(tabId) {
   const data = store.masterData.value || {};
+  if (tabId === 'ppn_rules') {
+    return (data.categories || []).length;
+  }
   const list = data[tabId] || [];
   return list.length;
 }
@@ -769,6 +821,8 @@ const filteredList = computed(() => {
   const q = searchQuery.value.toLowerCase().trim();
   const data = store.masterData.value || {};
   const list = data[activeTab.value] || [];
+
+  if (activeTab.value === 'ppn_rules') return [];
 
   if (!q) return list;
 
@@ -794,6 +848,26 @@ const filteredList = computed(() => {
 
   return list;
 });
+
+// Computed: semua kategori untuk tabel Aturan PPN (gunakan dari masterData.categories)
+const masterCategoriesForPpn = computed(() => {
+  const data = store.masterData.value || {};
+  const cats = data.categories || [];
+  const q = searchQuery.value.toLowerCase().trim();
+  if (!q) return cats;
+  return cats.filter(c => c.toLowerCase().includes(q));
+});
+
+// Cek apakah kategori ini Non-PPN
+function isCategoryNonPpn(categoryName) {
+  return isNonPpnCategory(categoryName);
+}
+
+// Toggle PPN rule untuk kategori
+async function togglePpnRule(categoryName) {
+  const currentlyNonPpn = isCategoryNonPpn(categoryName);
+  await store.setPpnRule(categoryName, !currentlyNonPpn);
+}
 
 function openAddModal() {
   addForm.name = '';

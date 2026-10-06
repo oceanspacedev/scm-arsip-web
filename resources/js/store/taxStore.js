@@ -2,8 +2,45 @@ import { reactive, computed, ref } from 'vue';
 import { saveDocumentBlob, getDocumentBlob, deleteDocumentBlob, clearAllDocumentBlobs } from '../utils/documentDb.js';
 import { USER_STORAGE_KEY, userFromStorage } from './authSession.js';
 
+// Shared ppn_rules state - module-level agar bisa diakses dari isNonPpnCategory (exported)
+const _sharedPpnRules = reactive({ list: [] });
+
+function _syncSharedPpnRules(ppnRules) {
+    _sharedPpnRules.list.splice(0, _sharedPpnRules.list.length, ...(ppnRules || []));
+}
+
 // Storage key synced with backend
 const STORAGE_KEY = 'scm_taxvault_programs_v2';
+const DELETED_DOCS_KEY = 'scm_deleted_doc_identifiers_v2';
+
+export function getDeletedDocIdentifiers() {
+    try {
+        const raw = localStorage.getItem(DELETED_DOCS_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function markDocAsDeleted(id, fileName) {
+    try {
+        const list = getDeletedDocIdentifiers();
+        let changed = false;
+        if (id && !list.includes(String(id))) {
+            list.push(String(id));
+            changed = true;
+        }
+        if (fileName && !list.includes(String(fileName))) {
+            list.push(String(fileName));
+            changed = true;
+        }
+        if (changed) {
+            localStorage.setItem(DELETED_DOCS_KEY, JSON.stringify(list.slice(-300)));
+        }
+    } catch (e) {
+        console.warn('markDocAsDeleted failed:', e);
+    }
+}
 
 function loadStoredPrograms() {
     try {
@@ -205,10 +242,38 @@ function loadStoredRolePermissions() {
     return JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
 }
 
+// Shared reactive ppn_rules accessible from outside store (module-level)
+
+// Default Non-PPN categories (hardcoded fallback)
+const DEFAULT_NON_PPN_KEYWORDS = ['price protection', 'price_protection', 'priceprotect', 'bonus', 'rebate'];
+
+export function isNonPpnCategory(category, title = '') {
+    const text = `${category || ''} ${title || ''}`.toLowerCase().trim();
+    // Baca dari shared ppn_rules jika tersedia
+    const masterNonPpn = _sharedPpnRules.list;
+    if (masterNonPpn.length > 0) {
+        const catLower = (category || '').toLowerCase().trim();
+        if (masterNonPpn.some(c => c.toLowerCase().trim() === catLower)) {
+            return true;
+        }
+    }
+    // Fallback ke keyword matching
+    return DEFAULT_NON_PPN_KEYWORDS.some(kw => text.includes(kw));
+}
+
+export function getDefaultPpnRate(category, title = '') {
+    return isNonPpnCategory(category, title) ? 0 : 0.11;
+}
+
 export const DEFAULT_MASTER_DATA = {
     categories: [
-        'Promosi',
+        'Marketing Service Fee',
+        'Price Protection',
+        'Bonus',
+        'Branding',
+        'Purchase Order',
         'Rebate',
+        'Promosi',
         'Cashback',
         'Sewa Display',
         'Listing Fee',
@@ -217,7 +282,6 @@ export const DEFAULT_MASTER_DATA = {
         'Insentif',
         'Bundling',
         'Sampling',
-        'Branding',
         'Loyalty',
         'Diskon',
         'Event',
@@ -263,6 +327,12 @@ export const DEFAULT_MASTER_DATA = {
         'Tempo',
         'Paid (Lunas)',
     ],
+    // Daftar kategori yang dikecualikan dari PPN (tarif 0%)
+    ppn_rules: [
+        'Price Protection',
+        'Bonus',
+        'Rebate',
+    ],
 };
 
 const MASTER_DATA_STORAGE_KEY = 'scm_master_data_cache_v1';
@@ -280,6 +350,7 @@ function loadStoredMasterData() {
                     warehouses: Array.isArray(parsed.warehouses) ? parsed.warehouses : DEFAULT_MASTER_DATA.warehouses,
                     suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : DEFAULT_MASTER_DATA.suppliers,
                     payment_statuses: Array.isArray(parsed.payment_statuses) ? parsed.payment_statuses : DEFAULT_MASTER_DATA.payment_statuses,
+                    ppn_rules: Array.isArray(parsed.ppn_rules) ? parsed.ppn_rules : DEFAULT_MASTER_DATA.ppn_rules,
                 };
             }
         }
@@ -670,7 +741,12 @@ export function mapBackendProgram(p) {
         is_verified: !!p.is_verified,
         program_date: p.due_date ? String(p.due_date).slice(0, 10) : (p.program_date || ''),
         status: p.status || 'Perlu Tindakan',
-        documents: (p.documents || []).map(d => ({
+        documents: (p.documents || []).filter(d => {
+            const delList = getDeletedDocIdentifiers();
+            if (d.id && delList.includes(String(d.id))) return false;
+            if (d.file_name && delList.includes(String(d.file_name))) return false;
+            return true;
+        }).map(d => ({
             id: String(d.id),
             document_type: d.type === 'faktur' ? 'faktur_pajak' : (d.type === 'memo' ? 'mou' : (d.document_type || d.type)),
             file_name: d.file_name,
@@ -1247,27 +1323,41 @@ export const useTaxStore = () => {
     async function deleteDocument(programId, docIdentifier) {
         const prog = getProgramById(programId);
         if (!prog || !prog.documents) return false;
-        const index = prog.documents.findIndex(d => d.id === docIdentifier || d.document_type === docIdentifier);
+        const index = prog.documents.findIndex(d => 
+            String(d.id) === String(docIdentifier) || 
+            (d.file_name && d.file_name === docIdentifier) || 
+            d.document_type === docIdentifier
+        );
         if (index !== -1) {
             const removed = prog.documents[index];
             const rawType = removed.document_type || removed.type;
             if (removed?.id) {
                 deleteDocumentBlob(removed.id);
             }
-            const deletedIdOrType = removed.id || docIdentifier;
+            const targetId = String(removed.id || '');
+            const targetFileName = String(removed.file_name || '');
+            markDocAsDeleted(targetId, targetFileName);
+
+            const deletedIdOrType = removed.id || removed.file_name || docIdentifier;
             prog.documents.splice(index, 1);
 
-            // Bersihkan nomor invoice jika dokumen invoice yang dihapus
+            // Bersihkan nomor invoice HANYA jika tidak ada lagi dokumen invoice yang tersisa
             if (rawType === 'invoice') {
-                prog.invoice_no = '';
-                prog.invoice_number = '';
+                const hasOther = prog.documents.some(d => (d.document_type || d.type) === 'invoice');
+                if (!hasOther) {
+                    prog.invoice_no = '';
+                    prog.invoice_number = '';
+                }
             }
-            // Bersihkan nomor & tanggal faktur pajak jika dokumen FP yang dihapus
+            // Bersihkan nomor & tanggal faktur pajak HANYA jika tidak ada lagi dokumen FP yang tersisa
             if (rawType === 'faktur_pajak' || rawType === 'faktur') {
-                prog.faktur_number = '';
-                prog.tax_invoice_number = '';
-                prog.faktur_date = '';
-                prog.tax_invoice_date = '';
+                const hasOtherFaktur = prog.documents.some(d => ['faktur_pajak', 'faktur'].includes(d.document_type || d.type));
+                if (!hasOtherFaktur) {
+                    prog.faktur_number = '';
+                    prog.tax_invoice_number = '';
+                    prog.faktur_date = '';
+                    prog.tax_invoice_date = '';
+                }
             }
 
             checkProgramCompleteness(prog);
@@ -1275,7 +1365,7 @@ export const useTaxStore = () => {
             notify(`Dokumen ${removed.file_name || getDocTypeLabel(removed.document_type)} berhasil dihapus.`, 'warning');
 
             try {
-                const res = await fetch(`/api/programs/${programId}/documents/${deletedIdOrType}`, {
+                const res = await fetch(`/api/programs/${programId}/documents/${encodeURIComponent(deletedIdOrType)}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -1287,9 +1377,22 @@ export const useTaxStore = () => {
                     if (data.program) {
                         const idx = state.programs.findIndex(p => String(p.id) === String(programId));
                         if (idx !== -1) {
+                            // Filter data.program.documents agar berkas yang baru dihapus tidak pernah dibangkitkan lagi
+                            if (Array.isArray(data.program.documents)) {
+                                data.program.documents = data.program.documents.filter(d => {
+                                    if (targetId && String(d.id) === targetId) return false;
+                                    if (targetFileName && d.file_name === targetFileName) return false;
+                                    return true;
+                                });
+                            }
                             state.programs[idx] = mapBackendProgram(data.program);
                             saveToStorage();
                         }
+                    }
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    if (err.message) {
+                        notify(err.message, 'error');
                     }
                 }
             } catch (e) {
@@ -2379,6 +2482,38 @@ export const useTaxStore = () => {
         }
     }
 
+    // Toggle/set PPN rule untuk kategori tertentu
+    // isNonPpn = true -> kategori ini masuk daftar Non-PPN (0%)
+    // isNonPpn = false -> hapus dari daftar Non-PPN (jadi 11%)
+    async function setPpnRule(categoryName, isNonPpn) {
+        if (!state.masterData.ppn_rules) {
+            state.masterData.ppn_rules = [...DEFAULT_MASTER_DATA.ppn_rules];
+        }
+        const current = state.masterData.ppn_rules;
+        const exists = current.some(c => c.toLowerCase().trim() === categoryName.toLowerCase().trim());
+        if (isNonPpn && !exists) {
+            state.masterData.ppn_rules = [...current, categoryName];
+        } else if (!isNonPpn && exists) {
+            state.masterData.ppn_rules = current.filter(c => c.toLowerCase().trim() !== categoryName.toLowerCase().trim());
+        } else {
+            return { success: true }; // no change needed
+        }
+        saveMasterDataToStorage();
+        // Sync ke backend via addMasterItem dengan type ppn_rules
+        try {
+            await fetch('/api/master-data/item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ type: 'ppn_rules', item: state.masterData.ppn_rules })
+            });
+        } catch (e) {
+            // Fallback ke lokal saja
+        }
+        const action = isNonPpn ? 'dikecualikan dari PPN (0%)' : 'dikenakan PPN 11%';
+        notify(`Kategori "${categoryName}" ${action}.`);
+        return { success: true };
+    }
+
     function openImportModal() {
         if (!canImportProgram.value) {
             notify('Role Anda tidak memiliki wewenang untuk mengimpor data.', 'error');
@@ -2486,11 +2621,13 @@ export const useTaxStore = () => {
         masterWarehouses,
         masterSuppliers,
         masterPaymentStatuses,
+        masterPpnRules: computed(() => state.masterData?.ppn_rules || DEFAULT_MASTER_DATA.ppn_rules),
         fetchMasterData,
         addMasterItem,
         updateMasterItem,
         deleteMasterItem,
         resetMasterData,
+        setPpnRule,
         monthsList,
         getProgramMonth,
         getProgramYear,
