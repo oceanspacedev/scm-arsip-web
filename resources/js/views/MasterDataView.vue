@@ -252,9 +252,9 @@
 
       <!-- 4. ATURAN PPN TABLE -->
       <div v-else-if="activeTab === 'ppn_rules'" class="overflow-x-auto">
-        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-900/20">
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Atur tarif PPN per kategori. Klik tombol aksi untuk beralih antara <strong class="text-slate-700 dark:text-slate-300">0% Non-PPN</strong> dan <strong class="text-slate-700 dark:text-slate-300">11% PPN</strong>.
+        <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/20">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Atur tarif PPN per kategori. Klik tombol aksi untuk beralih antara 0% (Non-PPN) dan 11% PPN.
           </p>
         </div>
         <table class="w-full text-left text-xs border-collapse">
@@ -276,10 +276,10 @@
               <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ cat }}</td>
               <td class="py-3 px-4 text-center">
                 <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border"
                   :class="isCategoryNonPpn(cat)
-                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50'
-                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50'"
+                    ? 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'"
                 >
                   {{ isCategoryNonPpn(cat) ? '0% Non-PPN' : '11% PPN' }}
                 </span>
@@ -288,9 +288,11 @@
                 <button
                   type="button"
                   @click="togglePpnRule(cat)"
-                  class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                  :disabled="togglingCategory === cat"
+                  class="h-7 px-2.5 text-xs font-medium rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {{ isCategoryNonPpn(cat) ? 'Ubah ke 11%' : 'Ubah ke 0%' }}
+                  <span v-if="togglingCategory === cat" class="text-slate-400">Memproses...</span>
+                  <span v-else>{{ isCategoryNonPpn(cat) ? 'Ubah ke 11%' : 'Ubah ke 0%' }}</span>
                 </button>
               </td>
             </tr>
@@ -858,15 +860,29 @@ const masterCategoriesForPpn = computed(() => {
   return cats.filter(c => c.toLowerCase().includes(q));
 });
 
-// Cek apakah kategori ini Non-PPN
+// Cek apakah kategori ini Non-PPN (reactive langsung terhadap store.masterData)
 function isCategoryNonPpn(categoryName) {
+  const rules = store.masterData.value?.ppn_rules;
+  if (Array.isArray(rules)) {
+    const cLower = String(categoryName || '').toLowerCase().trim();
+    return rules.some(r => r.toLowerCase().trim() === cLower);
+  }
   return isNonPpnCategory(categoryName);
 }
 
+// State loading per-kategori saat klik toggle
+const togglingCategory = ref(null);
+
 // Toggle PPN rule untuk kategori
 async function togglePpnRule(categoryName) {
-  const currentlyNonPpn = isCategoryNonPpn(categoryName);
-  await store.setPpnRule(categoryName, !currentlyNonPpn);
+  if (togglingCategory.value) return;
+  togglingCategory.value = categoryName;
+  try {
+    const currentlyNonPpn = isCategoryNonPpn(categoryName);
+    await store.setPpnRule(categoryName, !currentlyNonPpn);
+  } finally {
+    togglingCategory.value = null;
+  }
 }
 
 function openAddModal() {

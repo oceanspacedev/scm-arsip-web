@@ -248,16 +248,17 @@ function loadStoredRolePermissions() {
 const DEFAULT_NON_PPN_KEYWORDS = ['price protection', 'price_protection', 'priceprotect', 'bonus', 'rebate'];
 
 export function isNonPpnCategory(category, title = '') {
-    const text = `${category || ''} ${title || ''}`.toLowerCase().trim();
-    // Baca dari shared ppn_rules jika tersedia
-    const masterNonPpn = _sharedPpnRules.list;
-    if (masterNonPpn.length > 0) {
-        const catLower = (category || '').toLowerCase().trim();
-        if (masterNonPpn.some(c => c.toLowerCase().trim() === catLower)) {
-            return true;
-        }
+    const catLower = (category || '').toLowerCase().trim();
+    if (!catLower) return false;
+
+    // 1. Cek ppn_rules dari reactive state masterData jika tersedia
+    const rules = state?.masterData?.ppn_rules || _sharedPpnRules.list;
+    if (Array.isArray(rules) && rules.length > 0) {
+        return rules.some(c => c.toLowerCase().trim() === catLower);
     }
-    // Fallback ke keyword matching
+
+    // 2. Fallback HANYA jika rules belum tersedia
+    const text = `${category || ''} ${title || ''}`.toLowerCase().trim();
     return DEFAULT_NON_PPN_KEYWORDS.some(kw => text.includes(kw));
 }
 
@@ -427,6 +428,8 @@ const state = reactive({
     selectedFiscalYear: localStorage.getItem('scm_fiscal_year') || String(new Date().getFullYear()),
     isLoggingOut: false,
 });
+
+_syncSharedPpnRules(state.masterData.ppn_rules);
 
 function saveUsersToStorage() {
     try {
@@ -1830,6 +1833,7 @@ export const useTaxStore = () => {
     fetchUsers();
     fetchPrograms();
     fetchSettings();
+    fetchMasterData();
 
     async function registerUser({ name, phone, email, role, password }) {
         const cleanEmail = (email || '').trim().toLowerCase();
@@ -2402,6 +2406,7 @@ export const useTaxStore = () => {
             const data = await resp.json();
             if (resp.ok && data.success) {
                 state.masterData = data.data;
+                _syncSharedPpnRules(data.data?.ppn_rules);
                 saveMasterDataToStorage(data.data);
                 notify(data.message || 'Item data master berhasil ditambahkan.');
                 return { success: true, data: data.data };
@@ -2427,6 +2432,7 @@ export const useTaxStore = () => {
             const data = await resp.json();
             if (resp.ok && data.success) {
                 state.masterData = data.data;
+                _syncSharedPpnRules(data.data?.ppn_rules);
                 saveMasterDataToStorage(data.data);
                 notify(data.message || 'Item data master berhasil diperbarui.');
                 return { success: true, data: data.data };
@@ -2449,6 +2455,7 @@ export const useTaxStore = () => {
             const data = await resp.json();
             if (resp.ok && data.success) {
                 state.masterData = data.data;
+                _syncSharedPpnRules(data.data?.ppn_rules);
                 saveMasterDataToStorage(data.data);
                 notify(data.message || 'Item data master berhasil dihapus.');
                 return { success: true, data: data.data };
@@ -2470,6 +2477,7 @@ export const useTaxStore = () => {
             const data = await resp.json();
             if (resp.ok && data.success) {
                 state.masterData = data.data;
+                _syncSharedPpnRules(data.data?.ppn_rules);
                 saveMasterDataToStorage(data.data);
                 notify(data.message || 'Data master berhasil dikembalikan ke default.');
                 return { success: true };
@@ -2489,7 +2497,7 @@ export const useTaxStore = () => {
         if (!state.masterData.ppn_rules) {
             state.masterData.ppn_rules = [...DEFAULT_MASTER_DATA.ppn_rules];
         }
-        const current = state.masterData.ppn_rules;
+        const current = [...state.masterData.ppn_rules];
         const exists = current.some(c => c.toLowerCase().trim() === categoryName.toLowerCase().trim());
         if (isNonPpn && !exists) {
             state.masterData.ppn_rules = [...current, categoryName];
@@ -2498,14 +2506,24 @@ export const useTaxStore = () => {
         } else {
             return { success: true }; // no change needed
         }
+        _syncSharedPpnRules(state.masterData.ppn_rules);
         saveMasterDataToStorage();
+
         // Sync ke backend via addMasterItem dengan type ppn_rules
         try {
-            await fetch('/api/master-data/item', {
+            const resp = await fetch('/api/master-data/item', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ type: 'ppn_rules', item: state.masterData.ppn_rules })
             });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    state.masterData = data.data;
+                    _syncSharedPpnRules(data.data?.ppn_rules);
+                    saveMasterDataToStorage(data.data);
+                }
+            }
         } catch (e) {
             // Fallback ke lokal saja
         }

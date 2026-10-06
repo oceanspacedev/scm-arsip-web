@@ -64,6 +64,20 @@ class ProgramController extends Controller
     public static function isNonPpnCategory(?string $category, ?string $title = ''): bool
     {
         $cat = strtolower(trim((string)$category));
+        $masterFile = storage_path('app/master_data.json');
+        if (file_exists($masterFile)) {
+            $data = json_decode(@file_get_contents($masterFile), true);
+            if (!empty($data['ppn_rules']) && is_array($data['ppn_rules'])) {
+                $rules = array_map(fn($r) => strtolower(trim($r)), $data['ppn_rules']);
+                if ($cat !== '' && in_array($cat, $rules, true)) {
+                    return true;
+                }
+                if ($cat !== '') {
+                    return false;
+                }
+            }
+        }
+
         $t = strtolower(trim((string)$title));
         $combined = $cat . ' ' . $t;
 
