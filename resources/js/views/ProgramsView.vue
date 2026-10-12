@@ -3,7 +3,7 @@
     <!-- Page Header matching screenshot -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
       <div class="min-w-0">
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Arsip Program SCM
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -11,20 +11,16 @@
         </p>
       </div>
 
-      <!-- Action Buttons matching screenshot -->
+      <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium mr-1 hidden lg:inline">
-          {{ store.filteredPrograms.value.length }} Program terdaftar
-        </span>
-
         <!-- Import Excel (Hanya Staff SCM & Admin SCM) -->
         <button
           v-if="canImportProgram"
           type="button"
-          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
           @click="store.openImportModal()"
         >
-          <ExcelIcon class="w-4 h-4" />
+          <Upload class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>Import Excel</span>
         </button>
 
@@ -32,10 +28,10 @@
         <button
           v-if="canExportProgram"
           type="button"
-          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
           @click="handleExport"
         >
-          <ExcelIcon class="w-4 h-4" />
+          <Download class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>Ekspor Excel</span>
         </button>
 
@@ -43,7 +39,7 @@
         <button
           v-if="canAddProgram"
           type="button"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
           @click="isAddSheetOpen = true"
         >
           <Plus class="w-3.5 h-3.5" />
@@ -67,8 +63,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Download, Plus } from 'lucide-vue-next';
-import ExcelIcon from '../components/ui/ExcelIcon.vue';
+import { Download, Plus, Upload } from 'lucide-vue-next';
 import ProgramToolbar from '../components/programs/ProgramToolbar.vue';
 import ProgramTable from '../components/programs/ProgramTable.vue';
 import AddProgramSheet from '../components/programs/AddProgramSheet.vue';

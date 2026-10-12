@@ -24,7 +24,7 @@
               type="text"
               placeholder="Contoh: Program Supply Chain Optimization"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -35,7 +35,7 @@
             <select
               v-model="form.category"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option v-for="cat in masterCategories" :key="cat" :value="cat">
                 {{ cat }}
@@ -48,7 +48,7 @@
               type="text"
               placeholder="Ketik kategori baru"
               required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -58,7 +58,7 @@
             </label>
             <select
               v-model="form.brand"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option v-for="b in masterBrands" :key="b" :value="b">
                 {{ b }}
@@ -70,7 +70,7 @@
               v-model="customBrand"
               type="text"
               placeholder="Ketik nama brand baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
         </div>
@@ -83,7 +83,7 @@
             </label>
             <select
               v-model="form.company_name"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option v-for="c in masterCompanies" :key="c" :value="c">
                 {{ c }}
@@ -95,7 +95,7 @@
               v-model="customCompany"
               type="text"
               placeholder="Ketik nama company baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -105,7 +105,7 @@
             </label>
             <select
               v-model="form.kode_gudang"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer font-mono"
             >
               <option value="">-- Pilih Kode Gudang --</option>
               <option v-for="w in masterWarehouses" :key="w.code" :value="w.code">
@@ -118,7 +118,7 @@
               v-model="customWarehouse"
               type="text"
               placeholder="Contoh: GDG-JKT-03"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors uppercase font-mono"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors uppercase font-mono"
             />
           </div>
 
@@ -130,7 +130,7 @@
               v-model="form.po_sj_number"
               type="text"
               placeholder="Contoh: PO/2025/1016 / SJ-1016"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
           </div>
         </div>
@@ -145,7 +145,7 @@
               v-model="form.supplier"
               required
               @change="onSupplierChange"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option value="" disabled>-- Pilih Supplier --</option>
               <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
@@ -159,7 +159,7 @@
               type="text"
               placeholder="Ketik nama supplier baru"
               required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -171,7 +171,7 @@
               v-model="form.npwp"
               type="text"
               placeholder="01.234.567.8-901.000"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XX.XXX.XXX.X-XXX.XXX</p>
           </div>
@@ -187,7 +187,7 @@
               v-model="form.mou_number"
               type="text"
               placeholder="Contoh: DO/SCM/2026/088 atau MEMO/088"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
           </div>
 
@@ -198,7 +198,7 @@
             <input
               v-model="form.start_date"
               type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -209,7 +209,7 @@
             <input
               v-model="form.end_date"
               type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
         </div>
@@ -232,7 +232,7 @@
               type="text"
               placeholder="Contoh: INV/SCM/2025/1042"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
           </div>
 
@@ -244,7 +244,7 @@
               v-model="form.program_date"
               type="date"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
 
@@ -255,7 +255,7 @@
             <input
               v-model="form.due_date"
               type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
         </div>
@@ -272,7 +272,7 @@
               min="0"
               step="1000"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
               {{ formatRupiah(form.dpp || 0) }}
@@ -285,7 +285,7 @@
             </label>
             <select
               v-model="form.ppn_rate"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option value="0.11">11% (Standar)</option>
               <option value="0.12">12%</option>
@@ -341,7 +341,7 @@
             </label>
             <select
               v-model="form.pph_type"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
             >
               <option value="NON_PPH">Non PPh</option>
               <option value="PPH_21">PPh 21 (2,5%)</option>
@@ -377,7 +377,7 @@
               v-model="form.tax_invoice_number"
               type="text"
               placeholder="010.000-25.00000001"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors font-mono"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
             />
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XXX.XXX-XX.XXXXXXXX</p>
           </div>
@@ -389,7 +389,7 @@
             <input
               v-model="form.tax_invoice_date"
               type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
           </div>
         </div>
@@ -403,7 +403,7 @@
             v-model="form.tax_notes"
             rows="2"
             placeholder="Catatan kepatuhan pajak, verifikasi e-Faktur, nomor registrasi DJP..."
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors resize-none"
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors resize-none"
           ></textarea>
         </div>
 
@@ -413,7 +413,7 @@
             id="is_verified"
             v-model="form.is_verified"
             type="checkbox"
-            class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-600 cursor-pointer"
+            class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-slate-400 cursor-pointer"
           />
           <label for="is_verified" class="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
             Sudah diverifikasi Tim Pajak
@@ -432,7 +432,7 @@
         </button>
         <button
           type="submit"
-          class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+          class="px-4 py-2 text-xs rounded-lg transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
         >
           Simpan
         </button>
@@ -628,6 +628,9 @@ async function handleSubmit() {
     is_verified: form.is_verified,
     documents: []
   });
+
+  // Ditolak server (mis. data sudah terdaftar): biarkan form terbuka agar bisa diperbaiki
+  if (!created) return;
 
   // Reset form to defaults
   form.program_name = '';

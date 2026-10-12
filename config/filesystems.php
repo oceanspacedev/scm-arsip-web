@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // Folder dokumen program yang sudah dipakai frontend (file_path = uploads/documents/...)
+        'arsip_documents' => [
+            'driver' => 'local',
+            'root' => public_path('uploads/documents'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/uploads/documents',
+            'visibility' => 'public',
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

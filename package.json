@@ -25,6 +25,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-vue-next": "^1.0.0",
+        "pdfjs-dist": "6.3.289",
         "radix-vue": "^1.9.17",
         "reka-ui": "^2.10.4",
         "tailwind-merge": "^3.6.0",

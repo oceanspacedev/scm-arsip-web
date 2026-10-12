@@ -66,11 +66,11 @@ class DocumentAiAnalysisService
         $userPrompt = "Analisis dokumen terlampir ({$extension}). {$typeHint}\n"
             . "Ekstrak informasi berikut jika terdapat di dalam dokumen:\n"
             . "1. 'invoice_no': Nomor Invoice / Faktur Penjualan / Nomor Tagihan (contoh: INV/2026/0101, INV-9812, dsb). Jika tidak ada kembalikan null.\n"
-            . "2. 'faktur_number': Nomor Seri Faktur Pajak e-Faktur DJP 16 digit (contoh: 010.002-26.11029381 atau 0100022611029381). Jika tidak ada kembalikan null.\n"
+            . "2. 'faktur_number': Kode dan Nomor Seri Faktur Pajak, tulis persis seperti di dokumen. Bisa format lama 16 digit (contoh: 010.002-26.11029381) atau format Coretax 17 digit (contoh: 04002600333766027). Jangan ambil NPWP/NITKU atau nomor lain. Jika tidak ada kembalikan null.\n"
             . "3. 'faktur_date': Tanggal faktur pajak atau invoice dalam format 'YYYY-MM-DD'. Jika tidak ada kembalikan null.\n"
             . "4. 'dpp_amount': Nilai Dasar Pengenaan Pajak (DPP) sebagai angka murni (float/integer) tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
             . "5. 'ppn_amount': Nilai PPN sebagai angka murni tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
-            . "6. 'total_amount': Nilai Total Tagihan / Total Invoice sebagai angka murni tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
+            . "6. 'total_amount': Jumlah tagihan = DPP + PPN (sebelum dipotong PPh) sebagai angka murni tanpa simbol titik/koma ribuan. Jangan gunakan Net Pay / jumlah setelah potongan PPh. Jika tidak ada kembalikan null.\n"
             . "7. 'payment_status': Status pembayaran jika tertera di dokumen. Pilihan: 'cbd' (Cash Before Delivery), 'tempo', 'WAITING PAYMENT', atau 'PAID' (Lunas). Jika tidak tertera, kembalikan null.\n\n"
             . "Format output yang DIHARUSKAN (hanya JSON murni):\n"
             . "{\n"
@@ -136,6 +136,10 @@ class DocumentAiAnalysisService
             }
 
             $parsed = json_decode($cleanJson, true);
+            // Model kadang menambahkan teks sebelum/sesudah JSON (mis. "→ skipped: ..."), ambil objek JSON-nya saja
+            if (!is_array($parsed) && preg_match('/\{(?:[^{}]++|(?R))*\}/', $cleanJson, $matches)) {
+                $parsed = json_decode($matches[0], true);
+            }
             if (!is_array($parsed)) {
                 Log::warning('AI Analysis output was not valid JSON: ' . $content);
                 return [

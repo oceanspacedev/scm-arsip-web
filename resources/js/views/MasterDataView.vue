@@ -3,7 +3,7 @@
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Data Master
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -14,7 +14,7 @@
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+          class="h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
           @click="openResetModal"
           title="Reset semua data master ke pengaturan default sistem"
         >
@@ -32,17 +32,15 @@
           :key="tab.id"
           type="button"
           @click="changeTab(tab.id)"
-          class="group inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border-b-2 transition-all cursor-pointer whitespace-nowrap"
+          class="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap"
           :class="activeTab === tab.id
-            ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
-            : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'"
+            ? 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100'
+            : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
         >
           <span>{{ tab.label }}</span>
           <span
-            class="px-1.5 py-0.5 rounded-full text-[10px] font-mono tabular-nums transition-colors"
-            :class="activeTab === tab.id
-              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-slate-200/70 dark:group-hover:bg-slate-700'"
+            class="text-[11px] tabular-nums"
+            :class="activeTab === tab.id ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500'"
           >
             {{ getTabCount(tab.id) }}
           </span>
@@ -51,19 +49,22 @@
     </div>
 
     <!-- Main Card Container -->
-    <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs">
+    <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
       <!-- Toolbar Bar (Title + Search + Action Button) -->
-      <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="px-4 py-3 sm:px-5 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 class="text-xs font-semibold text-slate-900 dark:text-slate-100">
             {{ currentTabLabel }}
           </h2>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            <span v-if="searchQuery && activeTab !== 'ppn_rules'">
-              Menampilkan <strong>{{ filteredList.length }}</strong> dari total {{ getTabCount(activeTab) }} data
+            <span v-if="activeTab === 'ppn_rules'">
+              Pilih tarif PPN tiap kategori: 0% (Non-PPN) atau 11%.
+            </span>
+            <span v-else-if="searchQuery">
+              Menampilkan <strong class="font-medium text-slate-700 dark:text-slate-300">{{ filteredList.length }}</strong> dari total {{ getTabCount(activeTab) }} data
             </span>
             <span v-else>
-              Total <strong>{{ getTabCount(activeTab) }}</strong> referensi terdaftar
+              Total <strong class="font-medium text-slate-700 dark:text-slate-300">{{ getTabCount(activeTab) }}</strong> referensi terdaftar
             </span>
           </p>
         </div>
@@ -76,7 +77,7 @@
               v-model="searchQuery"
               type="text"
               :placeholder="`Cari ${currentTabLabel.toLowerCase()}...`"
-              class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+              class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
             <button
               v-if="searchQuery"
@@ -91,7 +92,7 @@
           <button
             v-if="activeTab !== 'ppn_rules'"
             type="button"
-            class="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs whitespace-nowrap"
+            class="h-8 px-3 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
             @click="openAddModal"
           >
             <Plus class="w-3.5 h-3.5" />
@@ -100,205 +101,134 @@
         </div>
       </div>
 
-      <!-- 1. DATA TABLE (Categories, Brands, Companies, Payment Statuses) -->
-      <div v-if="isGridTab" class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse min-w-[560px]">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-14 text-center">NO</th>
-              <th class="py-3 px-4">{{ getColumnTitle(activeTab) }}</th>
-              <th v-if="activeTab === 'payment_statuses'" class="py-3 px-4 w-44">TIPE STATUS</th>
-              <th class="py-3 px-4 w-28 text-right">AKSI</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-            <tr
-              v-for="(item, idx) in filteredList"
-              :key="item"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
+      <!-- 1. Daftar nama (Kategori, Brand, Company, Status Payment): grid ringkas, bukan satu baris per item -->
+      <ul v-if="isGridTab && filteredList.length" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <li
+          v-for="item in filteredList"
+          :key="item"
+          class="group flex items-center justify-between gap-2 min-h-9 pl-3 pr-1 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+        >
+          <span class="flex items-center gap-2 min-w-0">
+            <span v-if="activeTab === 'payment_statuses'" class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(item)"></span>
+            <span class="truncate text-slate-800 dark:text-slate-200" :title="item">{{ item }}</span>
+          </span>
+          <span class="flex items-center shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500">
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              title="Edit"
+              @click="openEditModal(activeTab, item)"
             >
-              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
-              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                {{ item }}
-              </td>
-              <td v-if="activeTab === 'payment_statuses'" class="py-3 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
-                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(item)"></span>
-                  {{ item }}
-                </span>
-              </td>
-              <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                    title="Edit"
-                    @click="openEditModal(activeTab, item)"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                    title="Hapus"
-                    @click="promptDelete(activeTab, item)"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <Pencil class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              title="Hapus"
+              @click="promptDelete(activeTab, item)"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+            </button>
+          </span>
+        </li>
+      </ul>
 
-      <!-- 2. KODE GUDANG TABLE -->
-      <div v-else-if="activeTab === 'warehouses'" class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse min-w-[560px]">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-14 text-center">NO</th>
-              <th class="py-3 px-4 w-44">KODE GUDANG</th>
-              <th class="py-3 px-4">NAMA GUDANG</th>
-              <th class="py-3 px-4 w-48">LOKASI / KOTA</th>
-              <th class="py-3 px-4 w-28 text-right">AKSI</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-            <tr
-              v-for="(w, idx) in filteredList"
-              :key="w.code"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
+      <!-- 2. Kode Gudang -->
+      <ul v-else-if="activeTab === 'warehouses' && filteredList.length" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <li
+          v-for="w in filteredList"
+          :key="w.code"
+          class="group flex items-center justify-between gap-2 py-2 pl-3 pr-1 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+        >
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900 dark:text-slate-100 truncate">{{ w.code }}</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate" :title="w.location ? `${w.name} · ${w.location}` : w.name">
+              {{ w.name }}<template v-if="w.location"> · {{ w.location }}</template>
+            </p>
+          </div>
+          <span class="flex items-center shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500">
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              title="Edit"
+              @click="openEditModal('warehouses', w)"
             >
-              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center px-2 py-0.5 rounded font-mono font-medium text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                  {{ w.code }}
-                </span>
-              </td>
-              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ w.name }}</td>
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400">{{ w.location || '-' }}</td>
-              <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                    title="Edit"
-                    @click="openEditModal('warehouses', w)"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                    title="Hapus"
-                    @click="promptDelete('warehouses', w)"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <Pencil class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              title="Hapus"
+              @click="promptDelete('warehouses', w)"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+            </button>
+          </span>
+        </li>
+      </ul>
 
-      <!-- 3. SUPPLIER & NPWP TABLE -->
-      <div v-else-if="activeTab === 'suppliers'" class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse min-w-[620px]">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-14 text-center">NO</th>
-              <th class="py-3 px-4">NAMA SUPPLIER</th>
-              <th class="py-3 px-4 w-52">NPWP SUPPLIER</th>
-              <th class="py-3 px-4 w-40">KONTAK / TELP</th>
-              <th class="py-3 px-4 w-28 text-right">AKSI</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-            <tr
-              v-for="(s, idx) in filteredList"
-              :key="s.name"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group"
+      <!-- 3. Supplier & NPWP -->
+      <ul v-else-if="activeTab === 'suppliers' && filteredList.length" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <li
+          v-for="s in filteredList"
+          :key="s.name"
+          class="group flex items-center justify-between gap-2 py-2 pl-3 pr-1 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+        >
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900 dark:text-slate-100 truncate" :title="s.name">{{ s.name }}</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate tabular-nums">
+              {{ s.npwp || 'NPWP belum diisi' }}<template v-if="s.phone"> · {{ s.phone }}</template>
+            </p>
+          </div>
+          <span class="flex items-center shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500">
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              title="Edit"
+              @click="openEditModal('suppliers', s)"
             >
-              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
-              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ s.name }}</td>
-              <td class="py-3 px-4 font-mono text-slate-600 dark:text-slate-300 text-[11px]">{{ s.npwp || '-' }}</td>
-              <td class="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px]">{{ s.phone || '-' }}</td>
-              <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                    title="Edit"
-                    @click="openEditModal('suppliers', s)"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                    title="Hapus"
-                    @click="promptDelete('suppliers', s)"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <Pencil class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              title="Hapus"
+              @click="promptDelete('suppliers', s)"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+            </button>
+          </span>
+        </li>
+      </ul>
 
-      <!-- 4. ATURAN PPN TABLE -->
-      <div v-else-if="activeTab === 'ppn_rules'" class="overflow-x-auto">
-        <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/20">
-          <p class="text-[11px] text-slate-500 dark:text-slate-400">
-            Atur tarif PPN per kategori. Klik tombol aksi untuk beralih antara 0% (Non-PPN) dan 11% PPN.
-          </p>
-        </div>
-        <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4 w-14 text-center">NO</th>
-              <th class="py-3 px-4">KATEGORI PROGRAM</th>
-              <th class="py-3 px-4 w-36 text-center">TARIF PPN</th>
-              <th class="py-3 px-4 w-32 text-center">AKSI</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-            <tr
-              v-for="(cat, idx) in masterCategoriesForPpn"
-              :key="cat"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+      <!-- 4. Aturan PPN: pilih 0% / 11% langsung per kategori -->
+      <ul v-else-if="activeTab === 'ppn_rules'" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <li
+          v-for="cat in masterCategoriesForPpn"
+          :key="cat"
+          class="flex items-center justify-between gap-2 min-h-9 pl-3 pr-1 rounded-lg border border-slate-200 dark:border-slate-800"
+        >
+          <span class="truncate text-slate-800 dark:text-slate-200" :title="cat">{{ cat }}</span>
+          <div
+            class="inline-flex shrink-0 rounded-md border border-slate-200 dark:border-slate-700 p-0.5"
+            :class="{ 'opacity-50': togglingCategory === cat }"
+          >
+            <button
+              v-for="opt in ppnOptions"
+              :key="opt.label"
+              type="button"
+              :disabled="togglingCategory === cat"
+              class="px-2 py-0.5 rounded text-[11px] tabular-nums transition-colors cursor-pointer disabled:cursor-wait"
+              :class="isCategoryNonPpn(cat) === opt.nonPpn
+                ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              @click="setPpnRate(cat, opt.nonPpn)"
             >
-              <td class="py-3 px-4 text-slate-400 font-mono text-[11px] text-center">{{ idx + 1 }}</td>
-              <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{{ cat }}</td>
-              <td class="py-3 px-4 text-center">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium border"
-                  :class="isCategoryNonPpn(cat)
-                    ? 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-slate-800'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'"
-                >
-                  {{ isCategoryNonPpn(cat) ? '0% Non-PPN' : '11% PPN' }}
-                </span>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <button
-                  type="button"
-                  @click="togglePpnRule(cat)"
-                  :disabled="togglingCategory === cat"
-                  class="h-7 px-2.5 text-xs font-medium rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span v-if="togglingCategory === cat" class="text-slate-400">Memproses...</span>
-                  <span v-else>{{ isCategoryNonPpn(cat) ? 'Ubah ke 11%' : 'Ubah ke 0%' }}</span>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              {{ opt.label }}
+            </button>
+          </div>
+        </li>
+      </ul>
 
       <!-- Empty State -->
       <div v-if="filteredList.length === 0 && activeTab !== 'ppn_rules'" class="py-12 px-4 text-center">
@@ -322,7 +252,7 @@
           <button
             type="button"
             @click="openAddModal"
-            class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer shadow-2xs"
+            class="px-3.5 py-1.5 rounded-lg font-medium text-xs transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
             + Tambah {{ currentTabLabel }}
           </button>
@@ -365,7 +295,7 @@
                 placeholder="Contoh: Digital Promo"
                 required
                 autofocus
-                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
               />
             </div>
 
@@ -380,7 +310,7 @@
                 placeholder="Contoh: SCM"
                 required
                 autofocus
-                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
               />
             </div>
 
@@ -395,7 +325,7 @@
                 placeholder="Contoh: PT SCM Nusantara"
                 required
                 autofocus
-                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
               />
             </div>
 
@@ -410,7 +340,7 @@
                 placeholder="Contoh: Waiting Payment, Tempo 30 Hari, Paid (Lunas)"
                 required
                 autofocus
-                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
               />
             </div>
 
@@ -426,7 +356,7 @@
                   placeholder="Contoh: GDG-JKT-03"
                   required
                   autofocus
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden uppercase"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden uppercase"
                 />
               </div>
 
@@ -439,7 +369,7 @@
                   type="text"
                   placeholder="Contoh: Gudang Daan Mogot"
                   required
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -451,7 +381,7 @@
                   v-model="addForm.location"
                   type="text"
                   placeholder="Contoh: Jakarta Barat"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -468,7 +398,7 @@
                   placeholder="Contoh: PT Unilever Indonesia Tbk"
                   required
                   autofocus
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -480,7 +410,7 @@
                   v-model="addForm.npwp"
                   type="text"
                   placeholder="01.234.567.8-901.000"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -492,7 +422,7 @@
                   v-model="addForm.phone"
                   type="text"
                   placeholder="Contoh: 021-52995299"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -508,7 +438,7 @@
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors cursor-pointer shadow-2xs"
+                class="px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Simpan
               </button>
@@ -552,7 +482,7 @@
                 type="text"
                 required
                 autofocus
-                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
               />
             </div>
 
@@ -567,7 +497,7 @@
                   type="text"
                   required
                   autofocus
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden uppercase"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden uppercase"
                 />
               </div>
 
@@ -579,7 +509,7 @@
                   v-model="editForm.name"
                   type="text"
                   required
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -590,7 +520,7 @@
                 <input
                   v-model="editForm.location"
                   type="text"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -606,7 +536,7 @@
                   type="text"
                   required
                   autofocus
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -618,7 +548,7 @@
                   v-model="editForm.npwp"
                   type="text"
                   placeholder="01.234.567.8-901.000"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
 
@@ -630,7 +560,7 @@
                   v-model="editForm.phone"
                   type="text"
                   placeholder="Contoh: 021-52995299"
-                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden"
+                  class="w-full h-8.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden"
                 />
               </div>
             </div>
@@ -646,7 +576,7 @@
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors cursor-pointer shadow-2xs"
+                class="px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Simpan Perubahan
               </button>
@@ -683,7 +613,7 @@
             </button>
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer shadow-2xs"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
               @click="confirmDelete"
             >
               Ya, Hapus
@@ -720,7 +650,7 @@
             </button>
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer shadow-2xs"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               @click="confirmReset"
             >
               Ya, Reset
@@ -791,14 +721,6 @@ const isGridTab = computed(() => {
 function changeTab(tabId) {
   activeTab.value = tabId;
   searchQuery.value = '';
-}
-
-function getColumnTitle(tabId) {
-  if (tabId === 'categories') return 'NAMA KATEGORI PROGRAM';
-  if (tabId === 'brands') return 'NAMA BRAND';
-  if (tabId === 'companies') return 'NAMA PERUSAHAAN (COMPANY)';
-  if (tabId === 'payment_statuses') return 'NAMA STATUS PAYMENT';
-  return 'NAMA REFERENSI';
 }
 
 function getTabCount(tabId) {
@@ -872,6 +794,18 @@ function isCategoryNonPpn(categoryName) {
 
 // State loading per-kategori saat klik toggle
 const togglingCategory = ref(null);
+
+const ppnOptions = [
+  { label: '0%', nonPpn: true },
+  { label: '11%', nonPpn: false },
+];
+
+// Pilih tarif langsung; klik pada tarif yang sudah aktif tidak mengubah apa-apa
+function setPpnRate(categoryName, nonPpn) {
+  if (isCategoryNonPpn(categoryName) !== nonPpn) {
+    togglePpnRule(categoryName);
+  }
+}
 
 // Toggle PPN rule untuk kategori
 async function togglePpnRule(categoryName) {

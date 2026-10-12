@@ -1,11 +1,11 @@
 <template>
-  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 p-3 sm:px-4 sm:py-3 shadow-2xs space-y-2.5">
+  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 p-3 sm:px-4 sm:py-3 space-y-2.5">
     <!-- Grid 4 Columns: 8 Filter Controls Perfectly Symmetrical -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
       <!-- 1. PENCARIAN -->
       <div>
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          PENCARIAN
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Pencarian
         </label>
         <div class="relative">
           <Search class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -13,7 +13,7 @@
             v-model="store.state.searchQuery"
             type="text"
             placeholder="Cari program, vendor, no. invoice..."
-            class="w-full h-[32px] pl-8 pr-7 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+            class="w-full h-[32px] pl-8 pr-7 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500 transition-colors"
           />
           <button
             v-if="store.state.searchQuery"
@@ -29,13 +29,13 @@
 
       <!-- 2. STATUS KELENGKAPAN -->
       <div class="relative" ref="statusDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          STATUS KELENGKAPAN
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Status Kelengkapan
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="store.state.selectedStatus !== 'all' ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="store.state.selectedStatus !== 'all' ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('status')"
         >
           <span class="truncate">{{ currentStatusLabel }}</span>
@@ -66,13 +66,13 @@
 
       <!-- 3. STATUS PAYMENT -->
       <div v-if="canViewFinanceColumns" class="relative" ref="paymentDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          STATUS PAYMENT
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Status Payment
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="store.state.selectedPaymentStatus !== 'all' ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="store.state.selectedPaymentStatus !== 'all' ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('payment')"
         >
           <span class="truncate">{{ currentPaymentStatusLabel }}</span>
@@ -103,13 +103,13 @@
 
       <!-- 4. BULAN -->
       <div class="relative" ref="monthDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          BULAN
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Bulan
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="store.state.selectedMonth !== 'all' ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="store.state.selectedMonth !== 'all' ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('month')"
         >
           <span class="truncate">{{ currentMonthLabel }}</span>
@@ -140,13 +140,13 @@
 
       <!-- 5. KATEGORI -->
       <div v-if="canViewMasterColumns" class="relative" ref="categoryDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          KATEGORI
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Kategori
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="store.state.selectedCategory !== 'Semua Kategori' ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="store.state.selectedCategory !== 'Semua Kategori' ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('category')"
         >
           <span class="truncate">{{ store.state.selectedCategory || 'Semua Kategori' }}</span>
@@ -176,13 +176,13 @@
 
       <!-- 6. BRAND -->
       <div v-if="canViewMasterColumns" class="relative" ref="brandDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          BRAND
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Brand
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="(store.state.selectedBrand !== 'all' && store.state.selectedBrand !== 'Semua Brand') ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="(store.state.selectedBrand !== 'all' && store.state.selectedBrand !== 'Semua Brand') ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('brand')"
         >
           <span class="truncate">{{ currentBrandLabel }}</span>
@@ -212,13 +212,13 @@
 
       <!-- 7. COMPANY NAME -->
       <div v-if="canViewMasterColumns" class="relative" ref="companyDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          COMPANY NAME
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Company
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="(store.state.selectedCompany !== 'all' && store.state.selectedCompany !== 'Semua Company') ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="(store.state.selectedCompany !== 'all' && store.state.selectedCompany !== 'Semua Company') ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('company')"
         >
           <span class="truncate">{{ currentCompanyLabel }}</span>
@@ -248,13 +248,13 @@
 
       <!-- 8. SUPPLIER -->
       <div v-if="canViewMasterColumns" class="relative" ref="supplierDropdownRef">
-        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-sans">
-          SUPPLIER
+        <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Supplier
         </label>
         <button
           type="button"
-          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-          :class="(store.state.selectedSupplier !== 'all' && store.state.selectedSupplier !== 'Semua Supplier') ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
+          class="w-full h-[32px] flex items-center justify-between px-2.5 rounded-lg border text-xs transition-colors cursor-pointer text-left focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:focus:border-slate-500 dark:focus:ring-slate-500"
+          :class="(store.state.selectedSupplier !== 'all' && store.state.selectedSupplier !== 'Semua Supplier') ? 'border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           @click="toggleDropdown('supplier')"
         >
           <span class="truncate">{{ currentSupplierLabel }}</span>
@@ -321,12 +321,12 @@
 
         <!-- Filter Count & Reset Button -->
         <div v-if="hasActiveFilters" class="flex items-center gap-2">
-          <span class="text-[10px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2 py-0.5 rounded-full">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">
             {{ activeFiltersCount }} filter aktif
           </span>
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[11px] font-medium transition-colors cursor-pointer shadow-2xs"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors cursor-pointer"
             title="Reset semua filter"
             @click="resetAllFilters"
           >

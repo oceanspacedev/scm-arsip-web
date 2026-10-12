@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+    <div class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 max-w-sm pointer-events-none">
       <div
         v-if="notification"
         :class="[

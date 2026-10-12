@@ -82,6 +82,15 @@
     background: #94A3B8;
 }
 
+/* Scroll container without a visible scrollbar (tab rows) */
+@utility no-scrollbar {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 /* Smooth transitions */
 button, a, input, select, textarea {
     transition-property: color, background-color, border-color, box-shadow;
@@ -90,17 +99,18 @@ button, a, input, select, textarea {
 }
 
 @layer base {
+  /* Sidebar: putih bersih dengan palet slate yang sama seperti konten */
   :root {
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215.3 19.3% 34.5%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 215 20.2% 65.1%;
 
-    --sidebar: hsl(0 0% 98%);
+    --sidebar: hsl(0 0% 100%);
   }
 
   .dark {
@@ -116,16 +126,16 @@ button, a, input, select, textarea {
     --color-border: #1E293B;
     --color-border-subtle: #1E293B;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222.2 47.4% 11.2%;
+    --sidebar-foreground: 215 20.2% 65.1%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 215 20.2% 65.1%;
 
-    --sidebar: hsl(240 5.9% 10%);
+    --sidebar: hsl(222.2 47.4% 11.2%);
   }
 }
 

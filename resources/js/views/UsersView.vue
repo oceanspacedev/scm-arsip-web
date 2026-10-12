@@ -3,7 +3,7 @@
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Manajemen User
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
@@ -15,7 +15,7 @@
       <div class="flex items-center gap-2.5 w-full sm:w-auto">
         <router-link
           to="/permissions"
-          class="h-8.5 px-3 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+          class="h-8.5 px-3 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
         >
           <ShieldCheck class="w-3.5 h-3.5 text-slate-400" />
           <span>Atur Hak Akses Role</span>
@@ -23,7 +23,7 @@
 
         <button
           type="button"
-          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
           @click="openAddModal"
         >
           <Plus class="w-4 h-4" />
@@ -63,7 +63,7 @@
             :aria-checked="showDemoAccounts"
             @click="handleToggleDemoAccounts"
             class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
-            :class="showDemoAccounts ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'"
+            :class="showDemoAccounts ? 'bg-slate-900 dark:bg-slate-400' : 'bg-slate-300 dark:bg-slate-700'"
             title="Nyalakan / Matikan Akun Demo di Login"
           >
             <span
@@ -90,11 +90,11 @@
 
     <!-- Filter Tabs & Stats -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 text-xs">
-      <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px scrollbar-none">
+      <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px no-scrollbar">
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'all' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'all' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('all')"
         >
           <span>Semua User</span>
@@ -106,7 +106,7 @@
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'pending' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'pending' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('pending')"
         >
           <span>Menunggu ACC</span>
@@ -121,7 +121,7 @@
         <button
           type="button"
           class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'approved' ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeFilter === 'approved' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="setActiveFilter('approved')"
         >
           <span>Aktif</span>
@@ -148,14 +148,14 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse min-w-[640px]">
           <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <th class="py-3 px-4">NAMA</th>
-              <th class="py-3 px-4">EMAIL</th>
-              <th class="py-3 px-4">NO. WHATSAPP</th>
-              <th class="py-3 px-4">PERAN</th>
-              <th class="py-3 px-4">DIBUAT</th>
-              <th class="py-3 px-4">STATUS</th>
-              <th class="py-3 px-4 text-right">AKSI</th>
+            <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <th class="py-3 px-4">Nama</th>
+              <th class="py-3 px-4">Email</th>
+              <th class="py-3 px-4">No. WhatsApp</th>
+              <th class="py-3 px-4">Peran</th>
+              <th class="py-3 px-4">Dibuat</th>
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4 text-right">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -221,10 +221,10 @@
                     v-if="user.status === 'pending'"
                     type="button"
                     :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                    class="h-7 px-2.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                     @click="handleApprove(user)"
                   >
-                    <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                     <span v-else>ACC</span>
                   </button>
 
@@ -254,7 +254,7 @@
                   <button
                     type="button"
                     :disabled="processingId === user.id"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
                     @click="openEditModal(user)"
                     title="Ubah Pengguna"
                   >
@@ -332,7 +332,7 @@
         </div>
 
         <!-- Card Middle: Contact & Info -->
-        <div class="bg-slate-50/70 dark:bg-slate-900/60 rounded-lg p-2.5 space-y-1.5 text-xs text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800">
+        <div class="rounded-lg p-2.5 space-y-1.5 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
           <div class="flex items-center gap-2 truncate">
             <Mail class="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span class="font-mono text-[11px] truncate select-all text-slate-700 dark:text-slate-300">{{ user.email }}</span>
@@ -389,10 +389,10 @@
                 v-if="user.status === 'pending'"
                 type="button"
                 :disabled="processingId === user.id"
-                class="h-7 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                class="h-7 px-3 rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                 @click="handleApprove(user)"
               >
-                <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                 <Check v-else class="w-3.5 h-3.5" />
                 <span>ACC Akun</span>
               </button>
@@ -553,10 +553,10 @@
 
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                 :disabled="isSubmitting"
               >
-                <span v-if="isSubmitting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span v-if="isSubmitting" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                 <span v-else>Simpan & Buat Akun</span>
               </button>
             </div>
@@ -699,10 +699,10 @@
 
               <button
                 type="submit"
-                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                 :disabled="isEditing"
               >
-                <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                 <span v-else>Simpan Perubahan</span>
               </button>
             </div>
@@ -755,11 +755,11 @@
 
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
               @click="confirmDelete"
               :disabled="processingId === userToDelete.id"
             >
-              <span v-if="processingId === userToDelete.id" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="processingId === userToDelete.id" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Ya, Hapus</span>
             </button>
           </div>
@@ -798,7 +798,7 @@
             <button
               type="button"
               :disabled="isResetting"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-75"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-75 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
               @click="handleResetData"
             >
               <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': isResetting }" />

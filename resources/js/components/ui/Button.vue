@@ -55,11 +55,11 @@ defineProps({
 defineEmits(['click']);
 
 const variantClasses = {
-  default: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-xs rounded-lg border border-blue-600 font-semibold',
+  default: 'rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium',
   secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 rounded-lg border border-slate-200',
   outline: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 rounded-lg shadow-2xs',
   ghost: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg',
-  destructive: 'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 rounded-lg shadow-xs border border-rose-600',
+  destructive: 'rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-medium',
   subtleTeal: 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-lg',
 };
 

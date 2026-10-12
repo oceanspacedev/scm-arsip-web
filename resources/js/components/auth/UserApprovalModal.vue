@@ -120,10 +120,10 @@
               <button
                 type="button"
                 :disabled="processingId === user.id"
-                class="px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5 disabled:opacity-75 disabled:cursor-wait"
+                class="px-3.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-75 disabled:cursor-wait bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
                 @click="approveUser(user.id)"
               >
-                <span v-if="processingId === user.id" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span v-if="processingId === user.id" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                 <Check v-else class="w-3.5 h-3.5" />
                 <span>{{ processingId === user.id ? 'Memproses...' : 'Setujui (ACC)' }}</span>
               </button>
@@ -171,11 +171,11 @@
                       v-if="user.status !== 'approved'"
                       type="button"
                       :disabled="processingId === user.id"
-                      class="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                      class="px-2.5 py-1 rounded text-[10px] transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
                       @click="approveUser(user.id)"
                       title="Setujui Akun"
                     >
-                      <span v-if="processingId === user.id" class="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span v-if="processingId === user.id" class="w-2.5 h-2.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
                       <span>{{ processingId === user.id ? '...' : 'ACC' }}</span>
                     </button>
                     <button
@@ -278,11 +278,11 @@
 
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold text-xs transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-75"
+              class="w-full py-2 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-75 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-medium"
               @click="executeDelete"
               :disabled="processingId === userToDelete.id"
             >
-              <span v-if="processingId === userToDelete.id" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="processingId === userToDelete.id" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Ya, Hapus</span>
             </button>
           </div>

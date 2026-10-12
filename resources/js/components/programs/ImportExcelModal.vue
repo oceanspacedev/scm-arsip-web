@@ -10,21 +10,16 @@
     ></div>
 
     <!-- Modal Dialog -->
-    <div class="relative bg-white dark:bg-[#111827] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+    <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
       <!-- Header -->
-      <div class="px-6 py-4.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0">
-            <ExcelIcon class="w-5 h-5" />
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">
-              Import Data Program & Invoice
-            </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Unggah file Excel (.xlsx, .xls) atau CSV untuk memasukkan data program sekaligus
-            </p>
-          </div>
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Import Data Program & Invoice
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Unggah file Excel (.xlsx, .xls) atau CSV untuk memasukkan data program sekaligus
+          </p>
         </div>
         <button
           type="button"
@@ -38,46 +33,38 @@
       <!-- Body -->
       <div class="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
         <!-- Format Column Reference Note -->
-        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-start gap-3 text-slate-700 dark:text-slate-300">
-          <Info class="w-4 h-4 text-slate-500 dark:text-slate-400 mt-0.5 shrink-0" />
-          <div class="flex-1 text-[11px] leading-relaxed">
-            <p class="font-bold text-slate-900 dark:text-white">Format Kolom yang Didukung:</p>
-            <div class="mt-1.5 flex flex-wrap gap-1.5">
-              <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800/80 font-mono font-bold text-blue-700 dark:text-blue-300">TANGGAL</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">BULAN</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">KATEGORI</span>
-              <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 rounded border border-emerald-200 dark:border-emerald-800/80 font-mono font-bold text-emerald-700 dark:text-emerald-300">BRAND</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">COMPANY NAME</span>
-              <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800/80 font-mono font-bold text-amber-700 dark:text-amber-300">KODE GUDANG</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. PO/SJ</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">PROGRAM</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">SUPPLIER</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. INVOICE</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">DPP</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">PPN</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">TOTAL INVOICE</span>
-              <span class="px-2 py-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono font-semibold text-slate-700 dark:text-slate-300">NO. FAKTUR PAJAK</span>
-              <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800/80 font-mono font-bold text-blue-700 dark:text-blue-300">TAX INVOICE DATE</span>
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div class="flex-1">
+            <p class="font-medium text-slate-900 dark:text-slate-100">Kolom yang didukung</p>
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              <span
+                v-for="col in supportedColumns"
+                :key="col"
+                class="px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300"
+              >
+                {{ col }}
+              </span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 mt-1.5 text-[10px]">
-              * PPN (11%) dan Total Invoice akan dihitung otomatis jika nilainya dikosongkan.
+            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+              PPN (11%) dan Total Invoice dihitung otomatis jika nilainya dikosongkan.
             </p>
           </div>
-          <div class="shrink-0 flex flex-col sm:flex-row gap-1.5">
+          <div class="shrink-0 flex gap-2">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors shadow-2xs cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               @click="downloadTemplate('xlsx')"
             >
-              <ExcelIcon class="w-3.5 h-3.5" />
-              <span>Unduh Template (.xlsx)</span>
+              <Download class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>Template Excel</span>
             </button>
             <button
               type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors shadow-2xs cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               @click="downloadTemplate('csv')"
             >
-              <span>Unduh CSV</span>
+              <Download class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>Template CSV</span>
             </button>
           </div>
         </div>
@@ -85,8 +72,8 @@
         <!-- Dropzone -->
         <div
           v-if="parsedRows.length === 0"
-          class="border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-colors"
-          :class="isDragging ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400 bg-slate-50/40 dark:bg-slate-900/40'"
+          class="border border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors"
+          :class="isDragging ? 'border-slate-500 bg-slate-50 dark:border-slate-400 dark:bg-slate-800/50' : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'"
           @dragover.prevent="isDragging = true"
           @dragleave.prevent="isDragging = false"
           @drop.prevent="handleDrop"
@@ -101,11 +88,11 @@
           />
 
           <div class="flex flex-col items-center justify-center gap-2">
-            <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-1">
-              <UploadCloud class="w-6 h-6" />
+            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs text-slate-500 dark:text-slate-400 flex items-center justify-center mb-1">
+              <UploadCloud class="w-5 h-5" />
             </div>
-            <p class="font-bold text-slate-800 dark:text-slate-200 text-sm">
-              Tarik file Excel / CSV ke sini, atau <span class="text-blue-600 dark:text-blue-400 underline">pilih dari perangkat</span>
+            <p class="font-medium text-slate-800 dark:text-slate-200 text-sm">
+              Tarik file Excel / CSV ke sini, atau <span class="text-slate-900 dark:text-white underline underline-offset-2">pilih dari perangkat</span>
             </p>
             <p class="text-slate-400 dark:text-slate-500 text-[11px]">
               Mendukung format .xlsx, .xls, atau .csv (Maksimal 10 MB)
@@ -115,39 +102,57 @@
 
         <!-- Loading State -->
         <div v-if="isLoading" class="py-8 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
-          <div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-6 h-6 border-2 border-slate-300 border-t-slate-700 dark:border-slate-600 dark:border-t-slate-200 rounded-full animate-spin"></div>
           <p class="font-medium text-xs">Membaca dan memvalidasi file data...</p>
         </div>
 
-        <!-- Error Banner -->
+        <!-- Error Banner: ringkasan singkat + daftar baris duplikat (bila ada) -->
         <div
           v-if="errorMessage"
-          class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-3"
+          class="rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 text-xs overflow-hidden"
         >
-          <AlertCircle class="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
-          <div class="flex-1">
-            <p class="font-bold">Gagal Memproses File</p>
-            <p class="mt-0.5 text-rose-700 dark:text-rose-300 leading-relaxed">{{ errorMessage }}</p>
+          <div class="flex items-start gap-2.5 px-3.5 py-3">
+            <AlertCircle class="w-4 h-4 text-rose-500 mt-px shrink-0" />
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-slate-900 dark:text-slate-100">
+                {{ duplicateRows.length ? 'Upload ditolak' : 'Gagal memproses file' }}
+              </p>
+              <p class="mt-0.5 text-slate-500 dark:text-slate-400 leading-relaxed">{{ errorMessage }}</p>
+            </div>
+            <button
+              type="button"
+              class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              @click="dismissError"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            type="button"
-            class="text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 p-1 cursor-pointer"
-            @click="errorMessage = ''"
+
+          <ul
+            v-if="duplicateRows.length"
+            class="max-h-36 overflow-y-auto border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800"
           >
-            <X class="w-4 h-4" />
-          </button>
+            <li
+              v-for="dup in duplicateRows"
+              :key="dup.row"
+              class="flex items-center gap-3 px-3.5 py-1.5 text-[11px]"
+            >
+              <span class="w-12 shrink-0 text-slate-400 tabular-nums">Baris {{ dup.row }}</span>
+              <span class="shrink-0 font-medium text-slate-700 dark:text-slate-200 tabular-nums">{{ dup.po_sj_number }}</span>
+              <span class="min-w-0 truncate text-slate-500 dark:text-slate-400">{{ dup.company_name }} · {{ dup.category }}</span>
+              <span v-if="dup.reason === 'in_file'" class="ml-auto shrink-0 text-slate-400">ganda di file</span>
+            </li>
+          </ul>
         </div>
 
         <!-- Parsed Data Preview -->
         <div v-if="parsedRows.length > 0 && !isLoading" class="space-y-3 animate-in fade-in duration-150">
           <!-- File Selected Info Banner -->
-          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                <ExcelIcon class="w-4 h-4" />
-              </div>
+              <FileSpreadsheet class="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0" />
               <div>
-                <p class="font-bold text-slate-900 dark:text-white text-xs">
+                <p class="font-medium text-slate-900 dark:text-white text-xs">
                   {{ selectedRawFile?.name || 'File Excel Terpilih' }}
                 </p>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400">
@@ -157,7 +162,7 @@
             </div>
             <button
               type="button"
-              class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               @click="resetFile"
             >
               Ganti File
@@ -165,10 +170,10 @@
           </div>
 
           <!-- Preview Table -->
-          <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
+          <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
             <div class="overflow-x-auto max-h-72">
               <table class="w-full text-left text-xs border-collapse">
-                <thead class="sticky top-0 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
+                <thead class="sticky top-0 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium uppercase text-[10px] whitespace-nowrap">
                   <tr>
                     <th class="py-2.5 px-3">NO</th>
                     <th class="py-2.5 px-2.5 whitespace-nowrap">TANGGAL</th>
@@ -200,7 +205,7 @@
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                       {{ row.category }}
                     </td>
-                    <td class="py-2 px-2 text-slate-800 dark:text-slate-200 whitespace-nowrap text-[10px] font-semibold">
+                    <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                       {{ row.brand || 'SCM' }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 max-w-[120px] truncate" :title="row.company_name">
@@ -210,7 +215,7 @@
                       {{ row.kode_gudang || '-' }}
                     </td>
                     <td class="py-2 px-2 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px] tabular-nums">
-                      {{ row.po_sj_number }}
+                      {{ row.po_sj_number || '-' }}
                     </td>
                     <td class="py-2 px-3 font-medium text-slate-800 dark:text-slate-200 max-w-[140px] truncate" :title="row.program_name">
                       {{ row.program_name }}
@@ -233,14 +238,14 @@
                     <td class="py-2 px-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.dpp) }}
                     </td>
-                    <td class="py-2 px-3 text-right text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap tabular-nums">
+                    <td class="py-2 px-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.ppn) }}
                     </td>
-                    <td class="py-2 px-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap tabular-nums">
+                    <td class="py-2 px-3 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap tabular-nums">
                       {{ formatRupiah(row.total_invoice) }}
                     </td>
                     <td class="py-2 px-3 text-center whitespace-nowrap">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                         {{ row.payment_status || 'WAITING PAYMENT' }}
                       </span>
                     </td>
@@ -248,7 +253,7 @@
                 </tbody>
               </table>
             </div>
-            <div v-if="parsedRows.length > 15" class="p-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center text-[10px] text-slate-500 dark:text-slate-400">
+            <div v-if="parsedRows.length > 15" class="p-2 border-t border-slate-200 dark:border-slate-800 text-center text-[10px] text-slate-500 dark:text-slate-400">
               Menampilkan 15 dari {{ parsedRows.length }} baris data
             </div>
           </div>
@@ -256,26 +261,26 @@
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between">
+      <div class="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <span class="text-slate-500 dark:text-slate-400 text-xs">
           {{ parsedRows.length > 0 ? `${parsedRows.length} data siap dimasukkan` : 'Pilih file terlebih dahulu' }}
         </span>
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
           <button
             type="button"
-            class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             @click="closeModal"
           >
             Batal
           </button>
           <button
             type="button"
-            :disabled="parsedRows.length === 0 || isLoading || isImporting"
-            class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs transition-all cursor-pointer"
+            :disabled="parsedRows.length === 0 || isLoading || isImporting || duplicateRows.length > 0"
+            class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
             @click="executeImport"
           >
             <UploadCloud v-if="!isImporting" class="w-4 h-4" />
-            <span v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            <span v-else class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
             <span>{{ isImporting ? 'Menyimpan Data...' : `Konfirmasi & Import ${parsedRows.length > 0 ? `${parsedRows.length} Data` : ''}` }}</span>
           </button>
         </div>
@@ -290,14 +295,19 @@ import { useRouter } from 'vue-router';
 import {
   UploadCloud,
   X,
-  Info,
   Download,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-vue-next';
 import { useTaxStore, formatRupiah, getProgramMonth, formatDate, getProgramYear, isNonPpnCategory } from '../../store/taxStore';
 
 const router = useRouter();
 const store = useTaxStore();
+
+const supportedColumns = [
+  'TANGGAL', 'BULAN', 'KATEGORI', 'BRAND', 'COMPANY NAME', 'KODE GUDANG', 'NO. PO/SJ', 'PROGRAM',
+  'SUPPLIER', 'NO. INVOICE', 'DPP', 'PPN', 'TOTAL INVOICE', 'NO. FAKTUR PAJAK', 'TAX INVOICE DATE'
+];
 
 const isOpen = computed(() => store.isImportModalOpen.value);
 
@@ -305,6 +315,8 @@ const isDragging = ref(false);
 const isLoading = ref(false);
 const isImporting = ref(false);
 const errorMessage = ref('');
+// Baris yang ditolak server karena sudah terdaftar: [{ row, po_sj_number, company_name, category, reason }]
+const duplicateRows = ref([]);
 const parsedRows = ref([]);
 const selectedRawFile = ref(null);
 const fileInputRef = ref(null);
@@ -314,10 +326,15 @@ function closeModal() {
   store.closeImportModal();
 }
 
+function dismissError() {
+  errorMessage.value = '';
+  duplicateRows.value = [];
+}
+
 function resetFile() {
   parsedRows.value = [];
   selectedRawFile.value = null;
-  errorMessage.value = '';
+  dismissError();
   isLoading.value = false;
   if (fileInputRef.value) {
     fileInputRef.value.value = '';
@@ -699,7 +716,8 @@ function mapRawRow(raw) {
     supplier: supplier || 'Vendor SCM',
     company_name: company_name || 'PT SCM Nusantara',
     kode_gudang: kode_gudang || '',
-    po_sj_number: po_sj_number || `PO-${Date.now().toString().slice(-4)}`,
+    // Jangan isi PO palsu: baris tanpa PO akan dianggap duplikat satu sama lain
+    po_sj_number: po_sj_number || '',
     invoice_number,
     dpp,
     ppn,
@@ -717,7 +735,7 @@ function mapRawRow(raw) {
 }
 
 async function processFile(file) {
-  errorMessage.value = '';
+  dismissError();
   isLoading.value = true;
   parsedRows.value = [];
   selectedRawFile.value = file;
@@ -811,7 +829,7 @@ function downloadTemplate(format = 'xlsx') {
 async function executeImport() {
   if (parsedRows.value.length === 0 || isImporting.value) return;
   isImporting.value = true;
-  errorMessage.value = '';
+  dismissError();
   try {
     await store.importPrograms(parsedRows.value, selectedRawFile.value);
 
@@ -833,7 +851,10 @@ async function executeImport() {
     // Navigasi ke Programs untuk melihat data yang baru diimport
     router.push('/programs');
   } catch (err) {
-    errorMessage.value = err.message || 'Gagal menyimpan data import ke server.';
+    duplicateRows.value = err.duplicates || [];
+    errorMessage.value = duplicateRows.value.length
+      ? `${duplicateRows.value.length} data sudah terdaftar dengan Company, No. PO, dan Category yang sama, jadi tidak ada yang diimpor. Ganti file untuk mengimpor data baru.`
+      : (err.message || 'Gagal menyimpan data import ke server.');
   } finally {
     isImporting.value = false;
   }

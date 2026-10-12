@@ -20,6 +20,8 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- Tes tidak boleh menyentuh S3 sungguhan; tes S3 memakai endpoint palsu + Http::fake -->
+        <env name="AWS_ENDPOINT" value=""/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

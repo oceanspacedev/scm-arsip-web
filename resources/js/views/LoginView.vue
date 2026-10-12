@@ -26,8 +26,8 @@
       <template v-if="!isRegisterMode && !isOtpStep">
         <!-- Card Header: Clean Title & Description (Sign Up moved to bottom) -->
         <CardHeader class="pb-4 pt-6 px-6 sm:px-7">
-          <CardTitle class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Login ke Akun
+          <CardTitle class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            Supply Chain Management
           </CardTitle>
           <CardDescription class="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {{ loginTab === 'whatsapp' ? 'Masukkan nomor WhatsApp terdaftar untuk verifikasi OTP' : 'Masukkan email dan kata sandi untuk masuk ke sistem' }}
@@ -55,7 +55,7 @@
             <button
               v-if="isNotRegisteredAlert"
               type="button"
-              class="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs mt-0.5"
+              class="w-full py-2 px-3 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 mt-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               @click="redirectToRegisterWithPhone"
             >
               <span>Registrasi Akun Baru Sekarang</span>
@@ -75,7 +75,7 @@
                 type="email"
                 placeholder="m@example.com"
                 required
-                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
             </div>
 
@@ -90,7 +90,7 @@
                   :type="showPassword ? 'text' : 'password'"
                   placeholder="••••••••"
                   required
-                  class="w-full h-10 px-3.5 pr-10 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  class="w-full h-10 px-3.5 pr-10 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
                 <button
                   type="button"
@@ -109,7 +109,7 @@
                 <input
                   v-model="rememberMe"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-600 cursor-pointer accent-blue-600"
+                  class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-slate-400 cursor-pointer accent-blue-600"
                 />
                 <span>Ingat saya di perangkat ini</span>
               </label>
@@ -118,10 +118,10 @@
             <!-- Main Blue Button: Login -->
             <button
               type="submit"
-              class="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-70"
+              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               :disabled="isLoading"
             >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Login</span>
             </button>
 
@@ -159,7 +159,7 @@
                 type="text"
                 placeholder="Contoh: 081224290502"
                 required
-                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
               <p class="text-xs text-slate-500 dark:text-slate-400">
                 Kode verifikasi OTP 6-digit akan dikirimkan ke WhatsApp Anda.
@@ -168,10 +168,10 @@
 
             <button
               type="submit"
-              class="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-70"
+              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               :disabled="isLoading"
             >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Kirim Kode OTP</span>
             </button>
 
@@ -290,10 +290,10 @@
 
             <button
               type="submit"
-              class="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-70"
+              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               :disabled="isLoading || otpInput.length < 6"
             >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Verifikasi & Masuk</span>
             </button>
           </form>
@@ -375,7 +375,7 @@
             <div class="pt-2 max-w-sm mx-auto">
               <button
                 type="button"
-                class="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors cursor-pointer shadow-xs"
+                class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                 @click="backToLoginForm"
               >
                 Kembali ke Halaman Login
@@ -402,7 +402,7 @@
                 type="text"
                 placeholder="Nama sesuai identitas kantor"
                 required
-                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
             </div>
 
@@ -416,7 +416,7 @@
                   type="text"
                   placeholder="Contoh: 081234567890"
                   required
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -429,7 +429,7 @@
                   type="email"
                   placeholder="nama@perusahaan.com"
                   required
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -441,7 +441,7 @@
               <select
                 v-model="regForm.role"
                 required
-                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
+                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
               >
                 <option value="Staff Gudang">Staff Gudang</option>
                 <option value="Staff Finance">Staff Finance</option>
@@ -460,7 +460,7 @@
                   placeholder="Minimal 6 karakter"
                   required
                   minlength="6"
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -474,7 +474,7 @@
                   placeholder="Ketik ulang kata sandi"
                   required
                   minlength="6"
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -488,10 +488,10 @@
 
             <button
               type="submit"
-              class="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-70"
+              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               :disabled="isLoading"
             >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span v-else>Daftar Sekarang</span>
             </button>
           </form>
@@ -510,11 +510,6 @@
         </CardFooter>
       </template>
     </Card>
-
-    <!-- Simple Footer -->
-    <p class="text-[11px] text-slate-400 dark:text-slate-500 text-center mt-5 select-none">
-      &copy; 2026 TaxVault Enterprise System.
-    </p>
   </div>
 </template>
 

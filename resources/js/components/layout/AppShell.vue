@@ -77,6 +77,8 @@ const currentRouteName = computed(() => {
   if (path === '/programs') return 'Arsip Program';
   if (path.startsWith('/programs/')) return 'Detail Program';
   if (path === '/users') return 'Manajemen User';
+  if (path === '/permissions') return 'Hak Akses & Role';
+  if (path === '/master-data') return 'Data Master';
   if (path === '/settings') return 'Pengaturan Sistem';
   return route.name || 'Dokumen Pajak';
 });

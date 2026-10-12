@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\AdminSettingController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\WhmsIntegrationController;
+use App\Http\Middleware\EnsureWhmsIntegrationToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +41,7 @@ Route::prefix('api')->group(function () {
     Route::put('/programs/{id}', [ProgramController::class, 'update']);
     Route::delete('/programs/{id}', [ProgramController::class, 'destroy']);
     Route::post('/programs/{id}/documents', [ProgramController::class, 'uploadDocument']);
+    Route::get('/programs/{id}/documents/{docId}/file', [ProgramController::class, 'documentFile']);
     Route::post('/programs/{id}/documents/{docId}/analyze', [ProgramController::class, 'analyzeDocumentAi']);
     Route::delete('/programs/{id}/documents/{docId}', [ProgramController::class, 'deleteDocument'])->where('docId', '.*');
     Route::post('/programs/import', [ProgramController::class, 'import']);
@@ -60,6 +63,12 @@ Route::prefix('api')->group(function () {
     Route::post('/master-data/update-item', [MasterDataController::class, 'updateItem']);
     Route::post('/master-data/delete-item', [MasterDataController::class, 'deleteItem']);
     Route::post('/master-data/reset', [MasterDataController::class, 'reset']);
+
+    // 6. Integrasi WHMS (server ke server): Memo/DO dari petugas gudang, dilindungi token
+    Route::prefix('integrations/whms')->middleware(EnsureWhmsIntegrationToken::class)->group(function () {
+        Route::get('/programs', [WhmsIntegrationController::class, 'programs']);
+        Route::post('/documents', [WhmsIntegrationController::class, 'storeDocument']);
+    });
 });
 
 /*

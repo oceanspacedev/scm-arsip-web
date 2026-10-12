@@ -8,12 +8,24 @@ use App\Models\ProgramDocument;
 use App\Models\RawImport;
 use App\Services\SeaweedStorageService;
 use App\Services\DocumentAiAnalysisService;
+use App\Services\ProgramDocumentStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class ProgramController extends Controller
 {
+    /**
+     * Nomor yang diisi AI per jenis dokumen: [kolom program (= kunci hasil AI), label].
+     * Hanya nomor ini yang diubah; DPP, PPN, total, tanggal, dan data lain tidak disentuh.
+     */
+    private const AI_NUMBER_FIELDS = [
+        'invoice' => ['invoice_no', 'No. Invoice'],
+        'faktur' => ['faktur_number', 'No. Faktur'],
+        'faktur_pajak' => ['faktur_number', 'No. Faktur'],
+    ];
+
     /**
      * Get all programs with summary metrics
      */
@@ -232,6 +244,13 @@ class ProgramController extends Controller
         }
 
         $category = $request->input('category') ?: 'Logistik';
+        $companyName = $request->input('company_name') ?: 'PT SCM Nusantara';
+        $poSjNumber = $request->input('po_sj_number') ?: $request->input('no_po_sj');
+
+        if ($duplicate = Program::findDuplicate($companyName, $poSjNumber, $category)) {
+            return $this->duplicateResponse($duplicate);
+        }
+
         $isNonPpn = self::isNonPpnCategory($category, $title);
 
         $dpp = (float) ($request->input('dpp_amount') ?? $request->input('dpp') ?? 0);
@@ -267,11 +286,11 @@ class ProgramController extends Controller
             'title' => $title,
             'supplier' => $supplier,
             'npwp' => $request->input('npwp') ?: '01.000.000.0-000.000',
-            'category' => $request->input('category') ?: 'Logistik',
+            'category' => $category,
             'brand' => $request->input('brand') ?: 'SCM',
-            'company_name' => $request->input('company_name') ?: 'PT SCM Nusantara',
+            'company_name' => $companyName,
             'kode_gudang' => $request->input('kode_gudang') ?: $request->input('warehouse_code'),
-            'po_sj_number' => $request->input('po_sj_number') ?: $request->input('no_po_sj'),
+            'po_sj_number' => $poSjNumber,
             'invoice_no' => $request->input('invoice_no') ?: $request->input('invoice_number') ?: ('INV/' . date('Y') . '/SCM/' . rand(1000, 9999)),
             'dpp_amount' => $dpp,
             'ppn_amount' => $ppn,
@@ -378,6 +397,18 @@ class ProgramController extends Controller
             }
         }
 
+        // Cek duplikasi hanya jika Company / No. PO / Category berubah, supaya arsip lama
+        // yang kebetulan sudah dobel tetap bisa diedit kolom lainnya
+        $next = $data + $program->only(['company_name', 'po_sj_number', 'category']);
+        $keyChanged = Program::duplicateKey($next['company_name'], $next['po_sj_number'], $next['category'])
+            !== Program::duplicateKey($program->company_name, $program->po_sj_number, $program->category);
+        if ($keyChanged) {
+            $duplicate = Program::findDuplicate($next['company_name'], $next['po_sj_number'], $next['category']);
+            if ($duplicate) {
+                return $this->duplicateResponse($duplicate);
+            }
+        }
+
         if (!empty($data)) {
             $program->update($data);
         }
@@ -387,6 +418,19 @@ class ProgramController extends Controller
             'message' => 'Program berhasil diperbarui.',
             'program' => $program->load('documents')
         ]);
+    }
+
+    /**
+     * Respon penolakan karena kombinasi Company + No. PO + Category sudah terdaftar
+     */
+    private function duplicateResponse(Program $existing)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => "Data sudah terdaftar: Company \"{$existing->company_name}\", No. PO \"{$existing->po_sj_number}\", "
+                . "dan Category \"{$existing->category}\" sudah tersimpan pada program \"{$existing->title}\" (ID {$existing->id}).",
+            'duplicate' => $existing->only(['id', 'title', 'company_name', 'po_sj_number', 'category']),
+        ], 409);
     }
 
     /**
@@ -447,30 +491,23 @@ class ProgramController extends Controller
         $fileName = $request->input('file_name');
         $fileSize = $request->input('file_size');
         $filePath = null;
-        $fileUrl = null;
+        $fileContent = null;
+        $fileExtension = null;
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $fileName = $fileName ?: $file->getClientOriginalName();
-            $extension = $file->getClientOriginalExtension() ?: 'pdf';
-            $safeName = 'doc_' . time() . '_' . Str::random(8) . '.' . $extension;
+            // Isi berkas disimpan untuk analisis AI, karena berkas di S3 tidak ada di disk lokal
+            $fileContent = $file->getContent();
+            $fileExtension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
 
-            $destination = public_path('uploads/documents');
-            if (!file_exists($destination)) {
-                mkdir($destination, 0777, true);
-            }
-
-            $file->move($destination, $safeName);
-            $filePath = 'uploads/documents/' . $safeName;
-            $fileUrl = url('uploads/documents/' . $safeName);
-
-            $bytes = filesize($destination . '/' . $safeName);
-            $fileSize = $bytes >= 1048576 
-                ? round($bytes / 1048576, 1) . ' MB' 
-                : round($bytes / 1024, 1) . ' KB';
+            $stored = ProgramDocumentStorage::store($file, (string) $id);
+            $filePath = $stored['path'];
+            $fileSize = $stored['size'];
         }
 
         $docId = 'doc-' . time() . '-' . rand(10, 99);
+        $fileUrl = ProgramDocument::urlFor((string) $id, $docId, $filePath);
 
         $docData = [
             'id' => $docId,
@@ -504,62 +541,18 @@ class ProgramController extends Controller
                 $program->update(['status' => 'Lengkap']);
             }
 
-            // Synchronous AI analysis only if NOT async_ai requested
+            // Synchronous AI analysis only if NOT async_ai requested (hanya nomor dokumen yang diisi)
             $isAsyncAi = $request->boolean('async_ai', false);
-            if (!$isAsyncAi && $filePath && file_exists(public_path($filePath)) && in_array($backendType, ['invoice', 'faktur'])) {
+            $aiField = self::AI_NUMBER_FIELDS[$backendType] ?? null;
+            if (!$isAsyncAi && $fileContent !== null && $aiField) {
                 try {
-                    $analysis = DocumentAiAnalysisService::analyzeFile(public_path($filePath), $backendType);
+                    [$column, $label] = $aiField;
+                    $analysis = $this->analyzeDocumentContent($fileContent, $fileExtension, $backendType);
                     if ($analysis['success']) {
                         $aiAnalysis = $analysis;
-                        $aiUpdates = [];
-
-                        // 1. Nomor Invoice - Lindungi nomor invoice yang sudah diinput/ada sebelumnya
-                        if (!empty($analysis['invoice_no'])) {
-                            $isPlaceholderInv = empty($program->invoice_no) || preg_match('/^INV\/\d{4}\/SCM\/\d+$/i', $program->invoice_no);
-                            if ($isPlaceholderInv || (empty($program->invoice_no) && $backendType === 'invoice')) {
-                                $aiUpdates['invoice_no'] = $analysis['invoice_no'];
-                                $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
-                            }
-                        }
-
-                        // 2. Nomor Faktur Pajak
-                        if (!empty($analysis['faktur_number'])) {
-                            if ($backendType === 'faktur' || empty($program->faktur_number)) {
-                                $aiUpdates['faktur_number'] = $analysis['faktur_number'];
-                                $aiDetectedInfo[] = "No. Faktur: {$analysis['faktur_number']}";
-                            }
-                        }
-
-                        // 3. Tanggal Faktur Pajak
-                        if (!empty($analysis['faktur_date'])) {
-                            if ($backendType === 'faktur' || empty($program->faktur_date)) {
-                                $aiUpdates['faktur_date'] = $analysis['faktur_date'];
-                            }
-                        }
-
-                        // 4. Status Pembayaran jika terdeteksi dari dokumen
-                        if (!empty($analysis['payment_status'])) {
-                            if (empty($program->payment_status) || $program->payment_status === 'WAITING PAYMENT') {
-                                $aiUpdates['payment_status'] = $analysis['payment_status'];
-                                $aiDetectedInfo[] = "Status Payment: {$analysis['payment_status']}";
-                            }
-                        }
-
-                        // 5. Nominal jika sebelumnya kosong
-                        if (!empty($analysis['dpp_amount']) && ($program->dpp_amount == 0 || $backendType === 'invoice')) {
-                            $aiUpdates['dpp_amount'] = (float)$analysis['dpp_amount'];
-                        }
-                        if (!empty($analysis['ppn_amount']) && ($program->ppn_amount == 0 || $backendType === 'invoice')) {
-                            if (!self::isNonPpnCategory($program->category, $program->title)) {
-                                $aiUpdates['ppn_amount'] = (float)$analysis['ppn_amount'];
-                            }
-                        }
-                        if (!empty($analysis['total_amount']) && ($program->total_amount == 0 || $backendType === 'invoice')) {
-                            $aiUpdates['total_amount'] = (float)$analysis['total_amount'];
-                        }
-
-                        if (!empty($aiUpdates)) {
-                            $program->update($aiUpdates);
+                        if (!empty($analysis[$column])) {
+                            $program->update([$column => $analysis[$column]]);
+                            $aiDetectedInfo[] = "{$label}: {$analysis[$column]}";
                         }
                     }
                 } catch (\Throwable $e) {
@@ -583,65 +576,87 @@ class ProgramController extends Controller
     }
 
     /**
-     * Trigger manual AI document analysis for an already uploaded document
+     * Tampilkan / unduh berkas dokumen, dari S3 atau folder lokal
+     */
+    public function documentFile($id, $docId)
+    {
+        $document = ProgramDocument::where('program_id', $id)->where('id', $docId)->firstOrFail();
+        $stored = ProgramDocumentStorage::read($document->file_path);
+        abort_unless($stored, 404, 'Berkas dokumen tidak ditemukan.');
+
+        $fileName = $document->file_name ?: basename((string) $document->file_path);
+        $asciiName = str_replace(['/', '\\', '%'], '_', Str::ascii($fileName));
+
+        return response($stored['content'], 200, [
+            'Content-Type' => $stored['mime'],
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, $fileName, $asciiName),
+        ]);
+    }
+
+    /**
+     * Analisis AI atas isi berkas lewat salinan sementara (berkas di S3 tidak ada di disk lokal)
+     */
+    private function analyzeDocumentContent(string $content, string $extension, string $type): array
+    {
+        $base = tempnam(sys_get_temp_dir(), 'doc_');
+        $path = $base . '.' . $extension;
+        file_put_contents($path, $content);
+
+        try {
+            return DocumentAiAnalysisService::analyzeFile($path, $type);
+        } finally {
+            @unlink($path);
+            @unlink($base);
+        }
+    }
+
+    /**
+     * Baca nomor dokumen yang sudah diunggah dengan AI: No. Invoice dari invoice, No. Faktur dari faktur pajak.
+     * Hanya nomor itu yang diisi; DPP, PPN, total, dan data lain tidak diubah.
      */
     public function analyzeDocumentAi(Request $request, $id, $docId)
     {
         $program = Program::findOrFail($id);
         $document = ProgramDocument::where('program_id', $id)->where('id', $docId)->firstOrFail();
 
-        $filePath = public_path($document->file_path);
-        if (!file_exists($filePath)) {
+        $aiField = self::AI_NUMBER_FIELDS[$document->type] ?? null;
+        if (!$aiField) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI hanya membaca nomor dari dokumen invoice dan faktur pajak.'
+            ], 422);
+        }
+        [$column, $label] = $aiField;
+
+        $stored = ProgramDocumentStorage::read($document->file_path);
+        if (!$stored) {
             return response()->json([
                 'success' => false,
                 'message' => 'File fisik tidak ditemukan pada server.'
             ], 404);
         }
 
-        $analysis = DocumentAiAnalysisService::analyzeFile($filePath, $document->type);
+        $extension = strtolower(pathinfo((string) $document->file_path, PATHINFO_EXTENSION) ?: 'pdf');
+        $analysis = $this->analyzeDocumentContent($stored['content'], $extension, $document->type);
         if (!$analysis['success']) {
-            return response()->json($analysis, 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'AI belum bisa membaca dokumen ini (' . rtrim($analysis['message'] ?? 'layanan AI error', '.') . "). Isi {$label} secara manual."
+            ], 422);
         }
 
-        $updates = [];
-        $aiDetectedInfo = [];
-
-        if (!empty($analysis['invoice_no'])) {
-            $isPlaceholderInv = empty($program->invoice_no) || preg_match('/^INV\/\d{4}\/SCM\/\d+$/i', $program->invoice_no);
-            if ($isPlaceholderInv || (empty($program->invoice_no) && $document->type === 'invoice')) {
-                $updates['invoice_no'] = $analysis['invoice_no'];
-                $aiDetectedInfo[] = "No. Invoice: {$analysis['invoice_no']}";
-            }
-        }
-        if (!empty($analysis['faktur_number'])) {
-            $updates['faktur_number'] = $analysis['faktur_number'];
-            $aiDetectedInfo[] = "No. Faktur: {$analysis['faktur_number']}";
-        }
-        if (!empty($analysis['faktur_date'])) {
-            $updates['faktur_date'] = $analysis['faktur_date'];
-        }
-        if (!empty($analysis['payment_status'])) {
-            $updates['payment_status'] = $analysis['payment_status'];
-        }
-        if (!empty($analysis['dpp_amount'])) {
-            $updates['dpp_amount'] = (float)$analysis['dpp_amount'];
-        }
-        if (!empty($analysis['ppn_amount'])) {
-            if (!self::isNonPpnCategory($program->category, $program->title)) {
-                $updates['ppn_amount'] = (float)$analysis['ppn_amount'];
-            }
-        }
-        if (!empty($analysis['total_amount'])) {
-            $updates['total_amount'] = (float)$analysis['total_amount'];
+        if (empty($analysis[$column])) {
+            return response()->json([
+                'success' => false,
+                'message' => "AI tidak menemukan {$label} di dokumen ini. Isi secara manual."
+            ], 422);
         }
 
-        if (!empty($updates)) {
-            $program->update($updates);
-        }
+        $program->update([$column => $analysis[$column]]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Analisis AI selesai: ' . (implode(', ', $aiDetectedInfo) ?: 'data diperbarui'),
+            'message' => "{$label} terisi otomatis: {$analysis[$column]}",
             'ai_analysis' => $analysis,
             'program' => $program->fresh()->load('documents')
         ]);
@@ -706,9 +721,7 @@ class ProgramController extends Controller
         }
 
         foreach ($matchingDocs as $d) {
-            if ($d->file_path && file_exists(public_path($d->file_path))) {
-                @unlink(public_path($d->file_path));
-            }
+            ProgramDocumentStorage::delete($d->file_path);
             $d->delete();
         }
 
@@ -790,7 +803,31 @@ class ProgramController extends Controller
         }
 
         try {
-            // 1. Upload Raw File to SeaweedFS / S3 storage if file is present
+            // 1. Parse program rows (can be JSON string or array)
+            $programsInput = $request->input('programs', []);
+            if (is_string($programsInput)) {
+                $items = json_decode($programsInput, true) ?: [];
+            } else {
+                $items = is_array($programsInput) ? $programsInput : [];
+            }
+
+            // 2. Tolak baris yang kombinasi Company + No. PO + Category-nya sudah terdaftar,
+            //    baris lain tetap diimpor. Jika semua baris duplikat, upload ditolak seluruhnya.
+            $items = array_map(fn ($p) => $this->normalizeImportKeyFields($p), $items);
+            [$items, $duplicates] = $this->rejectDuplicateRows($items);
+
+            if (empty($items) && !empty($duplicates)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload ditolak: semua data (' . count($duplicates) . ') sudah terdaftar dengan kombinasi '
+                        . 'Company, No. PO, dan Category yang sama.',
+                    'imported_count' => 0,
+                    'skipped_count' => count($duplicates),
+                    'duplicates' => $duplicates
+                ], 409);
+            }
+
+            // 3. Upload Raw File to SeaweedFS / S3 storage if file is present
             $rawImport = null;
             if ($request->hasFile('file')) {
                 try {
@@ -817,14 +854,6 @@ class ProgramController extends Controller
                 }
             }
 
-            // 2. Parse program rows (can be JSON string or array)
-            $programsInput = $request->input('programs', []);
-            if (is_string($programsInput)) {
-                $items = json_decode($programsInput, true) ?: [];
-            } else {
-                $items = is_array($programsInput) ? $programsInput : [];
-            }
-
             try {
                 $existingMax = Program::whereRaw('id REGEXP "^[0-9]+$"')
                     ->selectRaw('MAX(CAST(id AS UNSIGNED)) as max_id')
@@ -841,7 +870,7 @@ class ProgramController extends Controller
 
                 $dpp = (float) ($p['dpp_amount'] ?? $p['dpp'] ?? 0);
                 $title = $p['title'] ?? $p['program_name'] ?? 'Program Pengadaan SCM';
-                $category = $p['category'] ?? 'Logistik';
+                $category = $p['category'];
 
                 $isNonPpn = self::isNonPpnCategory($category, $title);
                 if ($isNonPpn) {
@@ -860,9 +889,9 @@ class ProgramController extends Controller
                 }
 
                 $dueDate = $this->parseSafeDate($p['due_date'] ?? $p['program_date'] ?? null);
-                $companyName = $p['company_name'] ?? $p['company'] ?? 'PT SCM Nusantara';
+                $companyName = $p['company_name'];
                 $kodeGudang = $p['kode_gudang'] ?? $p['warehouse_code'] ?? null;
-                $poSjNumber = $p['po_sj_number'] ?? $p['no_po_sj'] ?? null;
+                $poSjNumber = $p['po_sj_number'];
                 $fakturNumber = $p['faktur_number'] ?? $p['tax_invoice_number'] ?? null;
                 $fakturDate = $p['faktur_date'] ?? $p['tax_invoice_date'] ?? null;
 
@@ -882,7 +911,7 @@ class ProgramController extends Controller
                         'title' => $p['title'] ?? $p['program_name'] ?? 'Program Pengadaan SCM',
                         'supplier' => $p['supplier'] ?? 'PT Rekanan Vendor',
                         'npwp' => $p['npwp'] ?? '01.000.000.0-000.000',
-                        'category' => $p['category'] ?? 'Logistik',
+                        'category' => $category,
                         'brand' => !empty($p['brand']) ? trim($p['brand']) : 'SCM',
                         'company_name' => $companyName,
                         'kode_gudang' => $kodeGudang,
@@ -931,11 +960,16 @@ class ProgramController extends Controller
             $allPrograms = Program::with('documents')->orderBy('due_date', 'desc')->get();
 
             $storageMessage = $rawImport ? ' Berkas mentahan tersimpan di SeaweedFS SCM.' : '';
+            $duplicateMessage = $duplicates
+                ? ' ' . count($duplicates) . ' data ditolak karena kombinasi Company, No. PO, dan Category sudah terdaftar.'
+                : '';
 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil mengimpor {$imported} data program ke database.{$storageMessage}",
+                'message' => "Berhasil mengimpor {$imported} data program ke database.{$storageMessage}{$duplicateMessage}",
                 'imported_count' => $imported,
+                'skipped_count' => count($duplicates),
+                'duplicates' => $duplicates,
                 'programs' => $allPrograms,
                 'raw_import' => $rawImport
             ]);
@@ -946,6 +980,64 @@ class ProgramController extends Controller
                 'message' => 'Gagal memproses file import: ' . $e->getMessage()
             ], 422);
         }
+    }
+
+    /**
+     * Seragamkan kolom kunci duplikasi baris import, supaya yang dicek sama dengan yang disimpan
+     */
+    private function normalizeImportKeyFields(array $p): array
+    {
+        $po = trim((string) ($p['po_sj_number'] ?? $p['no_po_sj'] ?? ''));
+
+        return array_merge($p, [
+            'company_name' => trim((string) ($p['company_name'] ?? $p['company'] ?? 'PT SCM Nusantara')),
+            'po_sj_number' => $po === '' ? null : $po,
+            'category' => trim((string) ($p['category'] ?? 'Logistik')),
+        ]);
+    }
+
+    /**
+     * Pisahkan baris import yang kombinasi Company + No. PO + Category-nya sudah terdaftar
+     * atau muncul lebih dari sekali dalam file. Baris tanpa No. PO tidak dicek.
+     *
+     * @return array{0: array, 1: array} [baris yang diimpor, baris yang ditolak]
+     */
+    private function rejectDuplicateRows(array $items): array
+    {
+        $registered = Program::groupByDuplicateKey(array_column($items, 'po_sj_number'));
+        $seenKeys = [];
+        $accepted = [];
+        $rejected = [];
+
+        foreach (array_values($items) as $index => $p) {
+            $key = Program::duplicateKey($p['company_name'], $p['po_sj_number'], $p['category']);
+            if ($key === null) {
+                $accepted[] = $p;
+                continue;
+            }
+
+            // Baris ber-id yang memperbarui arsipnya sendiri tanpa mengubah kombinasi bukan duplikat
+            $owners = collect($registered[$key] ?? []);
+            $updatesItself = !empty($p['id']) && $owners->contains(fn (Program $owner) => (string) $owner->id === (string) $p['id']);
+            $existing = $updatesItself ? null : $owners->first();
+
+            if ($existing || isset($seenKeys[$key])) {
+                $rejected[] = [
+                    'row' => $index + 1, // nomor baris sesuai urutan data yang dikirim (kolom NO di preview)
+                    'company_name' => $p['company_name'],
+                    'po_sj_number' => $p['po_sj_number'],
+                    'category' => $p['category'],
+                    'reason' => $existing ? 'registered' : 'in_file',
+                    'existing_id' => $existing?->id,
+                ];
+                continue;
+            }
+
+            $seenKeys[$key] = true;
+            $accepted[] = $p;
+        }
+
+        return [$accepted, $rejected];
     }
 
     /**

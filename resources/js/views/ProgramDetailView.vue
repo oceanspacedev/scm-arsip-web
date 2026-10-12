@@ -1,49 +1,14 @@
 <template>
-  <div v-if="program" class="space-y-6 select-none max-w-7xl mx-auto pb-10">
+  <div v-if="program" class="space-y-5 select-none max-w-7xl mx-auto pb-10">
     <!-- Header Section matching screenshot -->
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           {{ program.program_name }}
         </h1>
         <p v-if="canViewMasterColumns" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
           {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
         </p>
-      </div>
-
-      <!-- Action Buttons Top Right matching screenshot: Kembali, Ubah, Hapus -->
-      <div class="flex items-center gap-2 shrink-0 self-start">
-        <!-- Kembali -->
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          @click="goBack"
-        >
-          <ArrowLeft class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span>Kembali</span>
-        </button>
-
-        <!-- Ubah (Hanya untuk Finance dan Admin. Gudang & SCM View-Only) -->
-        <button
-          v-if="canEditProgram"
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          @click="openEditModal"
-        >
-          <Pencil class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span>Ubah</span>
-        </button>
-
-        <!-- Hapus (Hanya Superadmin Admin SCM) -->
-        <button
-          v-if="isAdmin"
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-rose-400 hover:border-red-200 dark:hover:border-rose-900/50 hover:bg-red-50/50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-          @click="confirmDeleteProgram"
-        >
-          <Trash2 class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-          <span>Hapus</span>
-        </button>
       </div>
     </div>
 
@@ -212,54 +177,54 @@
     <!-- Bottom Section: Two Columns Grid matching screenshot -->
     <div
       v-if="canViewFinanceColumns || canViewMasterColumns"
-      class="grid grid-cols-1 gap-6"
+      class="grid grid-cols-1 gap-5"
       :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
     >
       <!-- Left Card: Rekonsiliasi Nilai & Perpajakan -->
       <div v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
         <div>
           <!-- Title -->
-          <div class="p-6 pb-4">
-            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 font-sans">
+          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Rekonsiliasi Nilai & Perpajakan
             </h3>
           </div>
 
           <!-- Key-Value Rows matching screenshot -->
-          <div class="px-6 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-            <div class="py-3 flex items-center justify-between">
+          <div class="px-5 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">No. Invoice</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.invoice_number }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Invoice</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Jatuh Tempo</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">DPP</span>
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.dpp) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">PPN (11%)</span>
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.ppn) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">
                 {{ getPphLabel(program.pph_type) }}
               </span>
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.pph || 0) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">No. Faktur Pajak</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
                 {{ program.faktur_number || '-' }}
               </span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Faktur Pajak</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
                 {{ program.faktur_date ? formatDate(program.faktur_date) : '-' }}
@@ -269,19 +234,19 @@
         </div>
 
         <!-- Total Payment & Status Summary Box -->
-        <div class="p-6 pt-4">
+        <div class="px-5 pb-5 pt-2">
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <p class="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Total Payment
                 </p>
                 <div class="relative inline-flex items-center group">
                   <span
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all select-none shadow-2xs"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all select-none"
                     :class="[
                       getPaymentBadgeClass(program.payment_status),
-                      (!canEditFinance && !isAdmin) ? 'opacity-85' : 'group-hover:shadow-xs'
+                      (!canEditFinance && !isAdmin) ? 'opacity-85' : ''
                     ]"
                   >
                     <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
@@ -305,7 +270,7 @@
                 DPP + PPN (Termasuk Pajak)
               </p>
             </div>
-            <span class="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            <span class="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
               {{ formatRupiah(program.total_invoice) }}
             </span>
           </div>
@@ -316,51 +281,51 @@
       <div v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
         <div>
           <!-- Title -->
-          <div class="p-6 pb-4">
-            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">
+          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Data Program & Supplier
             </h3>
           </div>
 
           <!-- Key-Value Rows matching screenshot -->
-          <div class="px-6 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-            <div class="py-3 flex items-center justify-between">
+          <div class="px-5 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Company Name</span>
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.company_name || getProgramCompanyName(program) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">No. PO / SJ</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.po_sj_number || getProgramPoSjNumber(program) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Bulan / Masa Pajak</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Nama Supplier</span>
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.supplier }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">NPWP Supplier</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ program.npwp || '02.010.121.3-071.000' }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Kategori</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.category }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Brand</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.brand || getProgramBrand(program) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Nomor Memo/DO</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.mou_number || `DO/SCM/2026/${String(program.id).padStart(3, '0')}` }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Periode Mulai</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
             </div>
-            <div class="py-3 flex items-center justify-between">
+            <div class="py-2.5 flex items-center justify-between">
               <span class="text-xs text-slate-500 dark:text-slate-400">Periode Selesai</span>
               <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
             </div>
@@ -368,7 +333,7 @@
         </div>
 
         <!-- Catatan Pemeriksaan Box (Clean Neutral) -->
-        <div class="p-6 pt-4">
+        <div class="px-5 pb-5 pt-2">
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
             <p class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               Catatan Pemeriksaan
@@ -413,7 +378,7 @@
                 type="text"
                 required
                 :disabled="!canEditPurchase"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -425,7 +390,7 @@
                   required
                   @change="onEditSupplierChange"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
                     {{ s.name }}
@@ -438,7 +403,7 @@
                   v-model="editForm.npwp"
                   type="text"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -449,7 +414,7 @@
                 <select
                   v-model="editForm.company_name"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option v-for="c in availableCompanies" :key="c" :value="c">
                     {{ c }}
@@ -463,7 +428,7 @@
                   type="text"
                   placeholder="PO/SCM/2026/001"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -474,7 +439,7 @@
                 <select
                   v-model="editForm.category"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option v-for="cat in availableCategories" :key="cat" :value="cat">
                     {{ cat }}
@@ -487,7 +452,7 @@
                 <select
                   v-model="editForm.brand"
                   :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option v-for="b in availableBrands" :key="b" :value="b">
                     {{ b }}
@@ -513,7 +478,7 @@
                   type="text"
                   placeholder="Contoh: INV/2026/001"
                   :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -522,7 +487,7 @@
                   :value="normalizePayStatus(editForm.payment_status)"
                   @change="editForm.payment_status = $event.target.value"
                   :disabled="!canEditFinance && !isAdmin"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
                     {{ opt.label }}
@@ -540,7 +505,7 @@
                   required
                   :disabled="!canEditFinance"
                   @input="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -549,7 +514,7 @@
                   v-model="editForm.ppn_rate"
                   :disabled="!canEditFinance"
                   @change="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option value="0.11">11% (Standar)</option>
                   <option value="0.12">12%</option>
@@ -588,7 +553,7 @@
                   v-model="editForm.pph_type"
                   :disabled="!canEditFinance"
                   @change="onPphTypeChange"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option value="NON_PPH">Non PPh</option>
                   <option value="PPH_21">PPh 21 (2,5%)</option>
@@ -620,7 +585,7 @@
                   type="text"
                   placeholder="010.000-25.00000001"
                   :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: XXX.XXX-XX.XXXXXXXX</p>
               </div>
@@ -630,7 +595,7 @@
                   v-model="editForm.faktur_date"
                   type="date"
                   :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-600 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -648,9 +613,9 @@
             <button
               type="submit"
               :disabled="isSavingEdit"
-              class="px-5 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-medium hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+              class="px-5 py-2 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
-              <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
               <span>{{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
             </button>
           </div>
@@ -714,7 +679,7 @@
             <button
               type="button"
               :disabled="isDeletingDoc"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
               @click="confirmDeleteDoc"
             >
               <Loader2 v-if="isDeletingDoc" class="w-3.5 h-3.5 animate-spin" />
@@ -754,7 +719,7 @@
             </button>
             <button
               type="button"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
               @click="executeDeleteProgram"
             >
               <Trash2 class="w-3.5 h-3.5" />
@@ -773,7 +738,7 @@
     <p class="text-xs text-slate-500 dark:text-slate-400">Program mungkin telah dihapus atau URL tidak sesuai.</p>
     <router-link
       to="/programs"
-      class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700"
+      class="inline-flex items-center gap-2 px-4 py-2 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
     >
       <ArrowLeft class="w-3.5 h-3.5" />
       <span>Kembali ke Arsip Program</span>
@@ -786,7 +751,6 @@ import { computed, ref, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ArrowLeft,
-  Pencil,
   Trash2,
   FileText,
   Upload,
@@ -1193,9 +1157,10 @@ async function handlePaymentStatusChange(newStatus) {
   await store.updatePaymentStatus(program.value.id, newStatus);
 }
 
-async function openEditModal() {
+function openEditModal() {
   if (!program.value) return;
-  await store.fetchMasterData();
+  // Modal langsung dibuka; data master diperbarui di belakang
+  store.fetchMasterData();
   editForm.program_name = program.value.program_name || '';
   editForm.supplier = program.value.supplier || '';
   editForm.company_name = program.value.company_name || getProgramCompanyName(program.value) || '';

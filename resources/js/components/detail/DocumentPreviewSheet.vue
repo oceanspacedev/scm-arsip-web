@@ -14,10 +14,10 @@
         @click.self="close"
       >
         <div
-          class="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          class="bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
-          <!-- Clean, Minimal, Non-Slop Header -->
-          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0 gap-4">
+          <!-- Header -->
+          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 gap-4">
             <div class="min-w-0">
               <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {{ document?.file_name || documentTitle }}
@@ -27,7 +27,6 @@
               </p>
             </div>
 
-            <!-- Action buttons (Clean text buttons without icons) -->
             <div class="flex items-center gap-2 shrink-0">
               <a
                 v-if="actualFileUrl"
@@ -35,9 +34,9 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
-                title="Buka berkas di tab baru"
+                title="Buka di tab baru (zoom, cetak, cari teks)"
               >
-                Tab Baru
+                Tab baru
               </a>
 
               <button
@@ -51,11 +50,12 @@
 
               <button
                 type="button"
-                class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                class="ml-1 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 @click="close"
                 title="Tutup pratinjau"
+                aria-label="Tutup pratinjau"
               >
-                Tutup
+                <X class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -68,13 +68,26 @@
               <span class="text-xs">Memuat dokumen...</span>
             </div>
 
-            <!-- PDF Viewer -->
-            <iframe
+            <!-- PDF Viewer: halaman dirender sendiri dengan PDF.js, jadi latar dan scrollbar (tipis) seragam dengan aplikasi -->
+            <div
               v-else-if="actualFileUrl && isPdf"
-              :src="pdfEmbedUrl"
-              class="w-full h-full border-none bg-slate-100 dark:bg-slate-950"
-              title="Pratinjau Dokumen PDF"
-            ></iframe>
+              ref="pdfScroller"
+              class="absolute inset-0 overflow-y-auto"
+            >
+              <div ref="pdfPages" class="flex flex-col items-center gap-4 p-5"></div>
+
+              <div v-if="pdfRendering" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
+                <div class="w-6 h-6 border-2 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-200 rounded-full animate-spin"></div>
+                <span class="text-xs">Memuat dokumen...</span>
+              </div>
+
+              <div v-if="pdfError" class="absolute inset-0 flex items-center justify-center p-6">
+                <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                  {{ pdfError }}
+                  <a :href="actualFileUrl" target="_blank" rel="noopener noreferrer" class="text-slate-900 dark:text-slate-100 underline underline-offset-2">Buka di tab baru</a>
+                </p>
+              </div>
+            </div>
 
             <!-- Image Viewer -->
             <div
@@ -97,7 +110,7 @@
               <p class="text-xs text-slate-500 dark:text-slate-400">Berkas ini dapat diunduh langsung untuk dibuka pada perangkat Anda.</p>
               <button
                 type="button"
-                class="px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
                 @click="handleDownload"
               >
                 Unduh Berkas
@@ -122,7 +135,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { X } from 'lucide-vue-next';
 import { formatUploadDate, useTaxStore } from '../../store/taxStore';
 
 const props = defineProps({
@@ -164,6 +178,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   document.body.style.overflow = '';
+  resetPdf();
 });
 
 watch(
@@ -203,13 +218,81 @@ const isImage = computed(() => {
   return mime.includes('image') || /\.(png|jpe?g|webp|gif|svg)$/i.test(name) || url.startsWith('data:image/');
 });
 
-const pdfEmbedUrl = computed(() => {
-  if (!actualFileUrl.value) return '';
-  if (actualFileUrl.value.startsWith('data:') || actualFileUrl.value.startsWith('blob:')) {
-    return actualFileUrl.value;
+const pdfScroller = ref(null);
+const pdfPages = ref(null);
+const pdfRendering = ref(false);
+const pdfError = ref('');
+// Naik setiap kali dokumen berganti atau ditutup, supaya proses render yang lama berhenti
+let renderToken = 0;
+let loadingTask = null;
+
+function resetPdf() {
+  renderToken++;
+  pdfRendering.value = false;
+  pdfError.value = '';
+  // destroy() ada di loading task (bukan di dokumen PDF.js 6) dan ikut membatalkan unduhan yang
+  // masih berjalan; kegagalannya tidak boleh menghalangi modal ditutup
+  loadingTask?.destroy().catch(() => {});
+  loadingTask = null;
+}
+
+async function renderPdf(url) {
+  const token = ++renderToken;
+  pdfRendering.value = true;
+  await nextTick();
+  if (token !== renderToken || !pdfPages.value) return;
+  pdfPages.value.replaceChildren();
+
+  try {
+    // Dimuat hanya saat pratinjau dibuka, tidak ikut bundle utama.
+    // ?worker&url: berkas worker disajikan Vite tanpa klien HMR (lewat ?url biasa klien itu ikut
+    // dan butuh `document`). Saat dev, halaman (127.0.0.1:8000 / .test) dan aset Vite (localhost:5173)
+    // beda origin; PDF.js sendiri membungkus workerSrc lintas origin dengan blob, jadi pakai workerSrc.
+    const [pdfjs, { default: workerUrl }] = await Promise.all([
+      import('pdfjs-dist'),
+      import('pdfjs-dist/build/pdf.worker.min.mjs?worker&url'),
+    ]);
+    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+
+    const task = pdfjs.getDocument({ url });
+    loadingTask = task;
+    const pdf = await task.promise;
+    if (token !== renderToken) return;
+
+    // Halaman selebar area pratinjau (dikurangi padding), dirender tajam sesuai devicePixelRatio
+    const available = pdfScroller.value.clientWidth - 40;
+    const dpr = window.devicePixelRatio || 1;
+
+    for (let n = 1; n <= pdf.numPages; n++) {
+      const page = await pdf.getPage(n);
+      if (token !== renderToken) return;
+
+      const scale = Math.min(available / page.getViewport({ scale: 1 }).width, 1.5);
+      const viewport = page.getViewport({ scale: scale * dpr });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
+      canvas.className = 'bg-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-800';
+      pdfPages.value.appendChild(canvas);
+
+      await page.render({ canvas, viewport }).promise;
+      if (n === 1) pdfRendering.value = false;
+    }
+  } catch (e) {
+    if (token === renderToken) {
+      console.warn('Pratinjau PDF gagal:', e);
+      pdfError.value = 'Pratinjau PDF tidak dapat ditampilkan.';
+    }
+  } finally {
+    if (token === renderToken) pdfRendering.value = false;
   }
-  return `${actualFileUrl.value}#toolbar=1&navpanes=0`;
-});
+}
+
+watch([actualFileUrl, isPdf], ([url, pdf]) => {
+  resetPdf();
+  if (url && pdf) renderPdf(url);
+}, { immediate: true });
 
 const documentTitle = computed(() => {
   if (!props.document) return 'Pratinjau Dokumen';

@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SCM TaxVault - Arsip Dokumen Pajak</title>
-    
+
+    <!-- Ikon tab: ikon arsip polos (?v= memaksa browser mengganti ikon lama yang tersimpan di cache) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
+
     <!-- Font: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

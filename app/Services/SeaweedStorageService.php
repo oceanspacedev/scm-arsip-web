@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,7 @@ class SeaweedStorageService
     protected string $endpoint;
     protected string $publicUrl;
     protected bool $usePathStyle;
+    protected ?string $caBundle;
 
     public function __construct()
     {
@@ -25,6 +27,8 @@ class SeaweedStorageService
         $this->endpoint = rtrim(env('AWS_ENDPOINT', 'https://storage.completeselular.com'), '/');
         $this->publicUrl = rtrim(env('AWS_URL', 'https://storage.completeselular.com/Arsip SCM'), '/');
         $this->usePathStyle = filter_var(env('AWS_USE_PATH_STYLE_ENDPOINT', true), FILTER_VALIDATE_BOOLEAN);
+        // Opsional: berkas CA untuk verifikasi TLS bila PHP tidak punya CA bundle (mis. Herd di Windows)
+        $this->caBundle = env('AWS_CA_BUNDLE') ?: null;
     }
 
     /**
@@ -102,65 +106,22 @@ class SeaweedStorageService
     }
 
     /**
+     * Apakah endpoint, kredensial, dan bucket S3 sudah diisi. Kalau belum, unggahan langsung disimpan lokal.
+     */
+    public function isConfigured(): bool
+    {
+        return $this->endpoint !== ''
+            && $this->accessKey !== ''
+            && $this->secretKey !== ''
+            && trim($this->bucket, '/') !== '';
+    }
+
+    /**
      * Send PUT request to S3 using AWS SigV4
      */
-    protected function putObject(string $key, string $content, string $mimeType): array
+    public function putObject(string $key, string $content, string $mimeType): array
     {
-        $host = parse_url($this->endpoint, PHP_URL_HOST);
-        $scheme = parse_url($this->endpoint, PHP_URL_SCHEME) ?: 'https';
-        $port = parse_url($this->endpoint, PHP_URL_PORT);
-        $portSuffix = $port ? (':' . $port) : '';
-
-        // S3 standard requires lowercase bucket name
-        $bucket = strtolower(trim($this->bucket, '/'));
-        $uri = '/' . $bucket . '/' . ltrim($key, '/');
-        $fullUrl = "{$scheme}://{$host}{$portSuffix}{$uri}";
-
-        $amzDate = gmdate('Ymd\THis\Z');
-        $dateStamp = gmdate('Ymd');
-        $payloadHash = hash('sha256', $content);
-
-        // Canonical headers
-        $canonicalHeaders = "host:" . strtolower($host) . ($port ? ":$port" : '') . "\n"
-            . "x-amz-content-sha256:" . $payloadHash . "\n"
-            . "x-amz-date:" . $amzDate . "\n";
-        $signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-
-        // Canonical request
-        $canonicalRequest = "PUT\n"
-            . $uri . "\n"
-            . "\n"
-            . $canonicalHeaders . "\n"
-            . $signedHeaders . "\n"
-            . $payloadHash;
-
-        // String to sign
-        $credentialScope = "{$dateStamp}/{$this->region}/s3/aws4_request";
-        $stringToSign = "AWS4-HMAC-SHA256\n"
-            . $amzDate . "\n"
-            . $credentialScope . "\n"
-            . hash('sha256', $canonicalRequest);
-
-        // Calculate signature
-        $kSecret = 'AWS4' . $this->secretKey;
-        $kDate = hash_hmac('sha256', $dateStamp, $kSecret, true);
-        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
-        $kService = hash_hmac('sha256', 's3', $kRegion, true);
-        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
-        $signature = hash_hmac('sha256', $stringToSign, $kSigning);
-
-        $authorization = "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
-
-        $response = Http::timeout(12)
-            ->withBody($content, $mimeType)
-            ->withHeaders([
-                'Host' => $host . ($port ? ":$port" : ''),
-                'x-amz-date' => $amzDate,
-                'x-amz-content-sha256' => $payloadHash,
-                'Authorization' => $authorization,
-                'Content-Type' => $mimeType,
-            ])
-            ->put($fullUrl);
+        $response = $this->signedRequest('PUT', $key, $content, $mimeType, 12);
 
         if ($response->successful()) {
             $url = $this->publicUrl . '/' . ltrim($key, '/');
@@ -182,46 +143,8 @@ class SeaweedStorageService
      */
     public function getObject(string $key): ?array
     {
-        $host = parse_url($this->endpoint, PHP_URL_HOST);
-        $scheme = parse_url($this->endpoint, PHP_URL_SCHEME) ?: 'https';
-        $port = parse_url($this->endpoint, PHP_URL_PORT);
-        $portSuffix = $port ? (':' . $port) : '';
-
-        $bucket = strtolower(trim($this->bucket, '/'));
-        $uri = '/' . $bucket . '/' . ltrim($key, '/');
-        $fullUrl = "{$scheme}://{$host}{$portSuffix}{$uri}";
-
-        $amzDate = gmdate('Ymd\THis\Z');
-        $dateStamp = gmdate('Ymd');
-        $payloadHash = hash('sha256', '');
-
-        $canonicalHeaders = "host:" . strtolower($host) . ($port ? ":$port" : '') . "\n"
-            . "x-amz-content-sha256:" . $payloadHash . "\n"
-            . "x-amz-date:" . $amzDate . "\n";
-        $signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-
-        $canonicalRequest = "GET\n{$uri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
-        $credentialScope = "{$dateStamp}/{$this->region}/s3/aws4_request";
-        $stringToSign = "AWS4-HMAC-SHA256\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
-
-        $kSecret = 'AWS4' . $this->secretKey;
-        $kDate = hash_hmac('sha256', $dateStamp, $kSecret, true);
-        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
-        $kService = hash_hmac('sha256', 's3', $kRegion, true);
-        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
-        $signature = hash_hmac('sha256', $stringToSign, $kSigning);
-
-        $authorization = "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
-
         try {
-            $response = Http::timeout(10)
-                ->withHeaders([
-                    'Host' => $host . ($port ? ":$port" : ''),
-                    'x-amz-date' => $amzDate,
-                    'x-amz-content-sha256' => $payloadHash,
-                    'Authorization' => $authorization,
-                ])
-                ->get($fullUrl);
+            $response = $this->signedRequest('GET', $key, '', null, 10);
 
             if ($response->successful()) {
                 return [
@@ -234,5 +157,69 @@ class SeaweedStorageService
         }
 
         return null;
+    }
+
+    /**
+     * Hapus objek dari SeaweedFS S3
+     */
+    public function deleteObject(string $key): bool
+    {
+        try {
+            return $this->signedRequest('DELETE', $key, '', null, 10)->successful();
+        } catch (\Throwable $e) {
+            Log::warning('SeaweedFS deleteObject error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Request ke satu objek di bucket, ditandatangani dengan AWS SigV4 (path-style)
+     */
+    private function signedRequest(string $method, string $key, string $content, ?string $mimeType, int $timeout): Response
+    {
+        $host = parse_url($this->endpoint, PHP_URL_HOST);
+        $scheme = parse_url($this->endpoint, PHP_URL_SCHEME) ?: 'https';
+        $port = parse_url($this->endpoint, PHP_URL_PORT);
+        $portSuffix = $port ? (':' . $port) : '';
+
+        // S3 standard requires lowercase bucket name
+        $bucket = strtolower(trim($this->bucket, '/'));
+        $uri = '/' . $bucket . '/' . ltrim($key, '/');
+        $fullUrl = "{$scheme}://{$host}{$portSuffix}{$uri}";
+
+        $amzDate = gmdate('Ymd\THis\Z');
+        $dateStamp = gmdate('Ymd');
+        $payloadHash = hash('sha256', $content);
+
+        $canonicalHeaders = "host:" . strtolower((string) $host) . ($port ? ":$port" : '') . "\n"
+            . "x-amz-content-sha256:" . $payloadHash . "\n"
+            . "x-amz-date:" . $amzDate . "\n";
+        $signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+        $canonicalRequest = "{$method}\n{$uri}\n\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
+        $credentialScope = "{$dateStamp}/{$this->region}/s3/aws4_request";
+        $stringToSign = "AWS4-HMAC-SHA256\n{$amzDate}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+
+        $kSecret = 'AWS4' . $this->secretKey;
+        $kDate = hash_hmac('sha256', $dateStamp, $kSecret, true);
+        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
+        $kService = hash_hmac('sha256', 's3', $kRegion, true);
+        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+        $signature = hash_hmac('sha256', $stringToSign, $kSigning);
+
+        $headers = [
+            'Host' => $host . ($port ? ":$port" : ''),
+            'x-amz-date' => $amzDate,
+            'x-amz-content-sha256' => $payloadHash,
+            'Authorization' => "AWS4-HMAC-SHA256 Credential={$this->accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}",
+        ];
+
+        $request = Http::timeout($timeout)->withOptions(['verify' => $this->caBundle ?? true]);
+        if ($method === 'PUT') {
+            // withBody sudah mengirim Content-Type; menambahkannya lagi di header membuat nilainya dobel
+            $request = $request->withBody($content, $mimeType);
+        }
+
+        return $request->withHeaders($headers)->send($method, $fullUrl);
     }
 }

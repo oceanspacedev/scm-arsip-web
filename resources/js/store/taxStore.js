@@ -11,7 +11,8 @@ function _syncSharedPpnRules(ppnRules) {
 
 // Storage key synced with backend
 const STORAGE_KEY = 'scm_taxvault_programs_v2';
-const DELETED_DOCS_KEY = 'scm_deleted_doc_identifiers_v2';
+// v3: daftar v2 berisi dokumen yang tidak pernah terhapus di server (hapus dulu gagal sebelum request terkirim)
+const DELETED_DOCS_KEY = 'scm_deleted_doc_identifiers_v3';
 
 export function getDeletedDocIdentifiers() {
     try {
@@ -22,24 +23,24 @@ export function getDeletedDocIdentifiers() {
     }
 }
 
-export function markDocAsDeleted(id, fileName) {
+// Hanya ID yang dicatat: tiap unggahan mendapat ID baru dari server, sedangkan nama berkas
+// boleh sama (unggah ulang). Mencatat nama berkas membuat unggahan ulang ikut tersembunyi.
+export function markDocAsDeleted(id) {
+    if (!id) return;
     try {
         const list = getDeletedDocIdentifiers();
-        let changed = false;
-        if (id && !list.includes(String(id))) {
+        if (!list.includes(String(id))) {
             list.push(String(id));
-            changed = true;
-        }
-        if (fileName && !list.includes(String(fileName))) {
-            list.push(String(fileName));
-            changed = true;
-        }
-        if (changed) {
             localStorage.setItem(DELETED_DOCS_KEY, JSON.stringify(list.slice(-300)));
         }
     } catch (e) {
         console.warn('markDocAsDeleted failed:', e);
     }
+}
+
+function withoutDeletedDocs(documents) {
+    const deletedIds = getDeletedDocIdentifiers();
+    return (documents || []).filter(d => !(d.id && deletedIds.includes(String(d.id))));
 }
 
 function loadStoredPrograms() {
@@ -744,12 +745,7 @@ export function mapBackendProgram(p) {
         is_verified: !!p.is_verified,
         program_date: p.due_date ? String(p.due_date).slice(0, 10) : (p.program_date || ''),
         status: p.status || 'Perlu Tindakan',
-        documents: (p.documents || []).filter(d => {
-            const delList = getDeletedDocIdentifiers();
-            if (d.id && delList.includes(String(d.id))) return false;
-            if (d.file_name && delList.includes(String(d.file_name))) return false;
-            return true;
-        }).map(d => ({
+        documents: withoutDeletedDocs(p.documents).map(d => ({
             id: String(d.id),
             document_type: d.type === 'faktur' ? 'faktur_pajak' : (d.type === 'memo' ? 'mou' : (d.document_type || d.type)),
             file_name: d.file_name,
@@ -760,6 +756,17 @@ export function mapBackendProgram(p) {
             uploaded_by: d.uploaded_by || 'Admin SCM'
         }))
     };
+}
+
+// useTaxStore() dipanggil di banyak komponen sekaligus. Request yang sama yang sedang berjalan
+// dipakai bersama, supaya membuka satu halaman tidak memicu puluhan request kembar.
+const inflightRequests = new Map();
+
+function dedupe(key, fn) {
+    if (!inflightRequests.has(key)) {
+        inflightRequests.set(key, Promise.resolve().then(fn).finally(() => inflightRequests.delete(key)));
+    }
+    return inflightRequests.get(key);
 }
 
 export const useTaxStore = () => {
@@ -1053,6 +1060,10 @@ export const useTaxStore = () => {
                 saveToStorage();
                 notify(`Program "${mapped.program_name}" berhasil ditambahkan.`);
                 return mapped;
+            } else if (!res.ok) {
+                // Ditolak server (mis. data sudah terdaftar), jangan disimpan lewat fallback lokal
+                notify(data.message || 'Gagal menambahkan program.', 'error');
+                return null;
             }
         } catch (e) {
             console.warn('Backend addProgram failed, local fallback:', e);
@@ -1172,7 +1183,7 @@ export const useTaxStore = () => {
 
     async function analyzeDocumentAi(id, docId, isBackground = false) {
         if (isBackground) {
-            notify('AI sedang membaca berkas dokumen untuk mengekstrak data...', 'info');
+            notify('AI sedang membaca nomor dokumen...', 'info');
         }
         try {
             const res = await fetch(`/api/programs/${id}/documents/${docId}/analyze`, {
@@ -1193,19 +1204,15 @@ export const useTaxStore = () => {
                 notify(data.message || 'Analisis AI selesai.');
                 return { success: true, ai_analysis: data.ai_analysis, program: data.program };
             } else {
-                if (!isBackground) {
-                    notify(data.message || 'Gagal menganalisis dokumen dengan AI.', 'error');
-                } else {
-                    console.info('Background AI info:', data.message);
-                }
+                // Juga saat berjalan di latar: tanpa pesan, pengguna mengira datanya tidak tersimpan
+                notify(
+                    data.message || (isBackground ? 'AI belum bisa membaca dokumen ini. Isi nomornya secara manual.' : 'Gagal menganalisis dokumen dengan AI.'),
+                    isBackground ? 'warning' : 'error'
+                );
                 return { success: false, message: data.message };
             }
         } catch (e) {
-            if (!isBackground) {
-                notify('Koneksi ke server AI gagal: ' + e.message, 'error');
-            } else {
-                console.warn('Background AI error:', e);
-            }
+            notify('Koneksi ke server AI gagal: ' + e.message, isBackground ? 'warning' : 'error');
             return { success: false, message: e.message };
         }
     }
@@ -1279,8 +1286,8 @@ export const useTaxStore = () => {
                             saveToStorage();
                             notify(data.message || `Dokumen ${getDocTypeLabel(docType)} berhasil diunggah.`);
 
-                            // Auto-trigger background AI extraction for invoice & faktur pajak
-                            if (docId && (docType === 'invoice' || docType === 'faktur_pajak' || docType === 'faktur')) {
+                            // AI di latar hanya membaca nomornya: No. Invoice dari invoice, No. Faktur dari faktur pajak
+                            if (docId && ['invoice', 'faktur_pajak', 'faktur'].includes(docType)) {
                                 setTimeout(() => {
                                     analyzeDocumentAi(programId, docId, true);
                                 }, 150);
@@ -1288,6 +1295,11 @@ export const useTaxStore = () => {
                             return true;
                         }
                     }
+                } else {
+                    // Server menolak berkas: jangan tampilkan seolah tersimpan, karena hilang saat halaman dimuat ulang
+                    const err = await res.json().catch(() => ({}));
+                    notify(err.message || `Dokumen ${getDocTypeLabel(docType)} gagal diunggah (HTTP ${res.status}).`, 'error');
+                    return false;
                 }
             } catch (err) {
                 console.warn('Backend file upload fallback to local storage', err);
@@ -1338,8 +1350,6 @@ export const useTaxStore = () => {
                 deleteDocumentBlob(removed.id);
             }
             const targetId = String(removed.id || '');
-            const targetFileName = String(removed.file_name || '');
-            markDocAsDeleted(targetId, targetFileName);
 
             const deletedIdOrType = removed.id || removed.file_name || docIdentifier;
             prog.documents.splice(index, 1);
@@ -1363,7 +1373,6 @@ export const useTaxStore = () => {
                 }
             }
 
-            checkProgramCompleteness(prog);
             saveToStorage();
             notify(`Dokumen ${removed.file_name || getDocTypeLabel(removed.document_type)} berhasil dihapus.`, 'warning');
 
@@ -1376,18 +1385,12 @@ export const useTaxStore = () => {
                     }
                 });
                 if (res.ok) {
+                    // Dicatat setelah server benar-benar menghapus, agar data lama yang masih dimuat tidak memunculkannya lagi
+                    markDocAsDeleted(targetId);
                     const data = await res.json();
                     if (data.program) {
                         const idx = state.programs.findIndex(p => String(p.id) === String(programId));
                         if (idx !== -1) {
-                            // Filter data.program.documents agar berkas yang baru dihapus tidak pernah dibangkitkan lagi
-                            if (Array.isArray(data.program.documents)) {
-                                data.program.documents = data.program.documents.filter(d => {
-                                    if (targetId && String(d.id) === targetId) return false;
-                                    if (targetFileName && d.file_name === targetFileName) return false;
-                                    return true;
-                                });
-                            }
                             state.programs[idx] = mapBackendProgram(data.program);
                             saveToStorage();
                         }
@@ -1397,6 +1400,8 @@ export const useTaxStore = () => {
                     if (err.message) {
                         notify(err.message, 'error');
                     }
+                    // Gagal dihapus di server: tampilkan lagi sesuai data server
+                    dedupe('programs', fetchPrograms);
                 }
             } catch (e) {
                 console.warn('Backend deleteDocument failed:', e);
@@ -1473,14 +1478,16 @@ export const useTaxStore = () => {
                 }
                 await fetchRawImports();
                 const count = data.imported_count || rows.length;
-                notify(data.message || `${count} program berhasil diimport dan disimpan.`);
+                notify(data.message || `${count} program berhasil diimport dan disimpan.`, data.skipped_count ? 'warning' : 'success');
                 return count;
             } else {
-                throw new Error(data.message || 'Gagal mengimpor program ke server.');
+                const error = new Error(data.message || 'Gagal mengimpor program ke server.');
+                error.duplicates = data.duplicates || [];
+                throw error;
             }
         } catch (err) {
+            // Pesan error ditampilkan di modal import, jadi tidak perlu toast lagi
             console.error('Import error:', err);
-            notify(err.message || 'Gagal mengimpor data ke server.', 'danger');
             throw err;
         }
     }
@@ -1764,11 +1771,13 @@ export const useTaxStore = () => {
             type,
             time: 'baru saja'
         };
+        // Pesan panjang (mis. daftar data duplikat yang ditolak) butuh waktu baca lebih lama
+        const duration = Math.min(12000, Math.max(4000, String(message).length * 60));
         setTimeout(() => {
             if (state.activeNotification && state.activeNotification.message === message) {
                 state.activeNotification = null;
             }
-        }, 4000);
+        }, duration);
     }
 
     function getDocTypeLabel(docType) {
@@ -1829,11 +1838,11 @@ export const useTaxStore = () => {
         }
     }
 
-    // Auto-fetch on store creation
-    fetchUsers();
-    fetchPrograms();
-    fetchSettings();
-    fetchMasterData();
+    // Auto-fetch on store creation (digabung bila komponen lain sedang memuat data yang sama)
+    dedupe('users', fetchUsers);
+    dedupe('programs', fetchPrograms);
+    dedupe('settings', fetchSettings);
+    dedupe('masterData', fetchMasterData);
 
     async function registerUser({ name, phone, email, role, password }) {
         const cleanEmail = (email || '').trim().toLowerCase();
@@ -2640,7 +2649,7 @@ export const useTaxStore = () => {
         masterSuppliers,
         masterPaymentStatuses,
         masterPpnRules: computed(() => state.masterData?.ppn_rules || DEFAULT_MASTER_DATA.ppn_rules),
-        fetchMasterData,
+        fetchMasterData: () => dedupe('masterData', fetchMasterData),
         addMasterItem,
         updateMasterItem,
         deleteMasterItem,

@@ -178,7 +178,7 @@
             :aria-checked="showDemoAccounts"
             @click="toggleDemoAccounts"
             class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
-            :class="showDemoAccounts ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'"
+            :class="showDemoAccounts ? 'bg-slate-900 dark:bg-slate-400' : 'bg-slate-300 dark:bg-slate-700'"
             title="Nyalakan / Matikan Akun Demo di Login"
           >
             <span
@@ -240,7 +240,7 @@
             <button
               type="button"
               :disabled="isResetting"
-              class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-75"
+              class="w-full py-2.5 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-75 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-medium"
               @click="executeReset"
             >
               <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': isResetting }" />

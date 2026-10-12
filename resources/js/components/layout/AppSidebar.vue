@@ -2,12 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  LayoutDashboard,
-  FolderArchive,
-  Users,
-  ShieldCheck,
-  Database,
-  Settings2,
+  LayoutGrid,
+  Archive,
+  UsersRound,
+  KeyRound,
+  Layers,
+  Settings,
   LogOut,
   ChevronRight,
 } from 'lucide-vue-next'
@@ -21,7 +21,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
@@ -33,7 +32,6 @@ const route = useRoute()
 const router = useRouter()
 const store = useTaxStore()
 
-const currentUser = computed(() => store.currentUser.value)
 const isAdmin = computed(() => store.isAdmin.value)
 const allUsersCount = computed(() => store.allUsers.value.length)
 const pendingUsersCount = computed(() => store.pendingUsersCount.value)
@@ -76,24 +74,23 @@ async function handleLogout() {
 
 <template>
   <Sidebar collapsible="icon">
-    <!-- Header: Workspace / App Title (Clean, no black square icon) -->
-    <SidebarHeader class="border-b border-sidebar-border/40 py-3 px-3">
-      <div class="flex items-center justify-between px-1 group-data-[collapsible=icon]:hidden">
-        <div class="grid flex-1 text-left leading-tight">
-          <span class="truncate font-semibold text-sm text-sidebar-foreground tracking-tight">SCM TaxVault</span>
-          <span class="truncate text-[11px] text-muted-foreground">{{ currentUser?.name || 'Staff' }} · {{ currentUser?.role || 'Enterprise' }}</span>
-        </div>
+    <!-- Header: nama aplikasi, sejajar dengan tinggi top bar (h-14) -->
+    <SidebarHeader class="h-14 justify-center border-b border-sidebar-border px-3 py-0 group-data-[collapsible=icon]:px-2">
+      <div class="px-1 leading-tight group-data-[collapsible=icon]:hidden">
+        <p class="truncate text-sm font-semibold tracking-tight text-sidebar-accent-foreground">Supply Chain Management</p>
+        <p class="truncate text-[11px] text-sidebar-foreground/70">Arsip Dokumen Pajak</p>
+      </div>
+      <div class="hidden group-data-[collapsible=icon]:flex size-8 items-center justify-center rounded-md border border-sidebar-border text-[10px] font-semibold text-sidebar-accent-foreground">
+        SCM
       </div>
     </SidebarHeader>
 
     <!-- Navigation Content -->
-    <SidebarContent>
-      <!-- Group: Platform -->
+    <SidebarContent class="pt-1">
       <SidebarGroup>
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroupLabel>Menu</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <!-- Dashboard -->
             <SidebarMenuItem>
               <SidebarMenuButton
                 as-child
@@ -101,13 +98,12 @@ async function handleLogout() {
                 tooltip="Dashboard"
               >
                 <router-link to="/dashboard">
-                  <LayoutDashboard />
+                  <LayoutGrid />
                   <span>Dashboard</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <!-- Arsip Program -->
             <SidebarMenuItem>
               <SidebarMenuButton
                 as-child
@@ -115,18 +111,15 @@ async function handleLogout() {
                 tooltip="Arsip Program"
               >
                 <router-link to="/programs">
-                  <FolderArchive />
+                  <Archive />
                   <span>Arsip Program</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <!-- Logout (untuk Non-Admin dekat Arsip Program) -->
+            <!-- Logout untuk non-admin (tidak punya grup Administrasi) -->
             <SidebarMenuItem v-if="!isAdmin">
-              <SidebarMenuButton
-                class="cursor-pointer"
-                @click="handleLogout"
-              >
+              <SidebarMenuButton tooltip="Logout" class="cursor-pointer" @click="handleLogout">
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
@@ -145,17 +138,17 @@ async function handleLogout() {
               <SidebarMenuButton
                 tooltip="Manajemen User"
                 :is-active="route.path === '/users'"
-                class="cursor-pointer justify-between"
+                class="cursor-pointer"
                 @click="handleUsersMenuClick"
               >
-                <div class="flex items-center gap-2 min-w-0">
-                  <Users class="size-4 shrink-0" />
-                  <span class="truncate">Manajemen User</span>
-                </div>
+                <!-- Ikon harus anak langsung: mode ikon menyembunyikan semua <div> di dalam tombol -->
+                <UsersRound />
+                <span class="truncate">Manajemen User</span>
                 <div class="flex items-center gap-1.5 ml-auto group-data-[collapsible=icon]:hidden">
                   <span
                     v-if="pendingUsersCount > 0"
-                    class="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-[10px] font-bold text-amber-900"
+                    class="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/70 px-1.5 text-[10px] font-medium text-amber-700 dark:text-amber-300"
+                    title="Menunggu ACC"
                   >
                     {{ pendingUsersCount }}
                   </span>
@@ -175,60 +168,52 @@ async function handleLogout() {
               </SidebarMenuButton>
 
               <SidebarMenuSub v-show="isUsersSubmenuOpen">
-                  <!-- Semua User -->
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      as-child
-                      size="sm"
-                      :is-active="route.path === '/users' && (!route.query.tab || route.query.tab === 'all')"
-                    >
-                      <router-link :to="{ name: 'users', query: { tab: 'all' } }" class="flex items-center justify-between w-full">
-                        <span class="truncate">Semua User</span>
-                        <span class="shrink-0 text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                          {{ allUsersCount }}
-                        </span>
-                      </router-link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    as-child
+                    size="sm"
+                    :is-active="route.path === '/users' && (!route.query.tab || route.query.tab === 'all')"
+                  >
+                    <router-link :to="{ name: 'users', query: { tab: 'all' } }" class="flex items-center justify-between w-full">
+                      <span class="truncate">Semua User</span>
+                      <span class="shrink-0 text-[11px] tabular-nums text-sidebar-foreground/60">{{ allUsersCount }}</span>
+                    </router-link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
 
-                  <!-- Menunggu ACC -->
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      as-child
-                      size="sm"
-                      :is-active="route.path === '/users' && route.query.tab === 'pending'"
-                    >
-                      <router-link :to="{ name: 'users', query: { tab: 'pending' } }" class="flex items-center justify-between w-full">
-                        <span class="truncate">Menunggu ACC</span>
-                        <span
-                          class="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors"
-                          :class="pendingUsersCount > 0 ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 dark:border dark:border-amber-800/60 font-bold' : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'"
-                        >
-                          {{ pendingUsersCount }}
-                        </span>
-                      </router-link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    as-child
+                    size="sm"
+                    :is-active="route.path === '/users' && route.query.tab === 'pending'"
+                  >
+                    <router-link :to="{ name: 'users', query: { tab: 'pending' } }" class="flex items-center justify-between w-full">
+                      <span class="truncate">Menunggu ACC</span>
+                      <span
+                        class="shrink-0 text-[11px] tabular-nums"
+                        :class="pendingUsersCount > 0 ? 'font-medium text-amber-600 dark:text-amber-400' : 'text-sidebar-foreground/60'"
+                      >
+                        {{ pendingUsersCount }}
+                      </span>
+                    </router-link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
 
-                  <!-- User Aktif -->
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      as-child
-                      size="sm"
-                      :is-active="route.path === '/users' && route.query.tab === 'approved'"
-                    >
-                      <router-link :to="{ name: 'users', query: { tab: 'approved' } }" class="flex items-center justify-between w-full">
-                        <span class="truncate">User Aktif</span>
-                        <span class="shrink-0 text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                          {{ approvedUsersCount }}
-                        </span>
-                      </router-link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    as-child
+                    size="sm"
+                    :is-active="route.path === '/users' && route.query.tab === 'approved'"
+                  >
+                    <router-link :to="{ name: 'users', query: { tab: 'approved' } }" class="flex items-center justify-between w-full">
+                      <span class="truncate">User Aktif</span>
+                      <span class="shrink-0 text-[11px] tabular-nums text-sidebar-foreground/60">{{ approvedUsersCount }}</span>
+                    </router-link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
             </SidebarMenuItem>
 
-            <!-- Hak Akses & Role Permission -->
             <SidebarMenuItem>
               <SidebarMenuButton
                 as-child
@@ -236,13 +221,12 @@ async function handleLogout() {
                 tooltip="Hak Akses & Role"
               >
                 <router-link to="/permissions">
-                  <ShieldCheck />
+                  <KeyRound />
                   <span>Hak Akses & Role</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <!-- Data Master (Kategori, Brand, Company, Gudang, Supplier) -->
             <SidebarMenuItem>
               <SidebarMenuButton
                 as-child
@@ -250,13 +234,12 @@ async function handleLogout() {
                 tooltip="Data Master"
               >
                 <router-link to="/master-data">
-                  <Database />
+                  <Layers />
                   <span>Data Master</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <!-- Pengaturan -->
             <SidebarMenuItem>
               <SidebarMenuButton
                 as-child
@@ -264,18 +247,14 @@ async function handleLogout() {
                 tooltip="Pengaturan"
               >
                 <router-link to="/settings">
-                  <Settings2 />
+                  <Settings />
                   <span>Pengaturan</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <!-- Logout (untuk Admin dekat Pengaturan) -->
             <SidebarMenuItem>
-              <SidebarMenuButton
-                class="cursor-pointer"
-                @click="handleLogout"
-              >
+              <SidebarMenuButton tooltip="Logout" class="cursor-pointer" @click="handleLogout">
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
