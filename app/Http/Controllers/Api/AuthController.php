@@ -157,7 +157,8 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'otp' => $otpCode,
+            // Kode hanya dikirim lewat WhatsApp; di respons hanya untuk pengembangan lokal
+            'otp' => app()->isLocal() ? $otpCode : null,
             'phone' => $user->phone,
             'name' => $user->name,
             'wag_dispatched' => $dispatch['success'],
@@ -191,19 +192,8 @@ class AuthController extends Controller
 
         $otpRecord = $otpQuery->latest()->first();
 
-        // Fallback demo support: kode 123456 selalu valid untuk akun demo yang disetujui
-        $user = null;
-        if ($otpRecord) {
-            $user = User::find($otpRecord->user_id);
-        } elseif ($code === '123456' || str_contains($identifier, '@scm.corp')) {
-            $cleanPhone = preg_replace('/[^0-9]/', '', $identifier);
-            $user = User::where('status', 'approved')
-                ->where(function($q) use ($identifier, $cleanPhone) {
-                    $q->where('email', $identifier)
-                      ->orWhere('phone', $identifier)
-                      ->orWhere('phone', $cleanPhone);
-                })->first() ?: User::where('status', 'approved')->first();
-        }
+        // Hanya kode OTP yang benar-benar dikirim yang berlaku (tanpa kode master / jalan pintas akun demo)
+        $user = $otpRecord ? User::find($otpRecord->user_id) : null;
 
         if (!$user) {
             return response()->json([
@@ -218,6 +208,9 @@ class AuthController extends Controller
                 'message' => 'Akun belum disetujui oleh Administrator.'
             ], 403);
         }
+
+        // Kode sekali pakai
+        $otpRecord->update(['is_used' => true]);
 
         Auth::login($user);
 

@@ -1,349 +1,189 @@
 <template>
-  <div v-if="program" class="space-y-5 select-none max-w-7xl mx-auto pb-10">
-    <!-- Header Section matching screenshot -->
-    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {{ program.program_name }}
-        </h1>
-        <p v-if="canViewMasterColumns" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
-          {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
-        </p>
+  <div v-if="program" class="space-y-6 select-none max-w-7xl mx-auto pb-10">
+    <!-- Judul, ringkasan, dan status -->
+    <div>
+      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        {{ program.program_name }}
+      </h1>
+      <p v-if="canViewMasterColumns" class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
+      </p>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-xs text-slate-500 dark:text-slate-400">
+        <span class="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+          <span
+            class="w-1.5 h-1.5 rounded-full"
+            :class="{
+              'bg-emerald-600': completeness.count === 3,
+              'bg-amber-500': completeness.count > 0 && completeness.count < 3,
+              'bg-slate-400': completeness.count === 0
+            }"
+          ></span>
+          {{ statusBadgeText }}
+        </span>
+        <span class="text-slate-300 dark:text-slate-600">·</span>
+        <span>Diarsipkan oleh {{ uploaderName }} · diperbarui {{ formatDate(program.program_date) }}</span>
       </div>
     </div>
 
-    <!-- Status & Meta Strip -->
-    <div class="flex flex-wrap items-center gap-3 text-xs">
-      <!-- Status Badge -->
-      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-        <span
-          class="w-1.5 h-1.5 rounded-full"
-          :class="{
-            'bg-emerald-600': completeness.count === 3,
-            'bg-amber-500': completeness.count > 0 && completeness.count < 3,
-            'bg-slate-400': completeness.count === 0
-          }"
-        ></span>
-        <span>{{ statusBadgeText }}</span>
-      </div>
-
-      <!-- Meta Info -->
-      <span class="text-slate-500 dark:text-slate-400 text-xs">
-        Diarsipkan oleh {{ uploaderName }} · diperbarui {{ formatDate(program.program_date) }}
-      </span>
-    </div>
-
-    <!-- Three Document Categories Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-      <div
+    <!-- Dokumen: tiga kartu berjejer -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section
         v-for="cat in documentCategories"
         :key="cat.type"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 flex flex-col justify-between shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all min-h-[220px]"
+        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col"
       >
-        <div class="flex-1 flex flex-col">
-          <!-- Card Header: Icon Badge, Title, Subtitle, and Add button -->
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div class="flex items-center gap-3 min-w-0">
-              <!-- Clean Neutral Icon Container -->
-              <div class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
-                <component :is="cat.icon" class="w-4 h-4 stroke-[1.75]" />
-              </div>
-
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <h4 class="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight truncate">
-                    {{ cat.label }}
-                  </h4>
-                  <span
-                    v-if="getDocs(cat.type).length > 0"
-                    class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0"
-                  >
-                    {{ getDocs(cat.type).length }} Berkas
-                  </span>
-                </div>
-                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                  {{ cat.description }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Quick "+ Tambah" button when category has files and user has upload permission -->
-            <button
-              v-if="getDocs(cat.type).length > 0 && canUploadDoc(cat.type)"
-              type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer shrink-0"
-              title="Unggah berkas tambahan"
-              @click="openUpload(cat.type, cat.label)"
-            >
-              <Plus class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span>Tambah</span>
-            </button>
-          </div>
-
-          <!-- Card Body: Uploaded Files List -->
-          <div v-if="getDocs(cat.type).length > 0" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 flex-1">
-            <div
-              v-for="(doc, dIdx) in getDocs(cat.type)"
-              :key="doc.id || doc.file_name || dIdx"
-              class="p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 group"
-            >
-              <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                <FileText class="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                <div class="min-w-0 flex-1">
-                  <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
-                    {{ doc.file_name }}
-                  </p>
-                  <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                    Diunggah {{ formatUploadDate(doc.uploaded_at || program.program_date) }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Action buttons per file -->
-              <div class="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  class="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer"
-                  title="Pratinjau berkas"
-                  @click="openPreviewDoc(doc)"
-                >
-                  <Eye class="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  class="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer"
-                  title="Unduh berkas"
-                  @click="downloadDocItem(doc)"
-                >
-                  <Download class="w-3.5 h-3.5" />
-                </button>
-                <button
-                  v-if="canDeleteDoc(cat.type)"
-                  type="button"
-                  class="p-1.5 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                  title="Hapus berkas ini"
-                  @click="deleteDocItem(doc, cat.label)"
-                >
-                  <Trash2 class="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card Body: Modern Interactive Dropzone or Read-Only State -->
-          <div v-else class="flex-1 flex flex-col justify-center">
-            <button
-              v-if="canUploadDoc(cat.type)"
-              type="button"
-              class="w-full py-4 px-3 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group"
-              @click="openUpload(cat.type, cat.label)"
-            >
-              <!-- Circular Upload Badge in center -->
-              <div class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex items-center justify-center text-slate-400 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 group-hover:border-slate-300 dark:group-hover:border-slate-600 group-hover:scale-105 transition-all">
-                <Upload class="w-4 h-4 stroke-[2]" />
-              </div>
-
-              <!-- Main Action Text -->
-              <div class="text-center">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 block leading-tight">
-                  Unggah {{ cat.label }}
-                </span>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-normal mt-1 block">
-                  PDF, JPG, PNG hingga 15 MB
-                </span>
-              </div>
-            </button>
-            <div
-              v-else
-              class="w-full py-6 px-3 rounded-lg border border-dashed border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 flex flex-col items-center justify-center gap-2 text-center"
-            >
-              <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
-                <component :is="cat.icon" class="w-4 h-4 stroke-[1.75]" />
-              </div>
-              <div>
-                <span class="text-xs font-medium text-slate-600 dark:text-slate-300 block leading-tight">
-                  Belum Ada Berkas
-                </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 block mt-1">
-                  {{ cat.type === 'mou' ? 'Khusus diunggah oleh Tim Gudang / SCM' : 'Khusus diunggah oleh Tim Finance / SCM' }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Section: Two Columns Grid matching screenshot -->
-    <div
-      v-if="canViewFinanceColumns || canViewMasterColumns"
-      class="grid grid-cols-1 gap-5"
-      :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
-    >
-      <!-- Left Card: Rekonsiliasi Nilai & Perpajakan -->
-      <div v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
-        <div>
-          <!-- Title -->
-          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Rekonsiliasi Nilai & Perpajakan
-            </h3>
-          </div>
-
-          <!-- Key-Value Rows matching screenshot -->
-          <div class="px-5 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">No. Invoice</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.invoice_number }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Invoice</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Jatuh Tempo</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">DPP</span>
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.dpp) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">PPN (11%)</span>
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.ppn) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">
-                {{ getPphLabel(program.pph_type) }}
-              </span>
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(program.pph || 0) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">No. Faktur Pajak</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
-                {{ program.faktur_number || '-' }}
-              </span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Tanggal Faktur Pajak</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">
-                {{ program.faktur_date ? formatDate(program.faktur_date) : '-' }}
-              </span>
-            </div>
-          </div>
+        <div class="flex items-center justify-between gap-3 mb-3 min-h-[28px]">
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {{ cat.label }}
+            <span v-if="getDocs(cat.type).length > 0" class="ml-1 text-xs font-normal text-slate-400 dark:text-slate-500 tabular-nums">
+              {{ getDocs(cat.type).length }}
+            </span>
+          </h3>
+          <button
+            v-if="getDocs(cat.type).length > 0 && canUploadDoc(cat.type)"
+            type="button"
+            class="px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Unggah berkas tambahan"
+            @click="openUpload(cat.type, cat.label)"
+          >
+            Tambah
+          </button>
         </div>
 
-        <!-- Total Payment & Status Summary Box -->
-        <div class="px-5 pb-5 pt-2">
-          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <div class="flex items-center gap-2">
-                <p class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Total Payment
-                </p>
-                <div class="relative inline-flex items-center group">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all select-none"
-                    :class="[
-                      getPaymentBadgeClass(program.payment_status),
-                      (!canEditFinance && !isAdmin) ? 'opacity-85' : ''
-                    ]"
-                  >
-                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
-                    <span>{{ formatPaymentStatus(program.payment_status) }}</span>
-                    <ChevronDown v-if="canEditFinance || isAdmin" class="w-3 h-3 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-0.5 shrink-0" />
-                  </span>
-                  <select
-                    :value="normalizePayStatus(program.payment_status)"
-                    :disabled="!canEditFinance && !isAdmin"
-                    @change="handlePaymentStatusChange($event.target.value)"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-                    title="Ubah Status Payment"
-                  >
-                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                DPP + PPN (Termasuk Pajak)
+        <!-- Daftar berkas -->
+        <ul v-if="getDocs(cat.type).length > 0" class="-mx-2 max-h-[208px] overflow-y-auto">
+          <li
+            v-for="(doc, dIdx) in getDocs(cat.type)"
+            :key="doc.id || doc.file_name || dIdx"
+            class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
+                {{ doc.file_name }}
+              </p>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                {{ formatUploadDate(doc.uploaded_at || program.program_date) }}
               </p>
             </div>
-            <span class="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-              {{ formatRupiah(program.total_invoice) }}
-            </span>
-          </div>
-        </div>
-      </div>
+            <div class="flex items-center shrink-0">
+              <button
+                type="button"
+                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
+                title="Pratinjau berkas"
+                @click="openPreviewDoc(doc)"
+              >
+                <Eye class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
+                title="Unduh berkas"
+                @click="downloadDocItem(doc)"
+              >
+                <Download class="w-4 h-4" />
+              </button>
+              <button
+                v-if="canDeleteDoc(cat.type)"
+                type="button"
+                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                title="Hapus berkas ini"
+                @click="deleteDocItem(doc, cat.label)"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </li>
+        </ul>
 
-      <!-- Right Card: Data Program & Supplier -->
-      <div v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between">
-        <div>
-          <!-- Title -->
-          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Data Program & Supplier
-            </h3>
-          </div>
-
-          <!-- Key-Value Rows matching screenshot -->
-          <div class="px-5 divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Company Name</span>
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.company_name || getProgramCompanyName(program) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">No. PO / SJ</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.po_sj_number || getProgramPoSjNumber(program) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Bulan / Masa Pajak</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ getProgramMonth(program.program_date) }} {{ getProgramYear(program.program_date) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Nama Supplier</span>
-              <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[240px] truncate text-right">{{ program.supplier }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">NPWP Supplier</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ program.npwp || '02.010.121.3-071.000' }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Kategori</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.category }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Brand</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.brand || getProgramBrand(program) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Nomor Memo/DO</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ program.mou_number || `DO/SCM/2026/${String(program.id).padStart(3, '0')}` }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Periode Mulai</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDate(program.program_date) }}</span>
-            </div>
-            <div class="py-2.5 flex items-center justify-between">
-              <span class="text-xs text-slate-500 dark:text-slate-400">Periode Selesai</span>
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">{{ formatDueDate(program.program_date) }}</span>
-            </div>
-          </div>
+        <!-- Belum ada berkas: area unggah, atau keterangan bila tidak berhak mengunggah -->
+        <button
+          v-else-if="canUploadDoc(cat.type)"
+          type="button"
+          class="flex-1 min-h-[96px] rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors flex flex-col items-center justify-center gap-1 cursor-pointer"
+          @click="openUpload(cat.type, cat.label)"
+        >
+          <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Unggah {{ cat.label }}</span>
+          <span class="text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG · maks. 15 MB</span>
+        </button>
+        <div
+          v-else
+          class="flex-1 min-h-[96px] rounded-lg border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-1 px-3 text-center"
+        >
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Belum ada berkas</span>
+          <span class="text-[11px] text-slate-400 dark:text-slate-500">
+            {{ cat.type === 'mou' ? 'Diunggah oleh Tim Gudang / SCM' : 'Diunggah oleh Tim Finance / SCM' }}
+          </span>
         </div>
+      </section>
+    </div>
 
-        <!-- Catatan Pemeriksaan Box (Clean Neutral) -->
-        <div class="px-5 pb-5 pt-2">
-          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-            <p class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Catatan Pemeriksaan
-            </p>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              {{ completeness.count === 3 ? 'Semua berkas invoice, faktur pajak, dan Memo/DO telah lengkap dan diverifikasi tim audit pajak.' : 'Menunggu kelengkapan dokumen perpajakan.' }}
-            </p>
+    <!-- Rincian: nilai & perpajakan, serta data program -->
+    <div
+      v-if="canViewFinanceColumns || canViewMasterColumns"
+      class="grid grid-cols-1 gap-4"
+      :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
+    >
+      <section v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col">
+        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai & Perpajakan</h3>
+
+        <dl class="px-5 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+          <div v-for="field in invoiceFields" :key="field.label" class="min-w-0">
+            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
+            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
           </div>
+        </dl>
+
+        <dl class="mx-5 mt-5 border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+          <div v-for="row in amountRows" :key="row.label" class="py-2 flex items-center justify-between text-xs">
+            <dt class="text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
+            <dd class="font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(row.value) }}</dd>
+          </div>
+        </dl>
+
+        <div class="mt-auto px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300" title="DPP + PPN (termasuk pajak)">Total Payment</span>
+            <div class="relative inline-flex items-center group">
+              <span
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors select-none"
+                :class="[
+                  getPaymentBadgeClass(program.payment_status),
+                  (!canEditFinance && !isAdmin) ? 'opacity-85' : ''
+                ]"
+              >
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
+                <span>{{ formatPaymentStatus(program.payment_status) }}</span>
+                <ChevronDown v-if="canEditFinance || isAdmin" class="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
+              </span>
+              <select
+                :value="normalizePayStatus(program.payment_status)"
+                :disabled="!canEditFinance && !isAdmin"
+                @change="handlePaymentStatusChange($event.target.value)"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
+                title="Ubah Status Payment"
+              >
+                <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <span class="text-base font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+            {{ formatRupiah(program.total_invoice) }}
+          </span>
         </div>
-      </div>
+      </section>
+
+      <section v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
+        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Data Program & Supplier</h3>
+
+        <dl class="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
+          <div v-for="field in programFields" :key="field.label" class="min-w-0">
+            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
+            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
+          </div>
+        </dl>
+      </section>
     </div>
 
     <!-- Edit Program Modal -->
@@ -753,12 +593,8 @@ import {
   ArrowLeft,
   Trash2,
   FileText,
-  Upload,
-  FileCheck,
-  ClipboardList,
   Eye,
   Download,
-  Plus,
   ChevronDown,
   X,
   Loader2
@@ -811,25 +647,49 @@ const completeness = computed(() => getCompleteness(program.value));
 const uploaderName = computed(() => store.currentUser.value?.name || 'Bagas Nugroho');
 
 const documentCategories = [
-  {
-    type: 'invoice',
-    label: 'Invoice',
-    description: 'Faktur tagihan & rincian biaya vendor',
-    icon: FileText,
-  },
-  {
-    type: 'faktur_pajak',
-    label: 'Faktur Pajak',
-    description: 'Bukti pungutan PPN e-Faktur resmi',
-    icon: FileCheck,
-  },
-  {
-    type: 'mou',
-    label: 'Memo/DO',
-    description: 'Surat Perintah Kerja / Dokumen Memo/DO',
-    icon: ClipboardList,
-  }
+  { type: 'invoice', label: 'Invoice' },
+  { type: 'faktur_pajak', label: 'Faktur Pajak' },
+  { type: 'mou', label: 'Memo/DO' }
 ];
+
+// Rincian kartu bawah: label di atas nilai supaya ringkas
+const invoiceFields = computed(() => {
+  const p = program.value;
+  if (!p) return [];
+  return [
+    { label: 'No. Invoice', value: p.invoice_number },
+    { label: 'Tanggal Invoice', value: formatDate(p.program_date) },
+    { label: 'Jatuh Tempo', value: formatDueDate(p.program_date) },
+    { label: 'No. Faktur Pajak', value: p.faktur_number },
+    { label: 'Tanggal Faktur Pajak', value: p.faktur_date ? formatDate(p.faktur_date) : '' }
+  ];
+});
+
+const amountRows = computed(() => {
+  const p = program.value;
+  if (!p) return [];
+  return [
+    { label: 'DPP', value: p.dpp },
+    { label: 'PPN (11%)', value: p.ppn },
+    { label: getPphLabel(p.pph_type), value: p.pph || 0 }
+  ];
+});
+
+const programFields = computed(() => {
+  const p = program.value;
+  if (!p) return [];
+  return [
+    { label: 'Company Name', value: p.company_name || getProgramCompanyName(p) },
+    { label: 'No. PO / SJ', value: p.po_sj_number || getProgramPoSjNumber(p) },
+    { label: 'Nama Supplier', value: p.supplier },
+    { label: 'NPWP Supplier', value: p.npwp || '02.010.121.3-071.000' },
+    { label: 'Kategori', value: p.category },
+    { label: 'Brand', value: p.brand || getProgramBrand(p) },
+    { label: 'Bulan / Masa Pajak', value: `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}` },
+    { label: 'Nomor Memo/DO', value: p.mou_number || `DO/SCM/2026/${String(p.id).padStart(3, '0')}` },
+    { label: 'Periode', value: `${formatDate(p.program_date)} – ${formatDueDate(p.program_date)}` }
+  ];
+});
 
 function getDocs(docType) {
   return (program.value?.documents || []).filter(d => d.document_type === docType);

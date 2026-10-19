@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs">
+  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-5">
     <!-- Header matching screenshot -->
     <div class="mb-4">
-      <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Rekap DPP & PPN per Bulan
       </h3>
       <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">

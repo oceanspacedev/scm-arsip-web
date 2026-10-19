@@ -71,7 +71,13 @@ class DocumentAiAnalysisService
             . "4. 'dpp_amount': Nilai Dasar Pengenaan Pajak (DPP) sebagai angka murni (float/integer) tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
             . "5. 'ppn_amount': Nilai PPN sebagai angka murni tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
             . "6. 'total_amount': Jumlah tagihan = DPP + PPN (sebelum dipotong PPh) sebagai angka murni tanpa simbol titik/koma ribuan. Jangan gunakan Net Pay / jumlah setelah potongan PPh. Jika tidak ada kembalikan null.\n"
-            . "7. 'payment_status': Status pembayaran jika tertera di dokumen. Pilihan: 'cbd' (Cash Before Delivery), 'tempo', 'WAITING PAYMENT', atau 'PAID' (Lunas). Jika tidak tertera, kembalikan null.\n\n"
+            . "7. 'payment_status': Status pembayaran jika tertera di dokumen. Pilihan: 'cbd' (Cash Before Delivery), 'tempo', 'WAITING PAYMENT', atau 'PAID' (Lunas). Jika tidak tertera, kembalikan null.\n"
+            . "8. 'sj_number': Nomor Surat Jalan / Delivery Order (label seperti No Surat Jalan, No. SJ, No. DO), tulis persis (contoh: 2609000804). Jika tidak ada kembalikan null.\n"
+            . "9. 'program_name': Nama program yang ditagih, biasanya di rincian/deskripsi barang di bawah jenis tagihan, atau pada faktur pajak di kolom Nama Barang/Jasa Kena Pajak setelah jenis tagihan (contoh: PROGRAM DEALER AUG 2026 C100I). Jika tidak ada kembalikan null.\n"
+            . "10. 'description': Jenis tagihan pada awal deskripsi barang / Nama Barang Kena Pajak (contoh: MARKETING SERVICE FEE). Jika tidak ada kembalikan null.\n"
+            . "11. 'bill_to': Nama perusahaan penerima tagihan (Bill To / Kepada / Pembeli Barang Kena Pajak). Jika tidak ada kembalikan null.\n"
+            . "12. 'supplier_name': Nama perusahaan penerbit dokumen / penjual / Pengusaha Kena Pajak, biasanya di kop surat (contoh: CV TOP SELULAR). Jika tidak ada kembalikan null.\n"
+            . "13. 'document_type': 'faktur_pajak' bila dokumen berjudul Faktur Pajak (ada Kode dan Nomor Seri Faktur Pajak), 'invoice' bila invoice / tagihan, selain itu 'other'.\n\n"
             . "Format output yang DIHARUSKAN (hanya JSON murni):\n"
             . "{\n"
             . "  \"invoice_no\": \"...\",\n"
@@ -80,7 +86,13 @@ class DocumentAiAnalysisService
             . "  \"dpp_amount\": 0,\n"
             . "  \"ppn_amount\": 0,\n"
             . "  \"total_amount\": 0,\n"
-            . "  \"payment_status\": null\n"
+            . "  \"payment_status\": null,\n"
+            . "  \"sj_number\": \"...\",\n"
+            . "  \"program_name\": \"...\",\n"
+            . "  \"description\": \"...\",\n"
+            . "  \"bill_to\": \"...\",\n"
+            . "  \"supplier_name\": \"...\",\n"
+            . "  \"document_type\": \"invoice\"\n"
             . "}";
 
         try {
@@ -193,6 +205,13 @@ class DocumentAiAnalysisService
                 'ppn_amount' => isset($parsed['ppn_amount']) && is_numeric($parsed['ppn_amount']) ? (float)$parsed['ppn_amount'] : null,
                 'total_amount' => isset($parsed['total_amount']) && is_numeric($parsed['total_amount']) ? (float)$parsed['total_amount'] : null,
                 'payment_status' => $paymentStatus,
+                // Untuk mencocokkan dokumen dengan program (unggah invoice otomatis)
+                'sj_number' => $cleanVal($parsed['sj_number'] ?? null),
+                'program_name' => $cleanVal($parsed['program_name'] ?? null),
+                'description' => $cleanVal($parsed['description'] ?? null),
+                'bill_to' => $cleanVal($parsed['bill_to'] ?? null),
+                'supplier_name' => $cleanVal($parsed['supplier_name'] ?? null),
+                'document_type' => self::documentType($cleanVal($parsed['document_type'] ?? null), $fakturNumber, $invoiceNo),
                 'raw' => $parsed
             ];
         } catch (\Throwable $e) {
@@ -202,5 +221,25 @@ class DocumentAiAnalysisService
                 'message' => 'Terjadi kesalahan sistem saat menganalisis dokumen: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Jenis dokumen: 'invoice', 'faktur_pajak', atau 'other'. Bila AI tidak menyebutkan,
+     * ditebak dari nomor yang terbaca (hanya No. Faktur berarti faktur pajak).
+     */
+    private static function documentType(?string $value, ?string $fakturNumber, ?string $invoiceNo): string
+    {
+        $value = strtolower((string) $value);
+        if (str_contains($value, 'faktur')) {
+            return 'faktur_pajak';
+        }
+        if (str_contains($value, 'invoice') || str_contains($value, 'tagihan')) {
+            return 'invoice';
+        }
+        if ($value === 'other') {
+            return 'other';
+        }
+
+        return $fakturNumber && !$invoiceNo ? 'faktur_pajak' : 'invoice';
     }
 }

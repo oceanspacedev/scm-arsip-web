@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutGrid,
   Archive,
+  History as HistoryIcon,
   UsersRound,
   KeyRound,
   Layers,
@@ -113,6 +114,19 @@ async function handleLogout() {
                 <router-link to="/programs">
                   <Archive />
                   <span>Arsip Program</span>
+                </router-link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                as-child
+                :is-active="route.path === '/history'"
+                tooltip="History"
+              >
+                <router-link to="/history">
+                  <HistoryIcon />
+                  <span>History</span>
                 </router-link>
               </SidebarMenuButton>
             </SidebarMenuItem>

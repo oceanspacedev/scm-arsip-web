@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentUploadLog;
 use App\Models\Program;
 use App\Models\ProgramDocument;
 use App\Models\RawImport;
 use App\Services\SeaweedStorageService;
 use App\Services\DocumentAiAnalysisService;
+use App\Services\DocumentProgramMatcher;
 use App\Services\ProgramDocumentStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -506,7 +508,7 @@ class ProgramController extends Controller
             $fileSize = $stored['size'];
         }
 
-        $docId = 'doc-' . time() . '-' . rand(10, 99);
+        $docId = self::newDocumentId();
         $fileUrl = ProgramDocument::urlFor((string) $id, $docId, $filePath);
 
         $docData = [
@@ -525,20 +527,18 @@ class ProgramController extends Controller
         $aiDetectedInfo = [];
 
         if ($program) {
-            ProgramDocument::create([
-                'id' => $docId,
-                'program_id' => $program->id,
-                'type' => $backendType,
-                'file_name' => $docData['file_name'],
-                'file_size' => $docData['file_size'],
-                'file_path' => $filePath,
-                'uploaded_at' => Carbon::now()
-            ]);
+            $this->createDocumentRecord($program, $docId, $backendType, $docData['file_name'], $docData['file_size'], $filePath);
 
-            // Check completeness across distinct document types
-            $types = $program->documents()->pluck('type')->toArray();
-            if (count(array_unique($types)) >= 3) {
-                $program->update(['status' => 'Lengkap']);
+            if ($filePath) {
+                DocumentUploadLog::create([
+                    'program_id' => $program->id,
+                    'document_id' => $docId,
+                    'file_name' => $docData['file_name'],
+                    'document_type' => $docType,
+                    'source' => DocumentUploadLog::SOURCE_MANUAL,
+                    'status' => 'matched',
+                    'uploaded_by' => $docData['uploaded_by'],
+                ]);
             }
 
             // Synchronous AI analysis only if NOT async_ai requested (hanya nomor dokumen yang diisi)
@@ -576,6 +576,180 @@ class ProgramController extends Controller
     }
 
     /**
+     * Unggah invoice / faktur pajak tanpa memilih program. AI mengenali jenis dokumen dan membaca
+     * nomor, nilai, nama program, serta pihak-pihaknya, lalu berkas dilampirkan ke program yang cocok
+     * (DocumentProgramMatcher). Bila tidak yakin, berkas TIDAK disimpan dan kandidat program
+     * dikembalikan; pengguna memilih, lalu mengirim ulang berkas dengan program_id, document_type, dan
+     * number hasil bacaan, agar AI tidak dipanggil lagi. Tiap hasil dicatat di riwayat (log_id dikirim
+     * ulang saat memilih, supaya baris "perlu dipilih" yang sama diperbarui).
+     */
+    public function autoUploadDocument(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:15360',
+            'program_id' => 'nullable|string',
+            'document_type' => 'nullable|in:invoice,faktur_pajak',
+            'number' => 'nullable|string|max:100',
+            'log_id' => 'nullable|integer',
+            'uploaded_by' => 'nullable|string|max:100',
+        ]);
+
+        $userRole = strtolower((string) ($request->header('X-User-Role') ?: $request->input('user_role')));
+        if (str_contains($userRole, 'gudang')) {
+            return response()->json([
+                'success' => false,
+                'status' => 'failed',
+                'message' => 'Role Staff Gudang hanya diizinkan mengunggah dokumen Memo / Surat Jalan (DO).'
+            ], 403);
+        }
+
+        $file = $request->file('file');
+        $fileName = $file->getClientOriginalName();
+        $extracted = null;
+
+        if ($request->filled('program_id')) {
+            $program = Program::find($request->input('program_id'));
+            if (!$program) {
+                return response()->json(['success' => false, 'status' => 'failed', 'message' => 'Program tidak ditemukan.'], 404);
+            }
+            $type = $request->input('document_type') ?: DocumentProgramMatcher::INVOICE;
+            $reason = 'Dipilih manual';
+            $number = $request->input('number');
+        } else {
+            $analysis = $this->analyzeDocumentContent($file->getContent(), strtolower($file->getClientOriginalExtension() ?: 'pdf'), null);
+            if (!$analysis['success']) {
+                $message = 'AI belum bisa membaca dokumen ini. Pilih programnya.';
+                return response()->json([
+                    'success' => false,
+                    'status' => 'review',
+                    'message' => $message,
+                    'extracted' => null,
+                    'candidates' => [],
+                    'log_id' => $this->logAutoUpload($request, ['status' => 'review', 'message' => $message]),
+                ]);
+            }
+
+            $type = $analysis['document_type'];
+            if (!in_array($type, [DocumentProgramMatcher::INVOICE, DocumentProgramMatcher::FAKTUR], true)) {
+                $message = 'Dokumen ini tidak dikenali sebagai invoice atau faktur pajak.';
+                return response()->json([
+                    'success' => false,
+                    'status' => 'failed',
+                    'message' => $message,
+                    'log_id' => $this->logAutoUpload($request, ['status' => 'failed', 'message' => $message]),
+                ]);
+            }
+
+            $extracted = array_intersect_key($analysis, array_flip([
+                'document_type', 'invoice_no', 'faktur_number', 'sj_number', 'program_name', 'description',
+                'bill_to', 'supplier_name', 'dpp_amount', 'ppn_amount',
+            ]));
+            $number = $type === DocumentProgramMatcher::FAKTUR ? $analysis['faktur_number'] : $analysis['invoice_no'];
+            $match = DocumentProgramMatcher::match($analysis, $type);
+            if (!$match['program']) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'review',
+                    'message' => $match['message'],
+                    'extracted' => $extracted,
+                    'candidates' => $match['candidates'],
+                    'log_id' => $this->logAutoUpload($request, [
+                        'status' => 'review', 'document_type' => $type, 'number' => $number, 'message' => $match['message'],
+                    ]),
+                ]);
+            }
+
+            $program = $match['program'];
+            $reason = $match['reason'];
+        }
+
+        $storedType = $type === DocumentProgramMatcher::FAKTUR ? 'faktur' : 'invoice';
+        $logBase = ['program_id' => $program->id, 'document_type' => $type, 'number' => $number, 'reason' => $reason];
+
+        // Berkas yang sama sudah diarsipkan di program ini (mis. terunggah dua kali)
+        if ($program->documents()->where('type', $storedType)->where('file_name', $fileName)->exists()) {
+            $message = "Sudah ada di program {$program->title}.";
+            return response()->json([
+                'success' => true,
+                'status' => 'duplicate',
+                'document_type' => $type,
+                'message' => $message,
+                'extracted' => $extracted,
+                'program' => $program->fresh()->load('documents'),
+                'log_id' => $this->logAutoUpload($request, $logBase + ['status' => 'duplicate', 'message' => $message]),
+            ]);
+        }
+
+        $stored = ProgramDocumentStorage::store($file, (string) $program->id);
+        $document = $this->createDocumentRecord($program, self::newDocumentId(), $storedType, $fileName, $stored['size'], $stored['path']);
+        if (filled($number)) {
+            // Hanya nomornya yang diisi (No. Invoice / No. Faktur); nominal dan data lain tidak diubah
+            [$column] = self::AI_NUMBER_FIELDS[$storedType];
+            $program->update([$column => $number]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'matched',
+            'document_type' => $type,
+            'message' => "Masuk ke {$program->title}.",
+            'reason' => $reason,
+            'extracted' => $extracted,
+            'program' => $program->fresh()->load('documents'),
+            'log_id' => $this->logAutoUpload($request, $logBase + ['status' => 'matched', 'document_id' => $document->id, 'message' => null]),
+        ]);
+    }
+
+    /**
+     * Catat hasil unggah otomatis di riwayat. Saat pengguna memilih program untuk berkas yang tadinya
+     * "perlu dipilih", baris yang sama (log_id) diperbarui agar satu berkas tetap satu baris.
+     */
+    private function logAutoUpload(Request $request, array $values): int
+    {
+        $values += ['uploaded_by' => $request->input('uploaded_by')];
+
+        $log = $request->filled('log_id') ? DocumentUploadLog::find($request->input('log_id')) : null;
+        if ($log) {
+            $log->update($values);
+            return $log->id;
+        }
+
+        return DocumentUploadLog::create($values + [
+            'file_name' => $request->file('file')->getClientOriginalName(),
+            'source' => DocumentUploadLog::SOURCE_AUTO,
+        ])->id;
+    }
+
+    private static function newDocumentId(): string
+    {
+        return 'doc-' . time() . '-' . rand(10, 99);
+    }
+
+    /**
+     * Simpan data dokumen untuk berkas yang sudah tersimpan, lalu perbarui status kelengkapan program
+     */
+    private function createDocumentRecord(Program $program, string $docId, string $type, string $fileName, string $fileSize, ?string $filePath): ProgramDocument
+    {
+        $document = ProgramDocument::create([
+            'id' => $docId,
+            'program_id' => $program->id,
+            'type' => $type,
+            'file_name' => $fileName,
+            'file_size' => $fileSize,
+            'file_path' => $filePath,
+            'uploaded_at' => Carbon::now()
+        ]);
+
+        // Check completeness across distinct document types
+        $types = $program->documents()->pluck('type')->toArray();
+        if (count(array_unique($types)) >= 3) {
+            $program->update(['status' => 'Lengkap']);
+        }
+
+        return $document;
+    }
+
+    /**
      * Tampilkan / unduh berkas dokumen, dari S3 atau folder lokal
      */
     public function documentFile($id, $docId)
@@ -596,7 +770,7 @@ class ProgramController extends Controller
     /**
      * Analisis AI atas isi berkas lewat salinan sementara (berkas di S3 tidak ada di disk lokal)
      */
-    private function analyzeDocumentContent(string $content, string $extension, string $type): array
+    private function analyzeDocumentContent(string $content, string $extension, ?string $type): array
     {
         $base = tempnam(sys_get_temp_dir(), 'doc_');
         $path = $base . '.' . $extension;

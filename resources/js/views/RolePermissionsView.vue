@@ -14,12 +14,11 @@
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+          class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors cursor-pointer"
           :disabled="isSaving"
           @click="resetToDefaults"
         >
-          <RotateCcw class="w-3.5 h-3.5 text-slate-400" />
-          <span>Reset Default</span>
+          Reset Default
         </button>
 
         <button
@@ -28,8 +27,7 @@
           :disabled="isSaving"
           @click="saveChanges"
         >
-          <Save v-if="!isSaving" class="w-3.5 h-3.5" />
-          <Loader2 v-else class="w-3.5 h-3.5 animate-spin" />
+          <Loader2 v-if="isSaving" class="w-3.5 h-3.5 animate-spin text-slate-500" />
           <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
         </button>
       </div>
@@ -80,11 +78,12 @@
             <th
               v-for="role in rolesList"
               :key="role.key"
-              class="py-2.5 px-3 text-center w-[15%] font-normal"
+              class="group py-2.5 px-3 text-center w-[15%] font-normal"
             >
               <span class="block font-medium text-slate-700 dark:text-slate-200 text-xs">{{ role.label }}</span>
               <span v-if="role.key === 'Admin SCM'" class="block text-[11px] text-slate-400 mt-0.5">Akses penuh</span>
-              <span v-else class="flex items-center justify-center gap-1 mt-0.5 text-[11px]">
+              <!-- Pilih/kosongkan semua: muncul saat kolom diarahkan kursor supaya header tetap bersih -->
+              <span v-else class="flex items-center justify-center gap-1 mt-0.5 text-[11px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                 <button
                   type="button"
                   class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
@@ -127,14 +126,24 @@
                 class="py-1.5 px-3 text-center align-middle"
               >
                 <Check v-if="role.key === 'Admin SCM'" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 mx-auto" />
-                <input
+                <button
                   v-else
-                  type="checkbox"
-                  :checked="isPermissionChecked(role.key, item.key)"
+                  type="button"
+                  role="checkbox"
+                  :aria-checked="isPermissionChecked(role.key, item.key)"
                   :aria-label="`${item.name} untuk ${role.label}`"
-                  class="w-3.5 h-3.5 align-middle rounded accent-slate-900 dark:accent-slate-300 cursor-pointer"
-                  @change="setPermission(role.key, item.key, $event.target.checked)"
-                />
+                  class="w-6 h-6 inline-flex items-center justify-center rounded-md align-middle hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-slate-400 transition-colors cursor-pointer"
+                  @click="togglePermission(role.key, item.key)"
+                >
+                  <span
+                    class="w-4 h-4 rounded border flex items-center justify-center transition-colors"
+                    :class="isPermissionChecked(role.key, item.key)
+                      ? 'border-slate-400 dark:border-slate-500'
+                      : 'border-slate-300 dark:border-slate-600'"
+                  >
+                    <Check v-if="isPermissionChecked(role.key, item.key)" class="w-3 h-3 text-slate-900 dark:text-slate-100 stroke-[3]" />
+                  </span>
+                </button>
               </td>
             </tr>
           </template>
@@ -176,22 +185,35 @@
 
       <div v-for="group in filteredGroups" :key="group.id" class="px-3.5 pb-1">
         <p class="pt-3 pb-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ group.title }}</p>
-        <label
-          v-for="item in group.items"
-          :key="item.key"
-          class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-800/80 last:border-b-0 cursor-pointer"
-          :title="item.description"
-        >
-          <span class="min-w-0 truncate text-slate-700 dark:text-slate-200">{{ item.name }}</span>
-          <Check v-if="activeMobileRole === 'Admin SCM'" class="w-3.5 h-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-          <input
+        <template v-for="item in group.items" :key="item.key">
+          <div
+            v-if="activeMobileRole === 'Admin SCM'"
+            class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-800/80 last:border-b-0"
+            :title="item.description"
+          >
+            <span class="min-w-0 truncate text-slate-700 dark:text-slate-200">{{ item.name }}</span>
+            <Check class="w-3.5 h-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+          </div>
+          <button
             v-else
-            type="checkbox"
-            :checked="isPermissionChecked(activeMobileRole, item.key)"
-            class="w-3.5 h-3.5 shrink-0 rounded accent-slate-900 dark:accent-slate-300 cursor-pointer"
-            @change="setPermission(activeMobileRole, item.key, $event.target.checked)"
-          />
-        </label>
+            type="button"
+            role="checkbox"
+            :aria-checked="isPermissionChecked(activeMobileRole, item.key)"
+            class="w-full flex items-center justify-between gap-3 py-2 text-left border-b border-slate-100 dark:border-slate-800/80 last:border-b-0 cursor-pointer"
+            :title="item.description"
+            @click="togglePermission(activeMobileRole, item.key)"
+          >
+            <span class="min-w-0 truncate text-slate-700 dark:text-slate-200">{{ item.name }}</span>
+            <span
+              class="w-4 h-4 shrink-0 rounded border flex items-center justify-center"
+              :class="isPermissionChecked(activeMobileRole, item.key)
+                ? 'border-slate-400 dark:border-slate-500'
+                : 'border-slate-300 dark:border-slate-600'"
+            >
+              <Check v-if="isPermissionChecked(activeMobileRole, item.key)" class="w-3 h-3 text-slate-900 dark:text-slate-100 stroke-[3]" />
+            </span>
+          </button>
+        </template>
       </div>
 
       <p v-if="filteredGroups.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
@@ -204,8 +226,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import {
-  RotateCcw,
-  Save,
   Search,
   X,
   Check,
@@ -374,6 +394,10 @@ function setPermission(roleKey, permKey, value) {
     localPermissions.value[roleKey] = {};
   }
   localPermissions.value[roleKey][permKey] = Boolean(value);
+}
+
+function togglePermission(roleKey, permKey) {
+  setPermission(roleKey, permKey, !isPermissionChecked(roleKey, permKey));
 }
 
 function toggleRoleAll(roleKey, stateVal) {

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\AdminSettingController;
+use App\Http\Controllers\Api\DocumentUploadLogController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\WhmsIntegrationController;
 use App\Http\Middleware\EnsureWhmsIntegrationToken;
@@ -45,6 +46,9 @@ Route::prefix('api')->group(function () {
     Route::post('/programs/{id}/documents/{docId}/analyze', [ProgramController::class, 'analyzeDocumentAi']);
     Route::delete('/programs/{id}/documents/{docId}', [ProgramController::class, 'deleteDocument'])->where('docId', '.*');
     Route::post('/programs/import', [ProgramController::class, 'import']);
+    Route::post('/documents/auto-upload', [ProgramController::class, 'autoUploadDocument']);
+    Route::get('/document-logs', [DocumentUploadLogController::class, 'index']);
+    Route::post('/document-logs/{id}/skip', [DocumentUploadLogController::class, 'skip']);
     Route::get('/programs/raw-imports', [ProgramController::class, 'rawImports']);
     Route::get('/programs/raw-imports/{id}/download', [ProgramController::class, 'downloadRawImport']);
     Route::delete('/programs/raw-imports/{id}', [ProgramController::class, 'deleteRawImport']);
@@ -54,7 +58,6 @@ Route::prefix('api')->group(function () {
     Route::post('/admin/settings', [AdminSettingController::class, 'updateSettings']);
     Route::get('/admin/role-permissions', [AdminSettingController::class, 'getRolePermissions']);
     Route::post('/admin/role-permissions', [AdminSettingController::class, 'updateRolePermissions']);
-    Route::post('/admin/reset-data', [AdminSettingController::class, 'resetData']);
 
     // 5. Master Data Management (Kategori, Brand, Company, Gudang, Supplier)
     Route::get('/master-data', [MasterDataController::class, 'index']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentUploadLog;
 use App\Models\Program;
 use App\Models\ProgramDocument;
 use Illuminate\Database\Eloquent\Builder;
@@ -94,6 +95,16 @@ class WhmsIntegrationController extends Controller
             if ($program->documents()->distinct()->count('type') >= 3) {
                 $program->update(['status' => 'Lengkap']);
             }
+
+            DocumentUploadLog::create([
+                'program_id' => $program->id,
+                'document_id' => $document->id,
+                'file_name' => $document->file_name,
+                'document_type' => 'mou',
+                'source' => DocumentUploadLog::SOURCE_WHMS,
+                'status' => 'matched',
+                'uploaded_by' => $validated['uploaded_by'] ?? 'WHMS',
+            ]);
         }
 
         return response()->json([

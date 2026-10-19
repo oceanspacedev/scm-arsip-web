@@ -3,7 +3,7 @@
     <!-- Header with Title & Fiscal Year Filter -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
       <div class="min-w-0">
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Dashboard Program SCM
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -15,10 +15,9 @@
       <div class="relative self-start sm:self-auto">
         <button
           type="button"
-          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           @click="showYearMenu = !showYearMenu"
         >
-          <Calendar class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>{{ currentYearLabel }}</span>
           <ChevronDown class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 ml-0.5 transition-transform" :class="{ 'rotate-180': showYearMenu }" />
         </button>
@@ -32,11 +31,11 @@
             :key="yr.value"
             type="button"
             class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-colors"
-            :class="selectedYear === yr.value ? 'font-semibold text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40' : 'text-slate-700 dark:text-slate-300'"
+            :class="selectedYear === yr.value ? 'font-medium text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60' : 'text-slate-700 dark:text-slate-300'"
             @click="chooseYear(yr.value)"
           >
             <span>{{ yr.label }}</span>
-            <span v-if="selectedYear === yr.value" class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+            <Check v-if="selectedYear === yr.value" class="w-3.5 h-3.5 text-slate-900 dark:text-slate-100" />
           </button>
         </div>
       </div>
@@ -67,7 +66,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Calendar, ChevronDown } from 'lucide-vue-next';
+import { Check, ChevronDown } from 'lucide-vue-next';
 import DashboardMetricCards from '../components/dashboard/DashboardMetricCards.vue';
 import MonthlyTaxChart from '../components/dashboard/MonthlyTaxChart.vue';
 import TopSuppliersChart from '../components/dashboard/TopSuppliersChart.vue';

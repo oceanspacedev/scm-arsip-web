@@ -22,8 +22,13 @@ export default defineConfig({
     },
     server: {
         host: '0.0.0.0',
+        // Port tetap milik proyek ini: proyek Herd lain juga memakai 5173 (di [::1]),
+        // sehingga "localhost:5173" bisa memuat app.js milik proyek lain
+        port: 5190,
+        strictPort: true,
         hmr: {
-            host: 'localhost',
+            // IPv4 eksplisit: "localhost" bisa diarahkan ke [::1] milik server lain
+            host: '127.0.0.1',
         },
         cors: true,
         watch: {

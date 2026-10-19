@@ -1,5 +1,5 @@
 import { reactive, computed, ref } from 'vue';
-import { saveDocumentBlob, getDocumentBlob, deleteDocumentBlob, clearAllDocumentBlobs } from '../utils/documentDb.js';
+import { saveDocumentBlob, getDocumentBlob, deleteDocumentBlob } from '../utils/documentDb.js';
 import { USER_STORAGE_KEY, userFromStorage } from './authSession.js';
 
 // Shared ppn_rules state - module-level agar bisa diakses dari isNonPpnCategory (exported)
@@ -145,7 +145,6 @@ export const defaultUsers = [
 export const demoUsers = defaultUsers.filter(u => u.status === 'approved');
 
 const USERS_LIST_STORAGE_KEY = 'scm_taxvault_users_list_v2';
-const DEMO_ACCOUNTS_STORAGE_KEY = 'scm_show_demo_accounts';
 export const ROLE_PERMISSIONS_STORAGE_KEY = 'scm_taxvault_role_permissions_v2';
 
 export const DEFAULT_ROLE_PERMISSIONS = {
@@ -370,18 +369,6 @@ function saveMasterDataToStorage(data) {
     }
 }
 
-function loadStoredDemoAccounts() {
-    try {
-        const val = localStorage.getItem(DEMO_ACCOUNTS_STORAGE_KEY);
-        if (val !== null) {
-            return val !== 'false';
-        }
-    } catch (e) {
-        console.error("Failed to load demo accounts preference", e);
-    }
-    return true;
-}
-
 function loadStoredUsersList() {
     try {
         const stored = localStorage.getItem(USERS_LIST_STORAGE_KEY);
@@ -407,11 +394,9 @@ const state = reactive({
     programs: loadStoredPrograms(),
     users: loadStoredUsersList(),
     currentUser: loadStoredUser(),
-    showDemoAccounts: loadStoredDemoAccounts(),
     rolePermissions: loadStoredRolePermissions(),
     masterData: loadStoredMasterData(),
     isSavingPermissions: false,
-    isResetting: false,
     isMobileSidebarOpen: false,
     activeOtp: null,
     searchQuery: '',
@@ -1335,6 +1320,78 @@ export const useTaxStore = () => {
         return true;
     }
 
+    // Unggah invoice / faktur pajak tanpa memilih program: server mengenali jenisnya lalu mencocokkan
+    // lewat No. Surat Jalan / No. Invoice (invoice) atau No. Faktur / DPP (faktur pajak).
+    // Hasil: status 'matched' | 'duplicate' | 'review' (pilih dari candidates) | 'failed'.
+    // Pilihan manual dikirim ulang dengan programId + documentType + number hasil bacaan sebelumnya,
+    // dan logId agar baris riwayat yang sama diperbarui.
+    async function autoUploadDocument(file, { programId = null, documentType = null, number = null, logId = null } = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('user_role', state.currentUser?.role || '');
+        formData.append('uploaded_by', state.currentUser?.name || '');
+        if (programId) formData.append('program_id', programId);
+        if (documentType) formData.append('document_type', documentType);
+        if (number) formData.append('number', number);
+        if (logId) formData.append('log_id', logId);
+
+        try {
+            const res = await fetch('/api/documents/auto-upload', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-User-Role': state.currentUser?.role || ''
+                },
+                body: formData
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const validationError = data.errors ? Object.values(data.errors)[0]?.[0] : null;
+                return { status: 'failed', message: validationError || data.message || `Gagal diunggah (HTTP ${res.status}).` };
+            }
+            if (data.program) {
+                const mapped = mapBackendProgram(data.program);
+                const idx = state.programs.findIndex(p => String(p.id) === mapped.id);
+                if (idx !== -1) {
+                    state.programs[idx] = mapped;
+                } else {
+                    state.programs.push(mapped);
+                }
+                saveToStorage();
+            }
+            return data;
+        } catch (e) {
+            return { status: 'failed', message: 'Tidak dapat terhubung ke server.' };
+        }
+    }
+
+    // Riwayat dokumen yang masuk (menu Riwayat)
+    async function fetchDocumentLogs({ status = '', source = '', q = '', page = 1 } = {}) {
+        const params = new URLSearchParams({ page: String(page) });
+        if (status) params.set('status', status);
+        if (source) params.set('source', source);
+        if (q) params.set('q', q);
+        try {
+            const res = await fetch(`/api/document-logs?${params}`, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                return { logs: data.logs, meta: data.meta };
+            }
+        } catch (e) {
+            console.warn('Gagal memuat riwayat dokumen:', e);
+        }
+        return null;
+    }
+
+    async function skipDocumentLog(logId) {
+        if (!logId) return;
+        try {
+            await fetch(`/api/document-logs/${logId}/skip`, { method: 'POST', headers: { 'Accept': 'application/json' } });
+        } catch (e) {
+            console.warn('Gagal mencatat berkas yang dilewati:', e);
+        }
+    }
+
     async function deleteDocument(programId, docIdentifier) {
         const prog = getProgramById(programId);
         if (!prog || !prog.documents) return false;
@@ -1687,83 +1744,6 @@ export const useTaxStore = () => {
         notify("Data program berhasil diexport ke file CSV.");
     }
 
-    async function fetchSettings() {
-        try {
-            const res = await fetch('/api/settings');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && data.settings) {
-                    if (data.settings.show_demo_accounts !== undefined) {
-                        state.showDemoAccounts = Boolean(data.settings.show_demo_accounts);
-                        localStorage.setItem(DEMO_ACCOUNTS_STORAGE_KEY, state.showDemoAccounts ? 'true' : 'false');
-                    }
-                }
-            }
-            await fetchRolePermissions();
-        } catch (e) {
-            console.warn('Failed to fetch settings from backend:', e);
-        }
-    }
-
-    async function setDemoAccountsVisibility(visible) {
-        state.showDemoAccounts = Boolean(visible);
-        localStorage.setItem(DEMO_ACCOUNTS_STORAGE_KEY, state.showDemoAccounts ? 'true' : 'false');
-        try {
-            await fetch('/api/admin/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ show_demo_accounts: state.showDemoAccounts })
-            });
-            notify(
-                state.showDemoAccounts
-                    ? 'Akun demo sekarang DITAMPILKAN di halaman login.'
-                    : 'Akun demo sekarang DISEMBUNYIKAN dari halaman login.',
-                'info'
-            );
-        } catch (e) {
-            console.error('Failed to sync settings with backend:', e);
-        }
-    }
-
-    async function resetEntireSystemData() {
-        state.isResetting = true;
-        try {
-            const res = await fetch('/api/admin/reset-data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-            });
-            const data = await res.json();
-
-            // Clear local cached programs, IndexedDB, and reset state
-            localStorage.removeItem(STORAGE_KEY);
-            state.programs = [];
-            await clearAllDocumentBlobs();
-            await fetchPrograms();
-            await fetchUsers();
-
-            if (data.success) {
-                notify(data.message || 'Seluruh data program, berkas lampiran, dan arsip telah berhasil dihapus bersih.', 'success');
-                return { success: true };
-            } else {
-                notify(data.message || 'Gagal menghapus data.', 'error');
-                return { success: false, message: data.message };
-            }
-        } catch (e) {
-            console.error('Failed to reset system data:', e);
-            localStorage.removeItem(STORAGE_KEY);
-            state.programs = [];
-            await clearAllDocumentBlobs();
-            notify('Seluruh data lokal telah dikosongkan.', 'info');
-            return { success: false, message: e.message };
-        } finally {
-            state.isResetting = false;
-        }
-    }
-
-    async function resetToDefault() {
-        return await resetEntireSystemData();
-    }
-
     function notify(message, type = 'success') {
         state.activeNotification = {
             id: Date.now(),
@@ -1841,7 +1821,7 @@ export const useTaxStore = () => {
     // Auto-fetch on store creation (digabung bila komponen lain sedang memuat data yang sama)
     dedupe('users', fetchUsers);
     dedupe('programs', fetchPrograms);
-    dedupe('settings', fetchSettings);
+    dedupe('rolePermissions', fetchRolePermissions);
     dedupe('masterData', fetchMasterData);
 
     async function registerUser({ name, phone, email, role, password }) {
@@ -2079,7 +2059,8 @@ export const useTaxStore = () => {
                     message: 'Pendaftaran akun Anda ditolak oleh Administrator. Silakan hubungi Admin SCM.'
                 };
             }
-            if (password !== user.password && password !== 'password123' && password !== 'admin') {
+            // Tanpa kata sandi master: hanya kata sandi akun itu sendiri
+            if (!user.password || password !== user.password) {
                 return { success: false, message: 'Kata sandi tidak sesuai. Silakan coba lagi.' };
             }
             return { success: true, user };
@@ -2175,11 +2156,14 @@ export const useTaxStore = () => {
                 notify(`Selamat datang, ${user.name} (${user.role})!`);
                 return { success: true, user };
             }
+            // Server sudah memutuskan kodenya salah: jangan dicocokkan ulang secara lokal
+            return { success: false, message: data.message || 'Kode OTP salah atau telah kedaluwarsa.' };
         } catch (e) {}
 
-        // Fallback local verify
-        if (state.activeOtp && (inputCode === state.activeOtp.code || inputCode === '123456')) {
-            const user = state.activeOtp.user || findUser(activeIdentifier) || defaultUsers[0];
+        // Server tidak terjangkau: cocokkan dengan kode yang dibuat lokal (tanpa kode master)
+        const localUser = state.activeOtp?.user || findUser(activeIdentifier);
+        if (state.activeOtp && localUser && inputCode === state.activeOtp.code) {
+            const user = localUser;
             state.currentUser = user;
             state.activeOtp = null;
             try {
@@ -2623,16 +2607,13 @@ export const useTaxStore = () => {
         analyzeDocumentAi,
         deleteProgram,
         uploadDocument,
+        autoUploadDocument,
+        fetchDocumentLogs,
+        skipDocumentLog,
         deleteDocument,
         loadDocumentContent,
         importPrograms,
         exportToCsv,
-        resetToDefault,
-        resetEntireSystemData,
-        showDemoAccounts: computed(() => state.showDemoAccounts),
-        isResetting: computed(() => state.isResetting),
-        setDemoAccountsVisibility,
-        fetchSettings,
         rawImports,
         fetchRawImports,
         deleteRawImport,

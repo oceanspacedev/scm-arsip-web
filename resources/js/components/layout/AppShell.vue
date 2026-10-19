@@ -42,6 +42,7 @@
 
     <ImportExcelModal />
     <UserApprovalModal />
+    <DocumentUploadPanel />
   </SidebarProvider>
 </template>
 
@@ -54,6 +55,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import Separator from '@/components/ui/separator/Separator.vue';
 import AppSidebar from './AppSidebar.vue';
 import ImportExcelModal from '../programs/ImportExcelModal.vue';
+import DocumentUploadPanel from '../programs/DocumentUploadPanel.vue';
 import UserApprovalModal from '../auth/UserApprovalModal.vue';
 import { useTaxStore } from '../../store/taxStore';
 
@@ -76,6 +78,7 @@ const currentRouteName = computed(() => {
   if (path === '/dashboard') return 'Dashboard';
   if (path === '/programs') return 'Arsip Program';
   if (path.startsWith('/programs/')) return 'Detail Program';
+  if (path === '/history') return 'History';
   if (path === '/users') return 'Manajemen User';
   if (path === '/permissions') return 'Hak Akses & Role';
   if (path === '/master-data') return 'Data Master';

@@ -32,62 +32,6 @@
       </div>
     </div>
 
-    <!-- Admin Controls Bar: Demo Account Toggle & Reset Data -->
-    <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-      <!-- Left: Demo Accounts Toggle -->
-      <div class="flex items-start sm:items-center gap-3">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-semibold text-slate-900 dark:text-slate-100">Tampilkan Akun Demo di Login</span>
-            <span
-              class="px-2 py-0.5 rounded text-[10px] font-medium transition-colors"
-              :class="showDemoAccounts ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700'"
-            >
-              {{ showDemoAccounts ? 'Aktif' : 'Nonaktif' }}
-            </span>
-          </div>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Menampilkan tombol cepat akun demo (Admin SCM, Tim Pajak, Staf SCM) di form masuk
-          </p>
-        </div>
-      </div>
-
-      <!-- Right: Actions (Toggle Switch & Reset Data Button) -->
-      <div class="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t border-slate-100 dark:border-slate-800 md:border-t-0 shrink-0 w-full md:w-auto">
-        <!-- Switch Toggle Button -->
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-slate-600 dark:text-slate-400 font-medium md:hidden">Akun Demo:</span>
-          <button
-            type="button"
-            role="switch"
-            :aria-checked="showDemoAccounts"
-            @click="handleToggleDemoAccounts"
-            class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
-            :class="showDemoAccounts ? 'bg-slate-900 dark:bg-slate-400' : 'bg-slate-300 dark:bg-slate-700'"
-            title="Nyalakan / Matikan Akun Demo di Login"
-          >
-            <span
-              aria-hidden="true"
-              class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out"
-              :class="showDemoAccounts ? 'translate-x-4' : 'translate-x-0'"
-            />
-          </button>
-        </div>
-
-        <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden md:block"></div>
-
-        <!-- Reset Data Button -->
-        <button
-          type="button"
-          class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-red-600 dark:hover:text-rose-400 hover:border-red-200 dark:hover:border-rose-900/50 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
-          @click="isResetModalOpen = true"
-        >
-          <RotateCcw class="w-3.5 h-3.5 text-slate-400" />
-          <span>Reset Data</span>
-        </button>
-      </div>
-    </div>
-
     <!-- Filter Tabs & Stats -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 text-xs">
       <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px no-scrollbar">
@@ -766,75 +710,18 @@
         </div>
       </div>
     </Teleport>
-
-    <!-- Modal Konfirmasi Reset Data -->
-    <Teleport to="body">
-      <div
-        v-if="isResetModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
-        @click.self="!isResetting && (isResetModalOpen = false)"
-      >
-        <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 text-center space-y-3.5 animate-in fade-in zoom-in-95 duration-150">
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto">
-            <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" :class="{ 'animate-spin': isResetting }" />
-          </div>
-
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
-            Hapus Semua Data?
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Apakah Anda yakin ingin menghapus <strong class="text-slate-800 dark:text-slate-200">SELURUH data</strong> arsip program, berkas lampiran, dan riwayat dokumen secara permanen? Data akan dikosongkan total dari sistem.
-          </p>
-
-          <div class="grid grid-cols-2 gap-2.5 pt-1">
-            <button
-              type="button"
-              :disabled="isResetting"
-              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50"
-              @click="isResetModalOpen = false"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              :disabled="isResetting"
-              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-75 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-              @click="handleResetData"
-            >
-              <RotateCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': isResetting }" />
-              <span>{{ isResetting ? 'Menghapus...' : 'Ya, Hapus Semua' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Plus, Search, Trash2, X, AlertCircle, Users, RotateCcw, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil, ShieldCheck } from 'lucide-vue-next';
+import { Plus, Search, Trash2, X, AlertCircle, Users, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil, ShieldCheck } from 'lucide-vue-next';
 import { useTaxStore } from '../store/taxStore';
 
 const route = useRoute();
 const router = useRouter();
 const store = useTaxStore();
-
-const showDemoAccounts = computed(() => store.showDemoAccounts.value);
-const isResetting = computed(() => store.isResetting.value);
-const isResetModalOpen = ref(false);
-
-async function handleToggleDemoAccounts() {
-  await store.setDemoAccountsVisibility(!showDemoAccounts.value);
-}
-
-async function handleResetData() {
-  const res = await store.resetEntireSystemData();
-  if (res && res.success) {
-    isResetModalOpen.value = false;
-  }
-}
 
 onMounted(() => {
   const role = store.currentUser.value?.role || '';

@@ -49,6 +49,12 @@ const routes = [
                 meta: { title: 'Detail Program - SCM TaxVault' }
             },
             {
+                path: 'history',
+                name: 'history',
+                component: () => import('../views/HistoryView.vue'),
+                meta: { title: 'History - SCM TaxVault' }
+            },
+            {
                 path: 'users',
                 name: 'users',
                 component: UsersView,

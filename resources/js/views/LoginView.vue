@@ -194,33 +194,6 @@
               <span>Email & Kata Sandi</span>
             </button>
           </form>
-
-          <!-- Demo Accounts Box (Controlled by Admin settings) -->
-          <div v-if="showDemoAccounts" class="pt-4 border-t border-slate-100 dark:border-slate-800 animate-in fade-in duration-200">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Akun Cepat / Demo
-              </span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              <button
-                v-for="user in demoAccounts"
-                :key="user.email"
-                type="button"
-                class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all text-left cursor-pointer group"
-                :title="`Masuk langsung sebagai ${user.label}`"
-                @click="quickLoginDemo(user)"
-              >
-                <div class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 leading-tight truncate">
-                  {{ user.label }}
-                </div>
-                <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 font-mono">
-                  {{ user.email.split('@')[0] }}
-                </div>
-              </button>
-            </div>
-          </div>
         </CardContent>
 
         <!-- Card Footer: Sign Up moved to bottom -->
@@ -514,7 +487,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useDark, useToggle } from '@vueuse/core';
 import {
@@ -597,20 +570,6 @@ const regForm = reactive({
   passwordConfirmation: ''
 });
 
-// Demo accounts list for quick testing
-const showDemoAccounts = computed(() => store.showDemoAccounts.value);
-
-onMounted(() => {
-  store.fetchSettings();
-});
-
-const demoAccounts = [
-  { label: 'Admin SCM', email: 'admin@scm.corp', role: 'Admin SCM', phone: '081234567890' },
-  { label: 'Staff Gudang', email: 'gudang@scm.corp', role: 'Staff Gudang', phone: '081298765431' },
-  { label: 'Staff Finance', email: 'finance@scm.corp', role: 'Staff Finance', phone: '081224290503' },
-  { label: 'Staff SCM', email: 'scm@scm.corp', role: 'Staff SCM', phone: '081298765433' },
-];
-
 const maskedPhone = computed(() => {
   if (!targetPhone.value) return 'WhatsApp Anda';
   const clean = String(targetPhone.value);
@@ -637,46 +596,6 @@ function backToLoginForm() {
   isPendingAlert.value = false;
   isNotRegisteredAlert.value = false;
   router.push('/login').catch(() => {});
-}
-
-function fillDemoAccount(acc) {
-  email.value = acc.email;
-  password.value = 'password123';
-  identifier.value = acc.phone;
-  errorMessage.value = '';
-  isPendingAlert.value = false;
-}
-
-// Login instan 1-klik untuk akun demo tanpa OTP
-async function quickLoginDemo(acc) {
-  isLoading.value = true;
-  errorMessage.value = '';
-  isPendingAlert.value = false;
-
-  try {
-    const credCheck = await store.validatePasswordCredentials(acc.email, 'password123');
-    if (credCheck.success && credCheck.user) {
-      store.loginDirect(credCheck.user);
-      isLoading.value = false;
-      router.push('/dashboard');
-      return;
-    }
-  } catch (e) {
-    console.warn('Quick demo login fallback', e);
-  }
-
-  // Fallback langsung ke store jika API offline
-  const found = store.state.users.find(u => u.email.toLowerCase() === acc.email.toLowerCase()) || {
-    id: 'usr-' + acc.role.toLowerCase(),
-    name: acc.label,
-    email: acc.email,
-    role: acc.role,
-    phone: acc.phone,
-    status: 'approved'
-  };
-  store.loginDirect(found);
-  isLoading.value = false;
-  router.push('/dashboard');
 }
 
 function handleForgotPassword() {
@@ -715,29 +634,6 @@ async function handleWhatsAppSubmit() {
   isPendingAlert.value = false;
   isNotRegisteredAlert.value = false;
   isLoading.value = true;
-
-  // Bypass OTP jika identifier adalah akun demo
-  const cleanId = (identifier.value || '').trim().toLowerCase();
-  const cleanDigits = cleanId.replace(/[^0-9]/g, '');
-  const demoMatch = demoAccounts.find(d => 
-    d.email.toLowerCase() === cleanId || 
-    (cleanDigits.length >= 8 && d.phone.replace(/[^0-9]/g, '') === cleanDigits)
-  );
-
-  if (demoMatch) {
-    const found = store.state.users.find(u => u.email.toLowerCase() === demoMatch.email.toLowerCase()) || {
-      id: 'usr-' + demoMatch.role.toLowerCase(),
-      name: demoMatch.label,
-      email: demoMatch.email,
-      role: demoMatch.role,
-      phone: demoMatch.phone,
-      status: 'approved'
-    };
-    store.loginDirect(found);
-    isLoading.value = false;
-    router.push('/dashboard');
-    return;
-  }
 
   try {
     const otpRes = await store.sendOtp(identifier.value);
