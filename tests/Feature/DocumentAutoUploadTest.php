@@ -187,6 +187,23 @@ class DocumentAutoUploadTest extends TestCase
         $this->assertSame(0, ProgramDocument::count());
     }
 
+    public function test_the_reason_ai_could_not_read_the_document_is_shown()
+    {
+        // Tiap unggahan mendapat balasan berikutnya: batas permintaan, teks biasa, lalu koneksi gagal
+        Http::fake(['ai.test/*' => Http::sequence()
+            ->push(['error' => 'rate limit'], 429)
+            ->push(['choices' => [['message' => ['content' => 'Maaf, dokumen tidak dapat dibaca.']]]])
+            ->pushFailedConnection('cURL error 28: Operation timed out')]);
+
+        foreach (['Batas permintaan AI tercapai (429)', 'tidak terbaca oleh AI', 'Layanan AI tidak merespons'] as $expected) {
+            $message = $this->upload()->assertOk()->assertJsonPath('status', 'review')->json('message');
+
+            $this->assertStringStartsWith('AI belum bisa membaca dokumen ini: ', $message);
+            $this->assertStringContainsString($expected, $message);
+        }
+        $this->assertSame(0, ProgramDocument::count());
+    }
+
     public function test_other_documents_are_not_stored()
     {
         $this->fakeAi(['document_type' => 'other', 'invoice_no' => null, 'sj_number' => null]);

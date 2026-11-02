@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -134,7 +135,7 @@ class DocumentAiAnalysisService
                 Log::error('AI Analysis failed HTTP ' . $response->status() . ': ' . $response->body());
                 return [
                     'success' => false,
-                    'message' => 'Layanan AI mengembalikan respon error: ' . $response->status()
+                    'message' => self::httpErrorMessage($response->status())
                 ];
             }
 
@@ -157,7 +158,8 @@ class DocumentAiAnalysisService
                 return [
                     'success' => false,
                     'raw_content' => $content,
-                    'message' => 'Gagal memproses format output dari AI.'
+                    // Biasanya AI membalas teks seperti "Maaf, dokumen tidak dapat dibaca"
+                    'message' => 'Isi dokumen tidak terbaca oleh AI, mungkin hasil scan buram atau berkas terkunci.'
                 ];
             }
 
@@ -214,6 +216,12 @@ class DocumentAiAnalysisService
                 'document_type' => self::documentType($cleanVal($parsed['document_type'] ?? null), $fakturNumber, $invoiceNo),
                 'raw' => $parsed
             ];
+        } catch (ConnectionException $e) {
+            Log::error('Exception during AI Document Analysis: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Layanan AI tidak merespons (waktu habis atau koneksi terputus), coba unggah lagi.'
+            ];
         } catch (\Throwable $e) {
             Log::error('Exception during AI Document Analysis: ' . $e->getMessage());
             return [
@@ -221,6 +229,21 @@ class DocumentAiAnalysisService
                 'message' => 'Terjadi kesalahan sistem saat menganalisis dokumen: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Pesan singkat untuk pengguna dari kode error layanan AI (detailnya tetap di log)
+     */
+    private static function httpErrorMessage(int $status): string
+    {
+        return match (true) {
+            $status === 401 || $status === 403 => "API key AI ditolak ({$status}), periksa OPENAI_COMPATIBLE_API_KEY.",
+            $status === 404 => 'Model AI tidak tersedia (404), periksa OPENAI_COMPATIBLE_MODEL.',
+            $status === 413 => 'Berkas terlalu besar untuk layanan AI (413).',
+            $status === 429 => 'Batas permintaan AI tercapai (429), coba lagi beberapa menit lagi.',
+            $status >= 500 => "Layanan AI sedang bermasalah ({$status}), coba lagi nanti.",
+            default => "Layanan AI mengembalikan error {$status}.",
+        };
     }
 
     /**

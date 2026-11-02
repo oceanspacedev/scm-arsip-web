@@ -20,6 +20,17 @@ if (typeof window !== 'undefined') {
     });
 }
 
+/**
+ * Tebakan jenis dari nama berkas, dipakai bila AI tidak bisa membaca dokumen. Pengguna tetap bisa
+ * menggantinya; tanpa petunjuk di nama, jenisnya harus dipilih sendiri.
+ */
+export function guessDocumentType(fileName) {
+    const name = String(fileName || '').toLowerCase();
+    if (/faktur|pajak|(^|[^a-z])fp([^a-z]|$)/.test(name)) return 'faktur_pajak';
+    if (/invoice|(^|[^a-z])inv([^a-z]|$)/.test(name)) return 'invoice';
+    return '';
+}
+
 function applyResult(item, result) {
     item.status = ['matched', 'duplicate', 'review'].includes(result.status) ? result.status : 'failed';
     item.message = result.message || '';
@@ -44,7 +55,8 @@ export function useDocumentUploadQueue() {
             let item;
             while ((item = queue.items.find(i => i.status === 'pending'))) {
                 item.status = 'processing';
-                applyResult(item, await store.autoUploadDocument(item.file));
+                // logId terisi bila berkas sedang diulang, supaya baris History yang sama yang diperbarui
+                applyResult(item, await store.autoUploadDocument(item.file, { logId: item.logId }));
             }
         } finally {
             queue.isProcessing = false;
@@ -63,7 +75,11 @@ export function useDocumentUploadQueue() {
                 file,
                 status: problem ? 'failed' : 'pending',
                 message: problem,
+                // Format/ukuran salah tidak akan berhasil walau diulang
+                invalid: Boolean(problem),
                 documentType: null,
+                // Jenis pilihan pengguna, hanya dipakai bila AI tidak mengenali jenisnya
+                typeChoice: guessDocumentType(file.name),
                 logId: null,
                 program: null,
                 reason: '',
@@ -76,8 +92,14 @@ export function useDocumentUploadQueue() {
         processPending();
     }
 
+    /** Program sudah dipilih dan jenisnya jelas (dibaca AI atau dipilih pengguna) */
+    function canSave(item) {
+        return Boolean(item.choice && (item.documentType || item.typeChoice) && !item.saving);
+    }
+
     async function saveChoice(item) {
-        const documentType = item.documentType || 'invoice';
+        if (!canSave(item)) return;
+        const documentType = item.documentType || item.typeChoice;
         item.saving = true;
         try {
             applyResult(item, await store.autoUploadDocument(item.file, {
@@ -96,6 +118,18 @@ export function useDocumentUploadQueue() {
         store.skipDocumentLog(item.logId);
     }
 
+    /** Bisa diulang: gagal di server/AI, atau AI tidak membaca apa pun (mis. batas permintaan, koneksi) */
+    function canRetry(item) {
+        return !item.invalid && (item.status === 'failed' || (item.status === 'review' && !item.extracted));
+    }
+
+    function retry(item) {
+        if (!canRetry(item)) return;
+        item.status = 'pending';
+        item.message = '';
+        processPending();
+    }
+
     function clearFinished() {
         queue.items = queue.items.filter(item => !FINISHED_STATUSES.includes(item.status));
     }
@@ -109,5 +143,5 @@ export function useDocumentUploadQueue() {
         return result;
     });
 
-    return { queue, counts, enqueue, saveChoice, skip, clearFinished };
+    return { queue, counts, enqueue, canSave, saveChoice, skip, canRetry, retry, clearFinished };
 }

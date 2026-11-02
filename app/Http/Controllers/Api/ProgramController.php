@@ -618,7 +618,8 @@ class ProgramController extends Controller
         } else {
             $analysis = $this->analyzeDocumentContent($file->getContent(), strtolower($file->getClientOriginalExtension() ?: 'pdf'), null);
             if (!$analysis['success']) {
-                $message = 'AI belum bisa membaca dokumen ini. Pilih programnya.';
+                // Alasannya ikut ditampilkan (panel unggah & History), supaya tidak perlu membuka log server
+                $message = 'AI belum bisa membaca dokumen ini: ' . rtrim($analysis['message'] ?? 'layanan AI error', '.') . '. Pilih programnya.';
                 return response()->json([
                     'success' => false,
                     'status' => 'review',

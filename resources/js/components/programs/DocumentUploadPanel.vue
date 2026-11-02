@@ -39,40 +39,76 @@
         <p class="mt-1 flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
           <Loader2 v-if="item.status === 'processing' || item.saving" class="w-3 h-3 mt-px shrink-0 animate-spin text-slate-400" />
           <span v-else class="w-1.5 h-1.5 mt-1 rounded-full shrink-0" :class="STATUS_DOT[item.status]"></span>
-          <span class="min-w-0">{{ statusText(item) }}</span>
+          <span class="min-w-0 flex-1">{{ statusText(item) }}</span>
+          <button
+            v-if="item.status === 'failed' && canRetry(item)"
+            type="button"
+            class="shrink-0 font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            @click="retry(item)"
+          >
+            Ulangi
+          </button>
         </p>
 
-        <!-- Belum yakin: pengguna memilih programnya -->
-        <div v-if="item.status === 'review'" class="mt-2 flex items-center gap-2">
-          <select
+        <!-- Belum yakin: pengguna memilih programnya, juga jenisnya bila AI tidak bisa membaca dokumen -->
+        <div v-if="item.status === 'review'" class="mt-2 space-y-2">
+          <ProgramPicker
             v-model="item.choice"
-            class="min-w-0 flex-1 h-8 px-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-slate-400"
+            :candidates="item.candidates"
+            :programs="allPrograms"
             :disabled="item.saving"
-          >
-            <option value="">Pilih program…</option>
-            <optgroup v-if="item.candidates.length > 0" label="Paling mirip">
-              <option v-for="c in item.candidates" :key="`c-${c.id}`" :value="c.id">{{ programLabel(c) }}</option>
-            </optgroup>
-            <optgroup label="Semua program">
-              <option v-for="p in allPrograms" :key="`p-${p.id}`" :value="p.id">{{ programLabel(p) }}</option>
-            </optgroup>
-          </select>
-          <button
-            type="button"
-            class="h-8 px-3 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!item.choice || item.saving"
-            @click="saveChoice(item)"
-          >
-            Simpan
-          </button>
-          <button
-            type="button"
-            class="h-8 px-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
-            :disabled="item.saving"
-            @click="skip(item)"
-          >
-            Lewati
-          </button>
+          />
+          <div class="flex items-center gap-2">
+            <div
+              v-if="!item.documentType"
+              class="inline-flex rounded-md border border-slate-200 dark:border-slate-700 p-0.5"
+              role="group"
+              aria-label="Jenis dokumen"
+            >
+              <button
+                v-for="option in TYPE_OPTIONS"
+                :key="option.value"
+                type="button"
+                class="h-6 px-2 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                :class="item.typeChoice === option.value
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'"
+                :aria-pressed="item.typeChoice === option.value"
+                :disabled="item.saving"
+                @click="item.typeChoice = option.value"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+            <div class="ml-auto flex items-center gap-1">
+              <!-- AI tidak membaca apa pun (mis. batas permintaan): baca ulang lebih dulu -->
+              <button
+                v-if="canRetry(item)"
+                type="button"
+                class="h-8 px-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                :disabled="item.saving"
+                @click="retry(item)"
+              >
+                Ulangi
+              </button>
+              <button
+                type="button"
+                class="h-8 px-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                :disabled="item.saving"
+                @click="skip(item)"
+              >
+                Lewati
+              </button>
+              <button
+                type="button"
+                class="h-8 px-3 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!canSave(item)"
+                @click="saveChoice(item)"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
         </div>
       </li>
     </ul>
@@ -84,6 +120,12 @@ import { ref, computed, watch } from 'vue';
 import { Loader2, X } from 'lucide-vue-next';
 import { useTaxStore, formatRupiah } from '../../store/taxStore';
 import { useDocumentUploadQueue } from '../../store/documentUploadQueue';
+import ProgramPicker from './ProgramPicker.vue';
+
+const TYPE_OPTIONS = [
+  { value: 'invoice', label: 'Invoice' },
+  { value: 'faktur_pajak', label: 'Faktur Pajak' }
+];
 
 const STATUS_DOT = {
   pending: 'bg-slate-300 dark:bg-slate-600',
@@ -95,7 +137,7 @@ const STATUS_DOT = {
 };
 
 const store = useTaxStore();
-const { queue, counts, saveChoice, skip, clearFinished } = useDocumentUploadQueue();
+const { queue, counts, canSave, saveChoice, skip, canRetry, retry, clearFinished } = useDocumentUploadQueue();
 
 const expanded = ref(false);
 const allPrograms = computed(() => store.programs.value || []);
@@ -170,11 +212,5 @@ function statusText(item) {
     default:
       return item.message || 'Gagal diproses.';
   }
-}
-
-function programLabel(program) {
-  return [program.title || program.program_name, program.company_name, program.po_sj_number]
-    .filter(Boolean)
-    .join(' · ');
 }
 </script>
