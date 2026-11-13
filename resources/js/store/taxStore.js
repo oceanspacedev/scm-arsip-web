@@ -1321,7 +1321,7 @@ export const useTaxStore = () => {
     }
 
     // Unggah invoice / faktur pajak tanpa memilih program: server mengenali jenisnya lalu mencocokkan
-    // lewat No. Surat Jalan / No. Invoice (invoice) atau No. Faktur / DPP (faktur pajak).
+    // lewat No. SJ (pada faktur: Referensi), No. Invoice, atau No. Faktur, dengan badan usaha yang sama.
     // Hasil: status 'matched' | 'duplicate' | 'review' (pilih dari candidates) | 'failed'.
     // Pilihan manual dikirim ulang dengan programId + documentType + number hasil bacaan sebelumnya,
     // dan logId agar baris riwayat yang sama diperbarui.

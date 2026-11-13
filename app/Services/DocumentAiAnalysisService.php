@@ -73,7 +73,7 @@ class DocumentAiAnalysisService
             . "5. 'ppn_amount': Nilai PPN sebagai angka murni tanpa simbol titik/koma ribuan. Jika tidak ada kembalikan null.\n"
             . "6. 'total_amount': Jumlah tagihan = DPP + PPN (sebelum dipotong PPh) sebagai angka murni tanpa simbol titik/koma ribuan. Jangan gunakan Net Pay / jumlah setelah potongan PPh. Jika tidak ada kembalikan null.\n"
             . "7. 'payment_status': Status pembayaran jika tertera di dokumen. Pilihan: 'cbd' (Cash Before Delivery), 'tempo', 'WAITING PAYMENT', atau 'PAID' (Lunas). Jika tidak tertera, kembalikan null.\n"
-            . "8. 'sj_number': Nomor Surat Jalan / Delivery Order (label seperti No Surat Jalan, No. SJ, No. DO), tulis persis (contoh: 2609000804). Jika tidak ada kembalikan null.\n"
+            . "8. 'sj_number': Nomor Surat Jalan / Delivery Order (label seperti No Surat Jalan, No. SJ, No. DO), tulis persis (contoh: 2609000804). Pada faktur pajak, nomor ini tertulis sebagai Referensi di pojok kiri bawah, contoh '(Referensi: 2610000626)' berarti 2610000626. Jika tidak ada kembalikan null.\n"
             . "9. 'program_name': Nama program yang ditagih, biasanya di rincian/deskripsi barang di bawah jenis tagihan, atau pada faktur pajak di kolom Nama Barang/Jasa Kena Pajak setelah jenis tagihan (contoh: PROGRAM DEALER AUG 2026 C100I). Jika tidak ada kembalikan null.\n"
             . "10. 'description': Jenis tagihan pada awal deskripsi barang / Nama Barang Kena Pajak (contoh: MARKETING SERVICE FEE). Jika tidak ada kembalikan null.\n"
             . "11. 'bill_to': Nama perusahaan penerima tagihan (Bill To / Kepada / Pembeli Barang Kena Pajak). Jika tidak ada kembalikan null.\n"

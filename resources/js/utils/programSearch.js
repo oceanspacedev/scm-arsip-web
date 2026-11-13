@@ -17,9 +17,11 @@ export function programTitle(program) {
 export function programMeta(program) {
     const poSj = filled(program.po_sj_number);
     const invoice = filled(program.invoice_no);
+    // Supplier ikut ditampilkan: No. PO/SJ yang sama bisa ada di badan usaha lain
     return [
         poSj && `PO/SJ ${poSj}`,
         filled(program.company_name),
+        filled(program.supplier),
         invoice && `No. Invoice ${invoice}`
     ].filter(Boolean).join(' · ');
 }

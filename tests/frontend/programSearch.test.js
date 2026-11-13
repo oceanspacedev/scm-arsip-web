@@ -29,10 +29,17 @@ describe('pencarian di pemilih program', () => {
         assert.equal(matchesProgram(STORE_PROGRAM, '   '), true, 'kolom cari kosong menampilkan semua');
     });
 
-    it('label membedakan program yang namanya sama lewat No. PO/SJ', () => {
+    it('label membedakan program yang namanya sama lewat No. PO/SJ dan badan usahanya', () => {
         assert.equal(programTitle(STORE_PROGRAM), 'PO REALME CENTRAL JAVA');
-        assert.equal(programMeta(STORE_PROGRAM), 'PO/SJ 2609000804 · PT. COSMO TECHNOLOGY · No. Invoice 791/TOP/IX/26');
+        assert.equal(
+            programMeta(STORE_PROGRAM),
+            'PO/SJ 2609000804 · PT. COSMO TECHNOLOGY · PT. REALME MOBILE TELECOMMUNICATIONS · No. Invoice 791/TOP/IX/26'
+        );
         assert.equal(programMeta(CANDIDATE), 'PO/SJ 2609000812 · CV. TOP SELULAR');
-        assert.equal(programMeta({ ...STORE_PROGRAM, invoice_no: '-' }), 'PO/SJ 2609000804 · PT. COSMO TECHNOLOGY', 'nomor "-" berarti belum diisi');
+        assert.equal(
+            programMeta({ ...STORE_PROGRAM, invoice_no: '-', supplier: '-' }),
+            'PO/SJ 2609000804 · PT. COSMO TECHNOLOGY',
+            'isian "-" berarti belum diisi'
+        );
     });
 });

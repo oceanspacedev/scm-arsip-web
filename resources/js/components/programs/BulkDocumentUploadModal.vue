@@ -2,7 +2,7 @@
   <Dialog
     :open="open"
     title="Unggah Invoice & Faktur Pajak"
-    description="Jenis dokumen dikenali otomatis. Invoice dicocokkan lewat No. Surat Jalan, faktur pajak lewat No. Faktur atau nilai DPP/PPN. Prosesnya berjalan di latar belakang, jadi Anda bisa langsung membuka halaman lain."
+    description="Jenis dokumen dikenali otomatis. Invoice dicocokkan lewat No. Surat Jalan, faktur pajak lewat Referensi (No. SJ) di pojok kiri bawah, lalu dicek badan usaha dan periodenya. Prosesnya berjalan di latar belakang, jadi Anda bisa langsung membuka halaman lain."
     maxWidth="max-w-2xl"
     :closeOnBackdrop="!isSending"
     @update:open="handleOpenChange"

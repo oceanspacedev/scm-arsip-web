@@ -26,7 +26,20 @@ class DocumentAutoUploadTest extends TestCase
         'ppn_amount' => 3053243,
     ];
 
-    /** Faktur pajak contoh untuk invoice di atas (tanpa No. Surat Jalan) */
+    /** Faktur pajak Coretax dengan Referensi (No. SJ) di pojok kiri bawah */
+    private const FAKTUR_REFERENSI = [
+        'document_type' => 'faktur_pajak',
+        'faktur_number' => '04002600416079925',
+        'sj_number' => '2610000626',
+        'program_name' => 'PROGRAM AREA A DEALER NON PROMOTOR SUPPORT SEPTEMBER 2026',
+        'description' => 'MARKETING SERVICE FEE',
+        'bill_to' => 'ARIS KEEP GOING',
+        'supplier_name' => 'TOP SELULAR',
+        'dpp_amount' => 52283033,
+        'ppn_amount' => 6273964,
+    ];
+
+    /** Faktur pajak contoh untuk invoice di atas (tanpa Referensi / No. Surat Jalan) */
     private const FAKTUR = [
         'document_type' => 'faktur_pajak',
         'faktur_number' => '04002600372891514',
@@ -72,6 +85,16 @@ class DocumentAutoUploadTest extends TestCase
             'category' => 'Marketing Service Fee',
             'dpp_amount' => 25443694,
             'ppn_amount' => 3053243,
+        ], $overrides));
+    }
+
+    /** Program untuk FAKTUR_REFERENSI, milik badan usaha PT. ARIS KEEP GOING kecuali diganti */
+    private function areaProgram(string $id, array $overrides = []): Program
+    {
+        return $this->program($id, '2610000626', array_merge([
+            'title' => 'Program Area A Dealer Non Promotor Support - SEPTEMBER 2026',
+            'dpp_amount' => 52283033,
+            'ppn_amount' => 6273964,
         ], $overrides));
     }
 
@@ -176,6 +199,82 @@ class DocumentAutoUploadTest extends TestCase
         $program = Program::find('P1');
         $this->assertSame('04002600372891514', $program->faktur_number);
         $this->assertEquals(25443694, $program->dpp_amount, 'Nominal tidak boleh diubah');
+    }
+
+    public function test_faktur_goes_to_the_program_of_its_referensi_sj()
+    {
+        $this->areaProgram('P5');
+        $this->fakeAi(self::FAKTUR_REFERENSI);
+
+        $this->upload()
+            ->assertOk()
+            ->assertJsonPath('status', 'matched')
+            ->assertJsonPath('reason', 'No. SJ 2610000626')
+            ->assertJsonPath('program.id', 'P5');
+
+        $this->assertSame('04002600416079925', Program::find('P5')->faktur_number);
+    }
+
+    public function test_same_sj_in_another_business_entity_is_skipped()
+    {
+        $this->areaProgram('P5', ['supplier' => 'PT. BADAN USAHA LAIN']);
+        $this->areaProgram('P6');
+        $this->fakeAi(self::FAKTUR_REFERENSI);
+
+        $this->upload()->assertOk()->assertJsonPath('status', 'matched')->assertJsonPath('program.id', 'P6');
+    }
+
+    public function test_sj_found_only_in_another_business_entity_is_left_for_the_user()
+    {
+        // Sebelumnya faktur ini langsung masuk ke P5 karena DPP-nya sama
+        $this->areaProgram('P5', ['supplier' => 'PT. BADAN USAHA LAIN']);
+        $this->fakeAi(self::FAKTUR_REFERENSI);
+
+        $this->upload()
+            ->assertOk()
+            ->assertJsonPath('status', 'review')
+            ->assertJsonPath('message', 'No. SJ 2610000626 ditemukan, tapi badan usahanya berbeda. Pilih programnya.')
+            ->assertJsonPath('candidates.0.id', 'P5');
+
+        $this->assertSame(0, ProgramDocument::count());
+    }
+
+    public function test_program_of_another_month_with_the_same_sj_is_left_for_the_user()
+    {
+        $this->areaProgram('P5', ['title' => 'Program Area A Dealer Non Promotor Support - AUGUST 2026']);
+        $this->fakeAi(self::FAKTUR_REFERENSI);
+
+        $this->upload()
+            ->assertOk()
+            ->assertJsonPath('status', 'review')
+            ->assertJsonPath('message', 'No. SJ 2610000626 ditemukan, tapi bulan/tahun programnya berbeda. Pilih programnya.');
+
+        $this->assertSame(0, ProgramDocument::count());
+    }
+
+    public function test_faktur_with_an_unknown_referensi_is_not_matched_by_dpp()
+    {
+        // DPP & nama sama dengan P1, tapi Referensi-nya SJ yang belum ada di arsip
+        $this->fakeAi(['sj_number' => '2610000999'] + self::FAKTUR);
+
+        $this->upload()
+            ->assertOk()
+            ->assertJsonPath('status', 'review')
+            ->assertJsonPath('message', 'No. SJ 2610000999 (Referensi) tidak ditemukan di arsip. Pilih programnya.');
+
+        $this->assertSame(0, ProgramDocument::count());
+    }
+
+    public function test_invoice_from_another_business_entity_is_not_attached()
+    {
+        $this->fakeAi(['bill_to' => 'PT. BADAN USAHA LAIN'] + self::INVOICE);
+
+        $this->upload()
+            ->assertOk()
+            ->assertJsonPath('status', 'review')
+            ->assertJsonPath('candidates.0.id', 'P1');
+
+        $this->assertSame(0, ProgramDocument::count());
     }
 
     public function test_same_dpp_for_an_unrelated_party_is_not_enough()

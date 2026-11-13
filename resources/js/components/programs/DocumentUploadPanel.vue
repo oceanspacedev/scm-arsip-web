@@ -197,13 +197,15 @@ function statusText(item) {
       return item.message;
     case 'review': {
       const extracted = item.extracted || {};
+      // Penjual → pembeli ikut ditampilkan: No. SJ yang sama bisa milik badan usaha lain
+      const parties = [extracted.supplier_name, extracted.bill_to].filter(Boolean).join(' → ');
       const read = [
         isFaktur(item) ? 'Faktur Pajak' : (extracted.document_type ? 'Invoice' : null),
-        isFaktur(item)
-          ? extracted.dpp_amount && `DPP ${formatRupiah(extracted.dpp_amount)}`
-          : extracted.sj_number && `SJ ${extracted.sj_number}`,
+        extracted.sj_number
+          ? `SJ ${extracted.sj_number}`
+          : isFaktur(item) && extracted.dpp_amount && `DPP ${formatRupiah(extracted.dpp_amount)}`,
         extracted.program_name,
-        extracted.bill_to
+        parties
       ].filter(Boolean).join(' · ');
       return read ? `${item.message} Terbaca: ${read}` : item.message;
     }
