@@ -3,85 +3,79 @@
     :open="open"
     title="Unggah Invoice & Faktur Pajak"
     description="Jenis dokumen dikenali otomatis. Invoice dicocokkan lewat No. Surat Jalan, faktur pajak lewat Referensi (No. SJ) di pojok kiri bawah, lalu dicek badan usaha dan periodenya. Prosesnya berjalan di latar belakang, jadi Anda bisa langsung membuka halaman lain."
-    maxWidth="max-w-2xl"
-    :closeOnBackdrop="!isSending"
+    max-width="max-w-2xl"
+    :close-on-backdrop="!isSending"
     @update:open="handleOpenChange"
   >
-    <div class="space-y-4 text-xs">
+    <div class="space-y-4">
       <div
-        class="rounded-lg border border-dashed px-4 py-6 text-center transition-colors cursor-pointer"
-        :class="isDragging
-          ? 'border-slate-500 bg-slate-50 dark:bg-slate-800/60'
-          : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40'"
+        role="button"
+        tabindex="0"
+        class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        :class="isDragging ? 'border-ring bg-muted/50' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
         @click="fileInput?.click()"
+        @keydown.enter.prevent="fileInput?.click()"
+        @keydown.space.prevent="fileInput?.click()"
       >
         <input ref="fileInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handlePick" />
-        <p class="font-medium text-slate-700 dark:text-slate-300">Tarik invoice / faktur pajak ke sini atau pilih dari komputer</p>
-        <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG · maks. 15 MB per berkas · PDF gabungan juga bisa</p>
+        <div class="mb-2 flex size-10 items-center justify-center rounded-full border bg-background">
+          <UploadCloud class="size-4 text-muted-foreground" />
+        </div>
+        <p class="font-medium">Tarik invoice / faktur pajak ke sini atau pilih dari komputer</p>
+        <p class="text-xs text-muted-foreground">PDF, JPG, PNG · maks. 15 MB per berkas · PDF gabungan juga bisa</p>
       </div>
 
-      <label class="flex items-start gap-2.5 cursor-pointer">
-        <input v-model="splitPages" type="checkbox" class="mt-0.5 w-3.5 h-3.5 rounded accent-slate-700 cursor-pointer" />
-        <span>
-          <span class="block font-medium text-slate-700 dark:text-slate-300">Pecah PDF per halaman</span>
-          <span class="block text-[11px] text-slate-400 dark:text-slate-500">
+      <div class="flex items-start gap-3">
+        <Checkbox id="bulk-upload-split-pages" v-model="splitPages" />
+        <div class="grid gap-2">
+          <Label for="bulk-upload-split-pages" class="cursor-pointer">Pecah PDF per halaman</Label>
+          <p class="text-xs text-muted-foreground">
             Untuk PDF gabungan: tiap halaman diproses sebagai dokumen sendiri dan masuk ke programnya masing-masing.
-          </span>
-        </span>
-      </label>
+          </p>
+        </div>
+      </div>
 
-      <ul
-        v-if="entries.length > 0"
-        class="max-h-[40vh] overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800"
-      >
-        <li v-for="(entry, index) in entries" :key="entry.key" class="px-3 py-2 flex items-center justify-between gap-3">
+      <ul v-if="entries.length > 0" class="max-h-[40vh] divide-y overflow-y-auto rounded-lg border">
+        <li v-for="(entry, index) in entries" :key="entry.key" class="flex items-center justify-between gap-3 py-2 pr-2 pl-4">
           <div class="min-w-0">
-            <p class="truncate font-medium text-slate-800 dark:text-slate-200" :title="entry.file.name">{{ entry.file.name }}</p>
-            <p v-if="entry.pages > 1" class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+            <p class="truncate font-medium" :title="entry.file.name">{{ entry.file.name }}</p>
+            <p v-if="entry.pages > 1" class="text-xs tabular-nums text-muted-foreground">
               {{ entry.pages }} halaman{{ splitPages ? ` · dipecah jadi ${entry.pages} dokumen` : '' }}
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            class="shrink-0 text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+            variant="ghost"
+            size="sm"
+            class="shrink-0"
             :disabled="isSending"
             @click="entries.splice(index, 1)"
           >
             Hapus
-          </button>
+          </Button>
         </li>
       </ul>
     </div>
 
     <template #footer>
-      <button
-        type="button"
-        class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50"
-        :disabled="isSending"
-        @click="handleOpenChange(false)"
-      >
-        Batal
-      </button>
-      <button
-        type="button"
-        class="h-8 px-3.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-        :disabled="entries.length === 0 || isSending"
-        @click="send"
-      >
-        <Loader2 v-if="isSending" class="w-3.5 h-3.5 animate-spin text-slate-500" />
+      <Button type="button" variant="outline" :disabled="isSending" @click="handleOpenChange(false)">Batal</Button>
+      <Button type="button" :disabled="entries.length === 0 || isSending" @click="send">
         {{ isSending ? 'Memecah PDF…' : (entries.length > 0 ? `Kirim ${documentCount} dokumen` : 'Kirim') }}
-      </button>
+      </Button>
     </template>
   </Dialog>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Loader2 } from 'lucide-vue-next';
-import Dialog from '../ui/Dialog.vue';
+import { UploadCloud } from 'lucide-vue-next';
+import Dialog from '@/components/ui/Dialog.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useDocumentUploadQueue } from '../../store/documentUploadQueue';
 import { countPdfPages, splitPdfPages } from '../../utils/pdfSplit';
 

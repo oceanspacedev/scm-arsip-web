@@ -1,30 +1,37 @@
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div
+  <StatGrid :values="cards.map(card => card.value)">
+    <StatCard
       v-for="card in cards"
       :key="card.label"
-      class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4"
-    >
-      <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">{{ card.label }}</p>
-      <p class="mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums truncate">
-        {{ card.value }}
-      </p>
-      <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ card.note }}</p>
-    </div>
-  </div>
+      :label="card.label"
+      :icon="card.icon"
+      :value="card.value"
+      :hint="card.note"
+    />
+  </StatGrid>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { useTaxStore, formatRupiah } from '../../store/taxStore';
+import { BanknotesIcon, CheckBadgeIcon, DocumentTextIcon, ReceiptPercentIcon } from '@heroicons/vue/24/outline';
+import StatCard from '@/components/layout/StatCard.vue';
+import StatGrid from '@/components/layout/StatGrid.vue';
+import { formatNumber, formatRupiah } from '@/lib/format';
+import { useTaxStore } from '../../store/taxStore';
 
 const store = useTaxStore();
 const metrics = computed(() => store.summaryMetrics.value);
 
+// Ikon sama dengan kartu di Arsip Program: invoice = dokumen, DPP = uang, PPN = struk persen
 const cards = computed(() => [
-  { label: 'Total Nilai Invoice', value: formatRupiah(metrics.value.totalInvoice), note: `${metrics.value.totalPrograms} program terarsip` },
-  { label: 'Total DPP', value: formatRupiah(metrics.value.totalDpp), note: 'Dasar Pengenaan Pajak' },
-  { label: 'Total PPN (11%)', value: formatRupiah(metrics.value.totalPpn), note: 'Pajak Pertambahan Nilai' },
-  { label: 'Siap Audit', value: `${metrics.value.lengkapCount} / ${metrics.value.totalPrograms}`, note: `${metrics.value.lengkapCount} program berkas lengkap` }
+  { label: 'Total Nilai Invoice', icon: DocumentTextIcon, value: formatRupiah(metrics.value.totalInvoice), note: `${formatNumber(metrics.value.totalPrograms)} program terarsip` },
+  { label: 'Total DPP', icon: BanknotesIcon, value: formatRupiah(metrics.value.totalDpp), note: 'Dasar Pengenaan Pajak' },
+  { label: 'Total PPN (11%)', icon: ReceiptPercentIcon, value: formatRupiah(metrics.value.totalPpn), note: 'Pajak Pertambahan Nilai' },
+  {
+    label: 'Siap Audit',
+    icon: CheckBadgeIcon,
+    value: `${formatNumber(metrics.value.lengkapCount)} / ${formatNumber(metrics.value.totalPrograms)}`,
+    note: 'Program dengan berkas lengkap',
+  },
 ]);
 </script>

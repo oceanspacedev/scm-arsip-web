@@ -1,236 +1,182 @@
 <template>
-  <div class="space-y-4 max-w-6xl pb-8 select-none font-sans text-xs">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Hak Akses & Role
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Atur wewenang setiap peran pengguna melalui centang perizinan
-        </p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <PageHeader
+      title="Hak Akses & Role"
+      description="Atur wewenang setiap peran pengguna melalui centang perizinan. Admin SCM selalu memiliki akses penuh."
+    >
+      <template #actions>
+        <Button variant="outline" :disabled="isSaving" @click="isResetDialogOpen = true">Reset Default</Button>
+        <Button :disabled="isSaving" @click="saveChanges">{{ isSaving ? 'Menyimpan…' : 'Simpan Perubahan' }}</Button>
+      </template>
+    </PageHeader>
 
+    <div class="flex flex-col gap-4">
+      <!-- Pencarian izin & centang massal per role -->
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-          :disabled="isSaving"
-          @click="resetToDefaults"
-        >
-          Reset Default
-        </button>
+        <div class="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+          <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input v-model="searchQuery" type="text" placeholder="Cari izin…" aria-label="Cari izin" class="h-8 pr-8 pl-8" />
+          <Button
+            v-if="searchQuery"
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-1/2 right-1 size-6 -translate-y-1/2 text-muted-foreground"
+            aria-label="Hapus pencarian"
+            @click="searchQuery = ''"
+          >
+            <X />
+          </Button>
+        </div>
 
-        <button
-          type="button"
-          class="h-8 px-3.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-          :disabled="isSaving"
-          @click="saveChanges"
-        >
-          <Loader2 v-if="isSaving" class="w-3.5 h-3.5 animate-spin text-slate-500" />
-          <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Search & Mobile Role Switcher -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-      <div class="relative w-full sm:w-72">
-        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Cari izin..."
-          class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition-colors"
-        />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
-          @click="searchQuery = ''"
-        >
-          <X class="w-3 h-3" />
-        </button>
+        <DropdownMenu :modal="false">
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="sm" class="ml-auto">Centang Massal</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-48">
+            <template v-for="(role, index) in editableRoles" :key="role.key">
+              <DropdownMenuSeparator v-if="index > 0" />
+              <DropdownMenuLabel>{{ role.label }}</DropdownMenuLabel>
+              <DropdownMenuItem @select="toggleRoleAll(role.key, true)">Centang Semua</DropdownMenuItem>
+              <DropdownMenuItem @select="toggleRoleAll(role.key, false)">Kosongkan Semua</DropdownMenuItem>
+            </template>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar lg:hidden">
-        <button
-          v-for="role in rolesList"
-          :key="role.key"
-          type="button"
-          class="px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer"
-          :class="activeMobileRole === role.key
-            ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
-            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
-          @click="activeMobileRole = role.key"
-        >
-          {{ role.label }}
-        </button>
-      </div>
-    </div>
+      <!-- Layar kecil: satu role per tampilan -->
+      <FormField label="Role" for="izin-pilih-role" :helper="activeRoleObj.description" class="md:hidden">
+        <NativeSelect id="izin-pilih-role" v-model="activeMobileRole">
+          <option v-for="role in rolesList" :key="role.key" :value="role.key">{{ role.label }}</option>
+        </NativeSelect>
+      </FormField>
 
-    <!-- Desktop: matriks izin x peran, satu baris per izin (keterangan muncul saat kursor diarahkan) -->
-    <div class="hidden lg:block bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <table class="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-            <th class="py-2.5 px-4 w-[40%] text-[11px] font-medium">Perizinan</th>
-            <th
-              v-for="role in rolesList"
-              :key="role.key"
-              class="group py-2.5 px-3 text-center w-[15%] font-normal"
-            >
-              <span class="block font-medium text-slate-700 dark:text-slate-200 text-xs">{{ role.label }}</span>
-              <span v-if="role.key === 'Admin SCM'" class="block text-[11px] text-slate-400 mt-0.5">Akses penuh</span>
-              <!-- Pilih/kosongkan semua: muncul saat kolom diarahkan kursor supaya header tetap bersih -->
-              <span v-else class="flex items-center justify-center gap-1 mt-0.5 text-[11px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                <button
-                  type="button"
-                  class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-                  @click="toggleRoleAll(role.key, true)"
-                >
-                  Semua
-                </button>
-                <span class="text-slate-300 dark:text-slate-700">·</span>
-                <button
-                  type="button"
-                  class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-                  @click="toggleRoleAll(role.key, false)"
-                >
-                  Kosong
-                </button>
-              </span>
-            </th>
-          </tr>
-        </thead>
-
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-          <template v-for="group in filteredGroups" :key="group.id">
-            <tr>
-              <td colspan="5" class="pt-3 pb-1.5 px-4 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                {{ group.title }}
-              </td>
-            </tr>
-
-            <tr
-              v-for="item in group.items"
-              :key="item.key"
-              class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
-            >
-              <td class="py-1.5 px-4 text-slate-700 dark:text-slate-200" :title="item.description">
-                {{ item.name }}
-              </td>
-              <td
-                v-for="role in rolesList"
-                :key="role.key"
-                class="py-1.5 px-3 text-center align-middle"
-              >
-                <Check v-if="role.key === 'Admin SCM'" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 mx-auto" />
-                <button
-                  v-else
-                  type="button"
-                  role="checkbox"
-                  :aria-checked="isPermissionChecked(role.key, item.key)"
-                  :aria-label="`${item.name} untuk ${role.label}`"
-                  class="w-6 h-6 inline-flex items-center justify-center rounded-md align-middle hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-slate-400 transition-colors cursor-pointer"
-                  @click="togglePermission(role.key, item.key)"
-                >
-                  <span
-                    class="w-4 h-4 rounded border flex items-center justify-center transition-colors"
-                    :class="isPermissionChecked(role.key, item.key)
-                      ? 'border-slate-400 dark:border-slate-500'
-                      : 'border-slate-300 dark:border-slate-600'"
+      <!-- Satu kartu per modul. Baris satu baris; keterangan izin muncul saat kursor diarahkan -->
+      <div v-if="filteredGroups.length" class="@container">
+        <div class="grid gap-4 @5xl:grid-cols-2">
+          <Card v-for="group in filteredGroups" :key="group.id" class="overflow-hidden">
+            <Table class="table-fixed">
+              <TableHeader>
+                <TableRow class="hover:bg-transparent">
+                  <TableHead class="h-12 pl-4 text-base font-semibold text-foreground">
+                    <span class="block truncate">{{ group.title }}</span>
+                  </TableHead>
+                  <TableHead
+                    v-for="role in rolesList"
+                    :key="role.key"
+                    :class="cn('h-12 w-16 px-1 text-center', roleColumnClass(role.key))"
                   >
-                    <Check v-if="isPermissionChecked(role.key, item.key)" class="w-3 h-3 text-slate-900 dark:text-slate-100 stroke-[3]" />
-                  </span>
-                </button>
-              </td>
-            </tr>
-          </template>
+                    <!-- Nama role dua baris (mis. "Staff / Gudang") supaya kolom tetap ramping -->
+                    <span class="mx-auto block w-min leading-4 whitespace-normal">{{ role.label }}</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-          <tr v-if="filteredGroups.length === 0">
-            <td colspan="5" class="py-10 text-center text-slate-400 dark:text-slate-500">
-              Tidak ada izin yang cocok dengan "{{ searchQuery }}".
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              <TableBody>
+                <TableRow v-for="item in group.items" :key="item.key">
+                  <TableCell class="py-2 pl-4 whitespace-normal">
+                    <Tooltip :delay-duration="300">
+                      <TooltipTrigger as-child>
+                        <!-- Di layar kecil label ikut mencentang role yang sedang ditampilkan -->
+                        <label :for="isWide ? undefined : checkboxId(activeMobileRole, item.key)" class="block">
+                          {{ item.name }}
+                        </label>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" align="start">
+                        <p>{{ item.name }}</p>
+                        <p>{{ item.description }}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableCell>
 
-    <!-- Mobile: satu peran per tampilan -->
-    <div class="lg:hidden bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
-      <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800">
-        <div class="min-w-0">
-          <p class="font-medium text-slate-800 dark:text-slate-200">{{ activeRoleObj?.label }}</p>
-          <p class="text-[11px] text-slate-400 truncate">{{ activeRoleObj?.description }}</p>
-        </div>
-        <div v-if="activeMobileRole !== 'Admin SCM'" class="flex items-center gap-1.5 shrink-0 text-[11px]">
-          <button
-            type="button"
-            class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
-            @click="toggleRoleAll(activeMobileRole, true)"
-          >
-            Semua
-          </button>
-          <span class="text-slate-300 dark:text-slate-700">·</span>
-          <button
-            type="button"
-            class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
-            @click="toggleRoleAll(activeMobileRole, false)"
-          >
-            Kosong
-          </button>
+                  <TableCell
+                    v-for="role in rolesList"
+                    :key="role.key"
+                    :class="cn('px-1 py-2 [&:has([role=checkbox])]:pr-1', roleColumnClass(role.key))"
+                  >
+                    <div class="flex items-center justify-center">
+                      <Checkbox
+                        v-if="role.key === 'Admin SCM'"
+                        :id="checkboxId(role.key, item.key)"
+                        :model-value="true"
+                        disabled
+                        :aria-label="`${item.name} untuk ${role.label} (akses penuh)`"
+                      />
+                      <Checkbox
+                        v-else
+                        :id="checkboxId(role.key, item.key)"
+                        :model-value="isPermissionChecked(role.key, item.key)"
+                        :aria-label="`${item.name} untuk ${role.label}`"
+                        @update:model-value="togglePermission(role.key, item.key)"
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Card>
         </div>
       </div>
 
-      <div v-for="group in filteredGroups" :key="group.id" class="px-3.5 pb-1">
-        <p class="pt-3 pb-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">{{ group.title }}</p>
-        <template v-for="item in group.items" :key="item.key">
-          <div
-            v-if="activeMobileRole === 'Admin SCM'"
-            class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-800/80 last:border-b-0"
-            :title="item.description"
-          >
-            <span class="min-w-0 truncate text-slate-700 dark:text-slate-200">{{ item.name }}</span>
-            <Check class="w-3.5 h-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-          </div>
-          <button
-            v-else
-            type="button"
-            role="checkbox"
-            :aria-checked="isPermissionChecked(activeMobileRole, item.key)"
-            class="w-full flex items-center justify-between gap-3 py-2 text-left border-b border-slate-100 dark:border-slate-800/80 last:border-b-0 cursor-pointer"
-            :title="item.description"
-            @click="togglePermission(activeMobileRole, item.key)"
-          >
-            <span class="min-w-0 truncate text-slate-700 dark:text-slate-200">{{ item.name }}</span>
-            <span
-              class="w-4 h-4 shrink-0 rounded border flex items-center justify-center"
-              :class="isPermissionChecked(activeMobileRole, item.key)
-                ? 'border-slate-400 dark:border-slate-500'
-                : 'border-slate-300 dark:border-slate-600'"
-            >
-              <Check v-if="isPermissionChecked(activeMobileRole, item.key)" class="w-3 h-3 text-slate-900 dark:text-slate-100 stroke-[3]" />
-            </span>
-          </button>
-        </template>
+      <div
+        v-else
+        class="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card px-6 py-12 text-center shadow-xs"
+      >
+        <SearchX class="size-8 text-muted-foreground" />
+        <p class="text-sm font-medium">Tidak ada izin yang cocok dengan "{{ searchQuery }}".</p>
+        <Button variant="outline" size="sm" class="mt-1" @click="searchQuery = ''">Reset pencarian</Button>
       </div>
-
-      <p v-if="filteredGroups.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
-        Tidak ada izin yang cocok dengan "{{ searchQuery }}".
-      </p>
     </div>
+
+    <AlertDialog v-model:open="isResetDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Kembalikan hak akses ke default?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Centang izin setiap role dikembalikan ke pengaturan bawaan dan langsung disimpan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" @click="resetToDefaults">Reset Default</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+import { Search, SearchX, X } from 'lucide-vue-next';
+import PageHeader from '../components/layout/PageHeader.vue';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Search,
-  X,
-  Check,
-  Loader2
-} from 'lucide-vue-next';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 import { useTaxStore, DEFAULT_ROLE_PERMISSIONS } from '../store/taxStore';
 
 const store = useTaxStore();
@@ -269,11 +215,11 @@ const activeRoleObj = computed(() => {
   return rolesList.find(r => r.key === activeMobileRole.value) || rolesList[1];
 });
 
-// Grouping of permissions with clean labels
+// Pengelompokan izin per modul (hanya tampilan: kunci, nama, dan keterangan izin tetap sama)
 const permissionGroups = [
   {
-    id: 'modules_visibility',
-    title: 'Visibilitas Kolom & Modul',
+    id: 'pages',
+    title: 'Akses Halaman',
     items: [
       {
         key: 'view_dashboard',
@@ -285,6 +231,12 @@ const permissionGroups = [
         name: 'Akses Arsip Program',
         description: 'Membuka tabel arsip program SCM'
       },
+    ]
+  },
+  {
+    id: 'program_columns',
+    title: 'Kolom Arsip Program',
+    items: [
       {
         key: 'view_master_columns',
         name: 'Tampilkan Kolom Master Data',
@@ -382,6 +334,24 @@ const filteredGroups = computed(() => {
     })
     .filter(g => g.items.length > 0);
 });
+
+// --- Tampilan ---
+// Role yang bisa dicentang massal (Admin SCM selalu akses penuh)
+const editableRoles = rolesList.filter(role => role.key !== 'Admin SCM');
+
+// Layar ≥768px menampilkan semua kolom role; di bawahnya hanya role yang dipilih
+const isWide = useMediaQuery('(min-width: 768px)');
+
+function roleColumnClass(roleKey) {
+  return roleKey === activeMobileRole.value ? '' : 'hidden md:table-cell';
+}
+
+function checkboxId(roleKey, permKey) {
+  return `izin-${roleKey.toLowerCase().replace(/\s+/g, '-')}-${permKey}`;
+}
+
+// Reset Default dikonfirmasi dulu karena langsung menimpa pengaturan yang tersimpan
+const isResetDialogOpen = ref(false);
 
 function isPermissionChecked(roleKey, permKey) {
   if (roleKey === 'Admin SCM') return true;

@@ -1,102 +1,77 @@
 <template>
-  <section class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-    <div class="px-5 py-3.5 flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800">
-      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Dokumen Belum Lengkap
-        <span v-if="alertList.length > 0" class="ml-1 text-xs font-normal text-slate-400 dark:text-slate-500 tabular-nums">
-          {{ alertList.length }}
-        </span>
-      </h3>
-      <router-link
-        to="/programs"
-        class="px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
-      >
-        Lihat semua
-      </router-link>
-    </div>
+  <Card class="overflow-hidden">
+    <CardHeader class="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <div class="flex min-w-0 flex-col gap-1.5">
+        <CardTitle>
+          Dokumen belum lengkap
+          <span v-if="alertList.length > 0" class="ml-1 font-normal text-muted-foreground tabular-nums">{{ alertList.length }}</span>
+        </CardTitle>
+        <CardDescription>Diurutkan dari dokumen paling sedikit.</CardDescription>
+      </div>
+      <Button variant="outline" size="sm" as-child>
+        <router-link to="/programs">Lihat semua</router-link>
+      </Button>
+    </CardHeader>
 
-    <!-- Desktop -->
-    <div class="hidden md:block overflow-x-auto">
-      <table class="w-full text-left text-xs">
-        <thead>
-          <tr class="border-b border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-            <th class="py-2.5 px-5 font-medium">Program</th>
-            <th class="py-2.5 px-5 font-medium">Dokumen Kurang</th>
-            <th class="py-2.5 px-5 font-medium">Tanggal</th>
-            <th class="py-2.5 px-5"><span class="sr-only">Aksi</span></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-          <tr v-if="alertList.length === 0">
-            <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-500">
+    <div class="border-t">
+      <Table>
+        <TableHeader>
+          <TableRow class="hover:bg-transparent">
+            <TableHead class="pl-6">Program</TableHead>
+            <TableHead class="hidden md:table-cell">Dokumen kurang</TableHead>
+            <TableHead class="hidden md:table-cell">Tanggal</TableHead>
+            <TableHead class="pr-6"><span class="sr-only">Aksi</span></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="alertList.length === 0" class="hover:bg-transparent">
+            <TableCell colspan="4" class="h-24 text-center whitespace-normal text-muted-foreground">
               Semua program sudah lengkap dokumennya.
-            </td>
-          </tr>
-          <tr
-            v-for="item in alertList"
-            :key="item.id"
-            class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-          >
-            <td class="py-2.5 px-5">
+            </TableCell>
+          </TableRow>
+          <TableRow v-for="item in alertList" :key="item.id">
+            <TableCell class="w-full pl-6 whitespace-normal">
+              <!-- Nama program tampil utuh, tidak dipotong -->
               <router-link
                 :to="`/programs/${item.id}`"
-                class="block max-w-[28rem] truncate font-medium text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white"
+                class="block break-words underline-offset-4 hover:underline"
               >
                 {{ item.name }}
               </router-link>
-              <span v-if="item.supplier" class="block max-w-[28rem] truncate text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                {{ item.supplier }}
-              </span>
-            </td>
-            <td class="py-2.5 px-5 whitespace-nowrap text-slate-700 dark:text-slate-300">
-              <span class="inline-flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="item.dotColor === 'red' ? 'bg-rose-500' : 'bg-amber-500'"></span>
-                {{ item.missingDoc }}
-              </span>
-            </td>
-            <td class="py-2.5 px-5 whitespace-nowrap text-slate-500 dark:text-slate-400 tabular-nums">
-              {{ item.date }}
-            </td>
-            <td class="py-2.5 px-5 text-right">
-              <router-link
-                :to="`/programs/${item.id}`"
-                class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-              >
-                Lihat
-              </router-link>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <p v-if="item.supplier" class="mt-0.5 text-xs text-muted-foreground">{{ item.supplier }}</p>
+              <!-- Layar kecil: dokumen kurang & tanggal pindah ke bawah nama program -->
+              <p class="mt-1 text-xs text-muted-foreground md:hidden">
+                Kurang: {{ item.missingDoc }} · <span class="tabular-nums">{{ formatTanggal(item.date) }}</span>
+              </p>
+            </TableCell>
+            <TableCell class="hidden md:table-cell">
+              <!-- Satu baris: kolom program yang menyesuaikan lebar, bukan lencana yang turun ke bawah -->
+              <div class="flex gap-1">
+                <Badge v-for="doc in item.missingDoc.split(', ')" :key="doc" variant="outline">{{ doc }}</Badge>
+              </div>
+            </TableCell>
+            <TableCell class="hidden text-muted-foreground tabular-nums md:table-cell">
+              {{ formatTanggal(item.date) }}
+            </TableCell>
+            <TableCell class="pr-6 text-right">
+              <Button variant="ghost" size="sm" as-child>
+                <router-link :to="`/programs/${item.id}`">Lihat</router-link>
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
-
-    <!-- Mobile: satu baris per program, seluruh baris bisa diklik -->
-    <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-      <p v-if="alertList.length === 0" class="py-8 px-4 text-center text-xs text-slate-400 dark:text-slate-500">
-        Semua program sudah lengkap dokumennya.
-      </p>
-      <router-link
-        v-for="item in alertList"
-        :key="item.id"
-        :to="`/programs/${item.id}`"
-        class="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-      >
-        <div class="flex items-start justify-between gap-3">
-          <p class="min-w-0 text-xs font-medium text-slate-800 dark:text-slate-200 leading-snug">{{ item.name }}</p>
-          <span class="shrink-0 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">{{ item.date }}</span>
-        </div>
-        <p v-if="item.supplier" class="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">{{ item.supplier }}</p>
-        <p class="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-          <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="item.dotColor === 'red' ? 'bg-rose-500' : 'bg-amber-500'"></span>
-          Kurang: {{ item.missingDoc }}
-        </p>
-      </router-link>
-    </div>
-  </section>
+  </Card>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatTanggal } from '@/lib/format';
 import { useTaxStore, formatDate, getMissingDocuments, getCompleteness } from '../../store/taxStore';
 
 const store = useTaxStore();

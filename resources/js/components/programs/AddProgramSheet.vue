@@ -1,450 +1,284 @@
 <template>
   <Dialog
     :open="open"
-    title="Tambah Program SCM"
+    title="Tambah Program"
     description="Lengkapi data program & perpajakan. Nilai PPN, total dan PPh dihitung otomatis dari DPP."
-    maxWidth="max-w-2xl"
+    max-width="max-w-2xl"
     @update:open="$emit('update:open', $event)"
   >
-    <form @submit.prevent="handleSubmit" class="space-y-4 text-xs select-none">
-      <!-- SECTION 1: DATA PROGRAM -->
-      <div>
-        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider uppercase mb-3 font-sans flex items-center gap-1.5">
-          <span>DATA PROGRAM</span>
-        </h4>
-
-        <!-- Row 1: Nama Program, Kategori Program & Brand -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NAMA PROGRAM <span class="text-red-500">*</span>
-            </label>
-            <input
+    <!-- Tombol Simpan ada di footer dialog; terhubung ke form ini lewat atribut form -->
+    <form id="add-program-form" class="space-y-6" @submit.prevent="handleSubmit">
+      <section class="space-y-4">
+        <h3 class="text-base font-semibold">Data purchase & pengadaan</h3>
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField label="Nama program" for="add-program-name" required class="md:col-span-2">
+            <Input
+              id="add-program-name"
               v-model="form.program_name"
               type="text"
               placeholder="Contoh: Program Supply Chain Optimization"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              KATEGORI PROGRAM <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.category"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
+          <FormField label="Kategori" for="add-program-category" required>
+            <NativeSelect id="add-program-category" v-model="form.category" required>
               <option v-for="cat in masterCategories" :key="cat" :value="cat">
                 {{ cat }}
               </option>
               <option value="__custom__">+ Ketik Kategori Lain...</option>
-            </select>
-            <input
+            </NativeSelect>
+            <Input
               v-if="form.category === '__custom__'"
               v-model="customCategory"
               type="text"
               placeholder="Ketik kategori baru"
+              aria-label="Kategori baru"
               required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              BRAND
-            </label>
-            <select
-              v-model="form.brand"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
+          <FormField label="Brand" for="add-program-brand">
+            <NativeSelect id="add-program-brand" v-model="form.brand">
               <option v-for="b in masterBrands" :key="b" :value="b">
                 {{ b }}
               </option>
               <option value="__custom__">+ Ketik Brand Lain...</option>
-            </select>
-            <input
+            </NativeSelect>
+            <Input
               v-if="form.brand === '__custom__'"
               v-model="customBrand"
               type="text"
               placeholder="Ketik nama brand baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+              aria-label="Brand baru"
             />
-          </div>
-        </div>
+          </FormField>
 
-        <!-- Row 1.5: Company Name, Kode Gudang & No. PO / SJ -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              COMPANY NAME
-            </label>
-            <select
-              v-model="form.company_name"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
+          <FormField label="Company" for="add-program-company">
+            <NativeSelect id="add-program-company" v-model="form.company_name">
               <option v-for="c in masterCompanies" :key="c" :value="c">
                 {{ c }}
               </option>
               <option value="__custom__">+ Ketik Company Lain...</option>
-            </select>
-            <input
+            </NativeSelect>
+            <Input
               v-if="form.company_name === '__custom__'"
               v-model="customCompany"
               type="text"
               placeholder="Ketik nama company baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+              aria-label="Company baru"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              KODE GUDANG
-            </label>
-            <select
-              v-model="form.kode_gudang"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer font-mono"
-            >
-              <option value="">-- Pilih Kode Gudang --</option>
+          <FormField label="Kode gudang" for="add-program-warehouse">
+            <NativeSelect id="add-program-warehouse" v-model="form.kode_gudang">
+              <option value="">Pilih kode gudang</option>
               <option v-for="w in masterWarehouses" :key="w.code" :value="w.code">
                 {{ w.code }} - {{ w.name }}
               </option>
               <option value="__custom__">+ Ketik Kode Gudang Lain...</option>
-            </select>
-            <input
+            </NativeSelect>
+            <Input
               v-if="form.kode_gudang === '__custom__'"
               v-model="customWarehouse"
               type="text"
               placeholder="Contoh: GDG-JKT-03"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors uppercase font-mono"
+              aria-label="Kode gudang baru"
+              class="uppercase"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. PO / SJ
-            </label>
-            <input
-              v-model="form.po_sj_number"
-              type="text"
-              placeholder="Contoh: PO/2025/1016 / SJ-1016"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-          </div>
-        </div>
-
-        <!-- Row 2: Nama Supplier & NPWP Supplier -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NAMA SUPPLIER <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.supplier"
-              required
-              @change="onSupplierChange"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option value="" disabled>-- Pilih Supplier --</option>
+          <FormField label="Supplier" for="add-program-supplier" required>
+            <NativeSelect id="add-program-supplier" v-model="form.supplier" required @change="onSupplierChange">
+              <option value="" disabled>Pilih supplier</option>
               <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
                 {{ s.name }}
               </option>
               <option value="__custom__">+ Ketik Supplier Lain...</option>
-            </select>
-            <input
+            </NativeSelect>
+            <Input
               v-if="form.supplier === '__custom__'"
               v-model="customSupplier"
               type="text"
               placeholder="Ketik nama supplier baru"
+              aria-label="Supplier baru"
               required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NPWP SUPPLIER
-            </label>
-            <input
+          <FormField label="NPWP supplier" for="add-program-npwp" helper="Format: XX.XXX.XXX.X-XXX.XXX">
+            <Input
+              id="add-program-npwp"
               v-model="form.npwp"
               type="text"
               placeholder="01.234.567.8-901.000"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
+              class="tabular-nums"
             />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XX.XXX.XXX.X-XXX.XXX</p>
-          </div>
-        </div>
+          </FormField>
 
-        <!-- Row 3: Nomor Memo / DO & Periode -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NOMOR MEMO / DO
-            </label>
-            <input
+          <FormField label="No. PO/SJ" for="add-program-po-sj">
+            <Input
+              id="add-program-po-sj"
+              v-model="form.po_sj_number"
+              type="text"
+              placeholder="Contoh: PO/2025/1016 / SJ-1016"
+              class="tabular-nums"
+            />
+          </FormField>
+
+          <FormField label="No. memo/DO" for="add-program-mou">
+            <Input
+              id="add-program-mou"
               v-model="form.mou_number"
               type="text"
               placeholder="Contoh: DO/SCM/2026/088 atau MEMO/088"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
+              class="tabular-nums"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              PERIODE MULAI
-            </label>
-            <input
-              v-model="form.start_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
+          <FormField label="Periode mulai" for="add-program-start">
+            <Input id="add-program-start" v-model="form.start_date" type="date" class="tabular-nums" />
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              PERIODE SELESAI
-            </label>
-            <input
-              v-model="form.end_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
+          <FormField label="Periode selesai" for="add-program-end">
+            <Input id="add-program-end" v-model="form.end_date" type="date" class="tabular-nums" />
+          </FormField>
         </div>
-      </div>
+      </section>
 
-      <!-- SECTION 2: INVOICE & PERPAJAKAN -->
-      <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider uppercase mb-3 font-sans flex items-center gap-1.5">
-          <span>INVOICE & PERPAJAKAN</span>
-        </h4>
-
-        <!-- Row 4: No. Invoice, Tanggal Invoice, Jatuh Tempo -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. INVOICE <span class="text-red-500">*</span>
-            </label>
-            <input
+      <section class="space-y-4 border-t pt-6">
+        <h3 class="text-base font-semibold">Nilai & faktur pajak</h3>
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField label="No. invoice" for="add-program-invoice" required class="md:col-span-2">
+            <Input
+              id="add-program-invoice"
               v-model="form.invoice_number"
               type="text"
               placeholder="Contoh: INV/SCM/2025/1042"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
+              class="tabular-nums"
             />
-          </div>
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TANGGAL INVOICE <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.program_date"
-              type="date"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
+          <FormField label="Tanggal invoice" for="add-program-date" required>
+            <Input id="add-program-date" v-model="form.program_date" type="date" required class="tabular-nums" />
+          </FormField>
 
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              JATUH TEMPO
-            </label>
-            <input
-              v-model="form.due_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-        </div>
+          <FormField label="Jatuh tempo" for="add-program-due">
+            <Input id="add-program-due" v-model="form.due_date" type="date" class="tabular-nums" />
+          </FormField>
 
-        <!-- Row 5: Nilai DPP (Rp) & Tarif PPN -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-7">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI DPP (RP) <span class="text-red-500">*</span>
-            </label>
-            <input
+          <FormField label="Nilai DPP (Rp)" for="add-program-dpp" required>
+            <Input
+              id="add-program-dpp"
               v-model.number="form.dpp"
               type="number"
               min="0"
               step="1000"
               required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
+              class="tabular-nums"
             />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
-              {{ formatRupiah(form.dpp || 0) }}
-            </p>
-          </div>
+            <template #helper>
+              <span class="tabular-nums">{{ formatRupiah(form.dpp) }}</span>
+            </template>
+          </FormField>
 
-          <div class="md:col-span-5">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TARIF PPN <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.ppn_rate"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
+          <FormField
+            label="Tarif PPN"
+            for="add-program-ppn-rate"
+            required
+            :helper="form.ppn_rate === '0' ? 'Kategori Non-PPN (PPN 0%)' : `Dikenakan PPN ${Math.round(Number(form.ppn_rate) * 100)}%`"
+          >
+            <NativeSelect id="add-program-ppn-rate" v-model="form.ppn_rate">
               <option value="0.11">11% (Standar)</option>
               <option value="0.12">12%</option>
               <option value="0">0% (Non-PPN)</option>
-            </select>
-            <p v-if="form.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-              Kategori Non-PPN (PPN 0%)
-            </p>
-            <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-1 font-medium">
-              Dikenakan PPN 11%
-            </p>
-          </div>
-        </div>
+            </NativeSelect>
+          </FormField>
 
-        <!-- Row 6: Nilai PPN (Rp) & Total Invoice (Rp) -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI PPN (RP)
-            </label>
-            <input
-              :value="calculatedPpn"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-              Dihitung otomatis dari DPP
-            </p>
-          </div>
+          <!-- Nilai hitungan: hanya tampilan, yang disimpan tetap hasil perhitungan di script -->
+          <FormField label="Nilai PPN (Rp)" for="add-program-ppn" helper="Dihitung otomatis dari DPP">
+            <output id="add-program-ppn" aria-live="off" :class="computedFieldClass">
+              {{ formatRupiah(calculatedPpn) }}
+            </output>
+          </FormField>
 
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TOTAL INVOICE (RP)
-            </label>
-            <input
-              :value="calculatedTotal"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs font-bold text-slate-900 dark:text-white font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
+          <FormField label="Total invoice (Rp)" for="add-program-total">
+            <output id="add-program-total" aria-live="off" :class="[computedFieldClass, 'font-medium']">
               {{ formatRupiah(calculatedTotal) }}
-            </p>
-          </div>
-        </div>
+            </output>
+          </FormField>
 
-        <!-- Row 7: Jenis PPh & Nilai PPh (Rp) -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              JENIS PPH
-            </label>
-            <select
-              v-model="form.pph_type"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
+          <FormField label="Jenis PPh" for="add-program-pph-type">
+            <NativeSelect id="add-program-pph-type" v-model="form.pph_type">
               <option value="NON_PPH">Non PPh</option>
               <option value="PPH_21">PPh 21 (2,5%)</option>
               <option value="PPH_23">PPh 23 (2%)</option>
               <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
               <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-            </select>
-          </div>
+            </NativeSelect>
+          </FormField>
 
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI PPH (RP)
-            </label>
-            <input
-              :value="calculatedPph"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
+          <FormField label="Nilai PPh (Rp)" for="add-program-pph">
+            <output id="add-program-pph" aria-live="off" :class="computedFieldClass">
               {{ formatRupiah(calculatedPph) }}
-            </p>
-          </div>
-        </div>
+            </output>
+          </FormField>
 
-        <!-- Row 8: No. Faktur Pajak & Tanggal Faktur Pajak -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. FAKTUR PAJAK
-            </label>
-            <input
+          <FormField label="No. faktur pajak" for="add-program-faktur" helper="Format: XXX.XXX-XX.XXXXXXXX">
+            <Input
+              id="add-program-faktur"
               v-model="form.tax_invoice_number"
               type="text"
               placeholder="010.000-25.00000001"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
+              class="tabular-nums"
             />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XXX.XXX-XX.XXXXXXXX</p>
-          </div>
+          </FormField>
 
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TANGGAL FAKTUR PAJAK
-            </label>
-            <input
-              v-model="form.tax_invoice_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+          <FormField label="Tanggal faktur pajak" for="add-program-faktur-date">
+            <Input id="add-program-faktur-date" v-model="form.tax_invoice_date" type="date" class="tabular-nums" />
+          </FormField>
+
+          <FormField label="Catatan pemeriksaan pajak" for="add-program-notes" class="md:col-span-2">
+            <Textarea
+              id="add-program-notes"
+              v-model="form.tax_notes"
+              rows="2"
+              placeholder="Catatan kepatuhan pajak, verifikasi e-Faktur, nomor registrasi DJP..."
+              class="resize-none"
             />
+          </FormField>
+
+          <div class="flex items-center gap-2 md:col-span-2">
+            <Checkbox id="add-program-verified" v-model="form.is_verified" />
+            <Label for="add-program-verified" class="cursor-pointer">Sudah diverifikasi Tim Pajak</Label>
           </div>
         </div>
-
-        <!-- Row 9: Catatan Pemeriksaan Pajak -->
-        <div class="mb-3">
-          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-            CATATAN PEMERIKSAAN PAJAK
-          </label>
-          <textarea
-            v-model="form.tax_notes"
-            rows="2"
-            placeholder="Catatan kepatuhan pajak, verifikasi e-Faktur, nomor registrasi DJP..."
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors resize-none"
-          ></textarea>
-        </div>
-
-        <!-- Row 10: Sudah diverifikasi Tim Pajak -->
-        <div class="flex items-center gap-2 pt-1">
-          <input
-            id="is_verified"
-            v-model="form.is_verified"
-            type="checkbox"
-            class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-slate-400 cursor-pointer"
-          />
-          <label for="is_verified" class="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-            Sudah diverifikasi Tim Pajak
-          </label>
-        </div>
-      </div>
-
-      <!-- Action Buttons Footer -->
-      <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-        <button
-          type="button"
-          class="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-colors cursor-pointer"
-          @click="$emit('update:open', false)"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 text-xs rounded-lg transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
-        >
-          Simpan
-        </button>
-      </div>
+      </section>
     </form>
+
+    <template #footer>
+      <Button type="button" variant="outline" @click="$emit('update:open', false)">Batal</Button>
+      <Button type="submit" form="add-program-form">Simpan</Button>
+    </template>
   </Dialog>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import Dialog from '../ui/Dialog.vue';
-import { useTaxStore, formatRupiah, isNonPpnCategory } from '../../store/taxStore';
+import Dialog from '@/components/ui/Dialog.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Textarea } from '@/components/ui/textarea';
+import { formatRupiah } from '@/lib/format';
+import { useTaxStore, isNonPpnCategory } from '../../store/taxStore';
+
+// Kotak nilai hitungan (PPN, total, PPh): hanya tampilan, tidak bisa diketik
+const computedFieldClass = 'flex h-9 w-full min-w-0 items-center rounded-md border bg-muted px-3 text-sm tabular-nums';
 
 const props = defineProps({
   open: {

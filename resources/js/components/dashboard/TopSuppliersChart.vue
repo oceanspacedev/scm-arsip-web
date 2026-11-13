@@ -1,78 +1,61 @@
 <template>
-  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between">
-    <!-- Header -->
-    <div class="mb-4">
-      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Supplier Teratas
-      </h3>
-      <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-        Berdasarkan nilai invoice
+  <Card class="flex flex-col">
+    <CardHeader>
+      <CardTitle>Supplier Teratas</CardTitle>
+      <CardDescription>Berdasarkan nilai invoice</CardDescription>
+    </CardHeader>
+
+    <CardContent class="flex flex-1 flex-col">
+      <p v-if="suppliers.length === 0" class="flex min-h-40 flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+        Belum ada data supplier.
       </p>
-    </div>
 
-    <!-- Horizontal Bars Container -->
-    <div class="space-y-2.5 relative my-auto">
-      <div
-        v-for="(supplier, idx) in suppliers"
-        :key="supplier.name"
-        class="flex items-center text-xs group cursor-pointer"
-        @mouseenter="hoveredSupplier = supplier"
-        @mouseleave="hoveredSupplier = null"
-      >
-        <!-- Label Left (PT Unilever Ind...) -->
-        <div class="w-28 sm:w-32 shrink-0 text-right pr-3 truncate text-[11px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
-          {{ supplier.name }}
-        </div>
-
-        <!-- Bar Track & Fill -->
-        <div class="flex-1 bg-slate-50 dark:bg-slate-800/80 rounded-r h-6 relative flex items-center overflow-hidden border-l border-slate-300 dark:border-slate-700">
-          <div
-            class="supplier-bar h-full rounded-r transition-all duration-300 group-hover:brightness-110 flex items-center justify-end pr-2"
-            :style="{
-              width: (supplier.value / maxVal) * 100 + '%',
-              backgroundColor: supplierColors[idx] || '#79BEAC',
-              '--delay': (idx * 0.08) + 's'
-            }"
-          >
-            <!-- Optional inline value display on hover -->
-            <span
-              v-if="hoveredSupplier?.name === supplier.name"
-              class="text-[10px] font-mono font-bold text-white drop-shadow-xs"
-            >
-              {{ formatShort(supplier.value) }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom X-axis Ticks -->
-    <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 pl-24 sm:pl-32">
-      <span>Rp 0</span>
-      <span class="hidden sm:inline">{{ formatShort(maxVal * 0.25) }}</span>
-      <span>{{ formatShort(maxVal * 0.5) }}</span>
-      <span class="hidden sm:inline">{{ formatShort(maxVal * 0.75) }}</span>
-      <span>{{ formatShort(maxVal) }}</span>
-    </div>
-  </div>
+      <!-- Satu seri, satu warna: panjang batang = nilai invoice relatif terhadap supplier teratas -->
+      <ul v-else class="flex flex-col gap-2">
+        <li v-for="(supplier, idx) in suppliers" :key="supplier.name">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <div
+                class="-mx-2 rounded-md px-2 py-1 transition-colors"
+                :class="hoveredSupplier?.name === supplier.name && 'bg-muted/50'"
+                @mouseenter="hoveredSupplier = supplier"
+                @mouseleave="hoveredSupplier = null"
+              >
+                <div class="flex items-baseline justify-between gap-3 text-sm">
+                  <span class="min-w-0 truncate">{{ supplier.name }}</span>
+                  <span class="shrink-0 tabular-nums text-muted-foreground">{{ formatShort(supplier.value) }}</span>
+                </div>
+                <div class="mt-2 h-2">
+                  <div
+                    class="supplier-bar h-full rounded-r-full bg-chart-1"
+                    :style="{
+                      width: Math.max(0, supplier.value / maxVal) * 100 + '%',
+                      '--delay': (idx * 0.06) + 's'
+                    }"
+                  />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p class="font-medium">{{ supplier.name }}</p>
+              <p class="tabular-nums">{{ formatRupiah(supplier.value) }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </li>
+      </ul>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatRupiah, formatRupiahShort } from '@/lib/format';
 import { useTaxStore } from '../../store/taxStore';
 
 const store = useTaxStore();
 const hoveredSupplier = ref(null);
-
-// Color gradient from primary blue to soft tints
-const supplierColors = [
-  '#2563EB', // Top 1: Brand Blue
-  '#3B82F6', // Top 2
-  '#60A5FA', // Top 3
-  '#93C5FD', // Top 4
-  '#BFDBFE', // Top 5
-  '#DBEAFE', // Top 6
-];
 
 const suppliers = computed(() => {
   const map = new Map();
@@ -93,28 +76,27 @@ const maxVal = computed(() => {
   return Math.max(...suppliers.value.map(s => s.value), 1000000);
 });
 
-function formatShort(val) {
-  if (val >= 1000000000) return 'Rp ' + (val / 1000000000).toFixed(1) + ' M';
-  if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(0) + ' Jt';
-  return 'Rp ' + Math.round(val).toLocaleString('id-ID');
-}
+// Nilai ringkas berformat Indonesia: "Rp 2,4 M", "Rp 412 Jt"
+const formatShort = formatRupiahShort;
 </script>
 
 <style scoped>
+/* Batang tumbuh dari kiri saat pertama tampil */
 .supplier-bar {
   transform-origin: left center;
-  animation: growBar 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: supplier-bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--delay, 0s);
 }
 
-@keyframes growBar {
+@keyframes supplier-bar-grow {
   from {
     transform: scaleX(0);
-    opacity: 0.3;
   }
-  to {
-    transform: scaleX(1);
-    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .supplier-bar {
+    animation: none;
   }
 }
 </style>

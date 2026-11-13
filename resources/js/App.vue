@@ -1,8 +1,8 @@
 <template>
   <router-view />
-  <ToastNotification />
+  <AppToaster />
 </template>
 
 <script setup>
-import ToastNotification from './components/ui/ToastNotification.vue';
+import AppToaster from './components/layout/AppToaster.vue';
 </script>

@@ -8,7 +8,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div role="separator" :class="cn('flex items-center text-slate-400 px-1', props.class)">
-    <Minus class="w-4 h-4 stroke-[2.5]" />
+  <div role="separator" :class="cn('flex items-center px-1 text-muted-foreground', props.class)">
+    <Minus class="size-4" />
   </div>
 </template>

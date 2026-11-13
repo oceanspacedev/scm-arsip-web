@@ -1,42 +1,18 @@
 <template>
-  <SidebarProvider>
+  <SidebarProvider :default-open="sidebarDefaultOpen">
     <AppSidebar />
-    <SidebarInset class="bg-[#F8FAFC] dark:bg-[#090D16] min-w-0 w-full max-w-full overflow-x-clip transition-colors">
-      <header class="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md px-4 w-full transition-[width,height,background-color,border-color] ease-linear">
-        <div class="flex items-center gap-2 min-w-0">
-          <SidebarTrigger class="-ml-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer shrink-0" />
-          <Separator orientation="vertical" class="mr-2 h-4 bg-slate-200 dark:bg-slate-800 shrink-0" />
-
-          <nav class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium select-none truncate">
-            <router-link to="/dashboard" class="hover:text-slate-800 dark:hover:text-slate-200 transition-colors shrink-0">
-              TaxVault
-            </router-link>
-            <ChevronRight class="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
-            <span class="text-slate-900 dark:text-slate-100 font-semibold truncate">{{ currentRouteName }}</span>
-          </nav>
-        </div>
-
-        <div class="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            class="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer focus:outline-hidden"
-            :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
-            @click="toggleDark()"
-          >
-            <Sun v-if="isDark" class="w-4 h-4 text-amber-400 transition-transform duration-200" />
-            <Moon v-else class="w-4 h-4 text-slate-600 transition-transform duration-200" />
-          </button>
-
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
-            <span>{{ userRole }}</span>
-          </div>
-        </div>
+    <SidebarInset class="min-w-0 bg-page">
+      <!-- Top bar setinggi kepala sidebar (h-16). Tombol menu hanya di layar kecil; di desktop ada di kepala sidebar. -->
+      <header class="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
+        <SidebarTrigger class="-ml-1 md:hidden" />
+        <Separator orientation="vertical" class="mr-1 h-4 md:hidden" />
+        <Breadcrumb :items="breadcrumbs" class="flex-1" />
+        <!-- Menu akun (gaya Filament): tema terang/gelap/sistem & Keluar -->
+        <UserMenu />
       </header>
 
-      <div class="flex-1 min-w-0 w-full max-w-full p-4 sm:p-6 lg:p-7 overflow-x-clip">
-        <div class="w-full max-w-[1600px] mx-auto min-w-0">
-          <router-view />
-        </div>
+      <div class="mx-auto w-full max-w-screen-2xl min-w-0 flex-1 p-4 md:p-6">
+        <router-view />
       </div>
     </SidebarInset>
 
@@ -49,40 +25,45 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { useDark, useToggle } from '@vueuse/core';
-import { ChevronRight, Sun, Moon } from 'lucide-vue-next';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SIDEBAR_COOKIE_NAME } from '@/components/ui/sidebar/utils';
 import Separator from '@/components/ui/separator/Separator.vue';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 import AppSidebar from './AppSidebar.vue';
+import UserMenu from './UserMenu.vue';
 import ImportExcelModal from '../programs/ImportExcelModal.vue';
 import DocumentUploadPanel from '../programs/DocumentUploadPanel.vue';
 import UserApprovalModal from '../auth/UserApprovalModal.vue';
-import { useTaxStore } from '../../store/taxStore';
 
 const route = useRoute();
-const store = useTaxStore();
 
-const isDark = useDark({
-  selector: 'html',
-  attribute: 'class',
-  valueDark: 'dark',
-  valueLight: '',
-  storageKey: 'scm_taxvault_theme'
-});
-const toggleDark = useToggle(isDark);
+// Sidebar terbuka penuh di layar ≥1366px; di bawahnya mulai sebagai deretan ikon supaya tabel muat.
+// Pilihan terakhir pengguna (tombol < / > di kepala sidebar, atau Ctrl+B) diingat lewat cookie.
+function initialSidebarOpen() {
+  if (typeof window === 'undefined') return true;
+  const saved = document.cookie.match(new RegExp(`(?:^|;\\s*)${SIDEBAR_COOKIE_NAME}=(true|false)`));
+  if (saved) return saved[1] === 'true';
+  return window.innerWidth >= 1366;
+}
+const sidebarDefaultOpen = initialSidebarOpen();
 
-const userRole = computed(() => store.currentUser.value?.role || 'Tamu');
+const PAGE_TITLES = {
+  '/dashboard': 'Dashboard',
+  '/programs': 'Arsip Program',
+  '/history': 'History',
+  '/users': 'Manajemen User',
+  '/permissions': 'Hak Akses & Role',
+  '/master-data': 'Data Master',
+  '/settings': 'Pengaturan',
+};
 
-const currentRouteName = computed(() => {
-  const path = route.path;
-  if (path === '/dashboard') return 'Dashboard';
-  if (path === '/programs') return 'Arsip Program';
-  if (path.startsWith('/programs/')) return 'Detail Program';
-  if (path === '/history') return 'History';
-  if (path === '/users') return 'Manajemen User';
-  if (path === '/permissions') return 'Hak Akses & Role';
-  if (path === '/master-data') return 'Data Master';
-  if (path === '/settings') return 'Pengaturan Sistem';
-  return route.name || 'Dokumen Pajak';
+const breadcrumbs = computed(() => {
+  const items = [{ label: 'TaxVault', to: '/dashboard' }];
+  if (route.path.startsWith('/programs/')) {
+    items.push({ label: 'Arsip Program', to: '/programs' }, { label: 'Detail Program' });
+  } else {
+    items.push({ label: PAGE_TITLES[route.path] || String(route.name || 'Dokumen Pajak') });
+  }
+  return items;
 });
 </script>

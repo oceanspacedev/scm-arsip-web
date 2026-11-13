@@ -1578,13 +1578,13 @@ export const useTaxStore = () => {
         }
     }
 
-    function exportToCsv() {
+    // rows: baris hasil filter di tabel Arsip Program (bawaan: filter lama di store)
+    function exportToCsv(rows = filteredPrograms.value) {
         if (!canExportProgram.value) {
             notify('Role Anda tidak memiliki wewenang untuk mengekspor data.', 'error');
             return;
         }
 
-        const rows = filteredPrograms.value;
         const dateStr = new Date().toISOString().slice(0, 10);
 
         if (window.XLSX) {

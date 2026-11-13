@@ -1,142 +1,107 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs font-sans"
-        @click.self="close"
-      >
-        <div
-          class="bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-        >
-          <!-- Header -->
-          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 gap-4">
-            <div class="min-w-0">
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                {{ document?.file_name || documentTitle }}
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                {{ documentTitle }}<span v-if="document?.uploaded_at"> · Diunggah {{ formatUploadDate(document?.uploaded_at) }}</span><span v-if="program?.program_name"> · {{ program.program_name }}</span>
-              </p>
-            </div>
+  <!-- Panel kanan (Sheet bersama): Escape, klik di luar, kunci scroll halaman, dan fokus ditangani komponennya -->
+  <Sheet :open="open" @update:open="value => emit('update:open', value)">
+    <SheetContent side="right" class="flex w-full flex-col gap-0 p-0 sm:max-w-3xl">
+      <SheetHeader class="gap-1 border-b px-6 py-4 pr-12 text-left">
+        <SheetTitle class="truncate" :title="document?.file_name || documentTitle">
+          {{ document?.file_name || documentTitle }}
+        </SheetTitle>
+        <SheetDescription class="truncate tabular-nums">
+          {{ documentTitle }}<template v-if="document?.uploaded_at"> · Diunggah {{ formatUploadDate(document?.uploaded_at) }}</template><template v-if="program?.program_name"> · {{ program.program_name }}</template>
+        </SheetDescription>
+      </SheetHeader>
 
-            <div class="flex items-center gap-2 shrink-0">
+      <!-- Area pratinjau -->
+      <div class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted">
+        <div v-if="isLoading" class="flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 class="size-5 animate-spin" />
+          <span class="text-xs">Memuat dokumen...</span>
+        </div>
+
+        <!-- PDF Viewer: halaman dirender sendiri dengan PDF.js, jadi latar dan scrollbar (tipis) seragam dengan aplikasi -->
+        <div
+          v-else-if="actualFileUrl && isPdf"
+          ref="pdfScroller"
+          class="absolute inset-0 overflow-y-auto"
+        >
+          <!-- p-5 (20px) dipakai perhitungan lebar halaman di renderPdf (clientWidth - 40) -->
+          <div ref="pdfPages" class="flex flex-col items-center gap-4 p-5"></div>
+
+          <div v-if="pdfRendering" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 class="size-5 animate-spin" />
+            <span class="text-xs">Memuat dokumen...</span>
+          </div>
+
+          <div v-if="pdfError" class="absolute inset-0 flex items-center justify-center p-6">
+            <p class="text-center text-sm text-muted-foreground">
+              {{ pdfError }}
               <a
-                v-if="actualFileUrl"
                 :href="actualFileUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
-                title="Buka di tab baru (zoom, cetak, cari teks)"
-              >
-                Tab baru
-              </a>
-
-              <button
-                type="button"
-                class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
-                @click="handleDownload"
-                title="Unduh berkas"
-              >
-                Unduh
-              </button>
-
-              <button
-                type="button"
-                class="ml-1 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                @click="close"
-                title="Tutup pratinjau"
-                aria-label="Tutup pratinjau"
-              >
-                <X class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Document Viewer (Main Hero Canvas) -->
-          <div class="flex-1 bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center">
-            <!-- Loading Indicator -->
-            <div v-if="isLoading" class="flex flex-col items-center justify-center text-slate-400 gap-2">
-              <div class="w-6 h-6 border-2 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-200 rounded-full animate-spin"></div>
-              <span class="text-xs">Memuat dokumen...</span>
-            </div>
-
-            <!-- PDF Viewer: halaman dirender sendiri dengan PDF.js, jadi latar dan scrollbar (tipis) seragam dengan aplikasi -->
-            <div
-              v-else-if="actualFileUrl && isPdf"
-              ref="pdfScroller"
-              class="absolute inset-0 overflow-y-auto"
-            >
-              <div ref="pdfPages" class="flex flex-col items-center gap-4 p-5"></div>
-
-              <div v-if="pdfRendering" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
-                <div class="w-6 h-6 border-2 border-slate-300 dark:border-slate-700 border-t-slate-700 dark:border-t-slate-200 rounded-full animate-spin"></div>
-                <span class="text-xs">Memuat dokumen...</span>
-              </div>
-
-              <div v-if="pdfError" class="absolute inset-0 flex items-center justify-center p-6">
-                <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-                  {{ pdfError }}
-                  <a :href="actualFileUrl" target="_blank" rel="noopener noreferrer" class="text-slate-900 dark:text-slate-100 underline underline-offset-2">Buka di tab baru</a>
-                </p>
-              </div>
-            </div>
-
-            <!-- Image Viewer -->
-            <div
-              v-else-if="actualFileUrl && isImage"
-              class="w-full h-full flex items-center justify-center p-6 overflow-auto bg-slate-900/5 dark:bg-black/40"
-            >
-              <img
-                :src="actualFileUrl"
-                :alt="document?.file_name"
-                class="max-h-full max-w-full object-contain rounded-lg shadow-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-              />
-            </div>
-
-            <!-- Generic file fallback -->
-            <div
-              v-else-if="actualFileUrl"
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
-            >
-              <p class="font-semibold text-slate-900 dark:text-slate-100 text-sm">{{ document?.file_name }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Berkas ini dapat diunduh langsung untuk dibuka pada perangkat Anda.</p>
-              <button
-                type="button"
-                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                @click="handleDownload"
-              >
-                Unduh Berkas
-              </button>
-            </div>
-
-            <!-- Empty state -->
-            <div
-              v-else
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
-            >
-              <h4 class="font-semibold text-slate-800 dark:text-slate-200 text-sm">Berkas Belum Tersedia</h4>
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                Belum ada berkas fisik yang diunggah untuk tipe {{ documentTitle }}.
-              </p>
-            </div>
+                class="font-medium text-foreground underline underline-offset-4"
+              >Buka di tab baru</a>
+            </p>
           </div>
         </div>
+
+        <!-- Image Viewer -->
+        <div
+          v-else-if="actualFileUrl && isImage"
+          class="flex h-full w-full items-center justify-center overflow-auto p-6"
+        >
+          <img
+            :src="actualFileUrl"
+            :alt="document?.file_name"
+            class="max-h-full max-w-full rounded-md border bg-background object-contain shadow-sm"
+          />
+        </div>
+
+        <!-- Berkas lain: unduh untuk dibuka di perangkat -->
+        <div
+          v-else-if="actualFileUrl"
+          class="mx-6 flex max-w-md flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center shadow-xs"
+        >
+          <p class="text-sm font-medium break-words">{{ document?.file_name }}</p>
+          <p class="text-sm text-muted-foreground">Berkas ini dapat diunduh langsung untuk dibuka pada perangkat Anda.</p>
+          <Button variant="outline" class="mt-2" @click="handleDownload">Unduh Berkas</Button>
+        </div>
+
+        <!-- Belum ada berkas (tidak ditampilkan saat panel sedang menutup) -->
+        <div
+          v-else-if="open"
+          class="mx-6 flex max-w-md flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center shadow-xs"
+        >
+          <p class="text-base font-semibold">Berkas belum tersedia</p>
+          <p class="text-sm text-muted-foreground">
+            Belum ada berkas fisik yang diunggah untuk tipe {{ documentTitle }}.
+          </p>
+        </div>
       </div>
-    </Transition>
-  </Teleport>
+
+      <SheetFooter class="flex-row justify-end gap-2 border-t p-4">
+        <Button
+          v-if="actualFileUrl"
+          as="a"
+          :href="actualFileUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="outline"
+          title="Buka di tab baru (zoom, cetak, cari teks)"
+        >
+          Tab baru
+        </Button>
+        <Button title="Unduh berkas" @click="handleDownload">Unduh</Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { X } from 'lucide-vue-next';
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue';
+import { Loader2 } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatUploadDate, useTaxStore } from '../../store/taxStore';
 
 const props = defineProps({
@@ -161,23 +126,9 @@ const store = useTaxStore();
 const actualFileUrl = ref(null);
 const isLoading = ref(false);
 
-function close() {
-  emit('update:open', false);
-}
-
-function handleKeydown(e) {
-  if (e.key === 'Escape' && props.open) {
-    close();
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
-
+// Escape, klik di luar, dan kunci scroll halaman diurus Sheet (reka-ui). Kunci scroll-nya menyimpan
+// lalu memulihkan body.style.overflow, jadi di sini overflow tidak boleh diubah sendiri.
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
-  document.body.style.overflow = '';
   resetPdf();
 });
 
@@ -185,7 +136,6 @@ watch(
   () => [props.open, props.document],
   async ([isOpen, doc]) => {
     if (isOpen && doc) {
-      document.body.style.overflow = 'hidden';
       isLoading.value = true;
       try {
         let url = doc.file_data || doc.file_url || null;
@@ -198,7 +148,6 @@ watch(
       }
     } else {
       actualFileUrl.value = null;
-      document.body.style.overflow = '';
     }
   },
   { immediate: true }
@@ -273,7 +222,8 @@ async function renderPdf(url) {
       canvas.width = Math.floor(viewport.width);
       canvas.height = Math.floor(viewport.height);
       canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
-      canvas.className = 'bg-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-800';
+      // Latar putih halaman diisi PDF.js sendiri saat mulai menggambar
+      canvas.className = 'shadow-sm ring-1 ring-border';
       pdfPages.value.appendChild(canvas);
 
       await page.render({ canvas, viewport }).promise;

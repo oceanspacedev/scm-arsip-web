@@ -20,9 +20,10 @@
     <script>
         (function() {
             try {
+                // 'light' | 'dark' | 'auto' (ikuti sistem); kosong = belum memilih, ikuti sistem
                 var theme = localStorage.getItem('scm_taxvault_theme');
                 var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (theme === 'dark' || (!theme && prefersDark)) {
+                if (theme === 'dark' || ((!theme || theme === 'auto') && prefersDark)) {
                     document.documentElement.classList.add('dark');
                 } else {
                     document.documentElement.classList.remove('dark');
@@ -33,7 +34,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-[#F8FAFC] antialiased font-sans selection:bg-[#E0F2FE] selection:text-[#0369A1] transition-colors">
+<body class="bg-background text-foreground antialiased font-sans">
     <div id="app"></div>
 </body>
 </html>

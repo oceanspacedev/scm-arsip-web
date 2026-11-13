@@ -1,25 +1,18 @@
 <template>
   <div>
     <!-- Program terpilih: nama + No. PO/SJ, karena banyak program bernama sama -->
-    <div
-      v-if="chosen"
-      class="flex items-start gap-2 rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5"
-    >
+    <div v-if="chosen" class="flex items-center gap-3 rounded-md border py-2 pr-2 pl-3">
       <div class="min-w-0 flex-1">
-        <p class="truncate font-medium text-slate-800 dark:text-slate-200">{{ programTitle(chosen) }}</p>
-        <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">{{ programMeta(chosen) }}</p>
+        <p class="truncate font-medium">{{ programTitle(chosen) }}</p>
+        <p class="truncate text-xs tabular-nums text-muted-foreground">{{ programMeta(chosen) }}</p>
       </div>
-      <button
-        type="button"
-        class="shrink-0 text-[11px] font-medium text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer disabled:cursor-not-allowed"
-        :disabled="disabled"
-        @click="change"
-      >
+      <Button type="button" variant="ghost" size="sm" class="shrink-0" :disabled="disabled" @click="change">
         Ganti
-      </button>
+      </Button>
     </div>
 
     <template v-else>
+      <!-- <input> biasa (bukan komponen Input): fokusnya dipindah ke sini lewat ref saat "Ganti" -->
       <input
         ref="inputEl"
         v-model="query"
@@ -32,7 +25,7 @@
         autocomplete="off"
         :placeholder="placeholder"
         :disabled="disabled"
-        class="w-full h-8 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-slate-400"
+        class="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
         @focus="open"
         @input="open"
         @blur="isOpen = false"
@@ -48,13 +41,13 @@
         :id="listId"
         ref="listEl"
         role="listbox"
-        class="mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+        class="mt-1 max-h-56 overflow-y-auto rounded-md border shadow-xs"
         @mousedown.prevent
       >
         <template v-for="section in sections" :key="section.label">
           <p
             v-if="sections.length > 1"
-            class="px-2.5 pt-2 pb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500"
+            class="px-3 pt-2 pb-1 text-xs font-medium text-muted-foreground"
           >
             {{ section.label }}
           </p>
@@ -64,19 +57,19 @@
             :key="row.program.id"
             role="option"
             :aria-selected="row.index === activeIndex"
-            class="px-2.5 py-1.5 cursor-pointer"
-            :class="row.index === activeIndex ? 'bg-slate-100 dark:bg-slate-800' : ''"
+            class="cursor-pointer px-3 py-2"
+            :class="row.index === activeIndex ? 'bg-accent text-accent-foreground' : ''"
             @mouseenter="activeIndex = row.index"
             @click="choose(row.program)"
           >
-            <p class="truncate font-medium text-slate-800 dark:text-slate-200">{{ programTitle(row.program) }}</p>
-            <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">{{ programMeta(row.program) }}</p>
+            <p class="truncate font-medium">{{ programTitle(row.program) }}</p>
+            <p class="truncate text-xs tabular-nums text-muted-foreground">{{ programMeta(row.program) }}</p>
           </div>
         </template>
-        <p v-if="options.length === 0" class="px-2.5 py-2 text-slate-400 dark:text-slate-500">Tidak ada program yang cocok.</p>
+        <p v-if="options.length === 0" class="px-3 py-2 text-muted-foreground">Tidak ada program yang cocok.</p>
         <p
           v-if="matches.hidden > 0"
-          class="px-2.5 py-1.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 dark:text-slate-500"
+          class="border-t px-3 py-2 text-xs tabular-nums text-muted-foreground"
         >
           {{ matches.hidden }} program lain, ketik untuk mempersempit.
         </p>
@@ -87,6 +80,7 @@
 
 <script setup>
 import { ref, computed, nextTick, useId } from 'vue';
+import { Button } from '@/components/ui/button';
 import { matchesProgram, programMeta, programTitle } from '../../utils/programSearch';
 
 // Batas baris "program lain" yang dirender; sisanya ditemukan lewat pencarian

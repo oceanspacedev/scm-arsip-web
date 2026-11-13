@@ -6,88 +6,78 @@
     maxWidth="max-w-md"
     @update:open="$emit('update:open', $event)"
   >
-    <div class="space-y-4 text-xs font-sans">
-      <!-- Drag & Drop Area -->
-      <div
-        class="border-2 border-dashed rounded-xl p-5 text-center transition-colors cursor-pointer"
-        :class="isDragging ? 'border-slate-500 bg-slate-100/70 dark:bg-slate-800/70' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100/40 dark:hover:bg-slate-800/40'"
+    <div class="flex flex-col gap-4">
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        accept=".pdf, .jpg, .jpeg, .png"
+        class="hidden"
+        @change="handleFileChange"
+      />
+
+      <!-- Area tarik & lepas; diklik untuk memilih berkas dari komputer -->
+      <button
+        type="button"
+        class="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-8 text-center transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        :class="isDragging ? 'border-ring bg-muted' : 'hover:border-ring hover:bg-muted/50'"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleFileDrop"
         @click="$refs.fileInput.click()"
       >
-        <input
-          ref="fileInput"
-          type="file"
-          multiple
-          accept=".pdf, .jpg, .jpeg, .png"
-          class="hidden"
-          @change="handleFileChange"
-        />
+        <span class="text-sm font-medium">
+          Tarik berkas ke sini atau <span class="underline underline-offset-4">pilih dari komputer</span>
+        </span>
+        <span class="text-xs text-muted-foreground">
+          Mendukung PDF, JPG, PNG (bisa pilih banyak berkas, maks. 15 MB)
+        </span>
+      </button>
 
-        <div class="flex flex-col items-center justify-center space-y-2">
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shadow-2xs">
-            <Upload class="w-5 h-5 stroke-[2]" />
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
-              Tarik berkas ke sini atau <span class="text-slate-900 dark:text-slate-100 underline font-semibold hover:text-black dark:hover:text-white">pilih dari komputer</span>
-            </p>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Mendukung: <strong>PDF, JPG, PNG</strong> (bisa pilih banyak berkas, maks 15 MB)
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Selected Files List -->
-      <div v-if="selectedFiles.length > 0" class="space-y-2">
-        <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium px-1">
-          <span>{{ selectedFiles.length }} berkas dipilih:</span>
-          <button
-            type="button"
-            class="text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+      <!-- Berkas terpilih -->
+      <div v-if="selectedFiles.length > 0" class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xs text-muted-foreground">{{ selectedFiles.length }} berkas dipilih</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="px-2 text-muted-foreground"
             :disabled="isUploading"
             @click="selectedFiles = []"
           >
             Hapus Semua
-          </button>
+          </Button>
         </div>
 
-        <div class="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-          <div
-            v-for="(f, idx) in selectedFiles"
-            :key="idx"
-            class="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 shadow-2xs"
-          >
-            <div class="flex items-center gap-2 min-w-0">
-              <FileText class="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-              <div class="min-w-0">
-                <p class="font-semibold text-slate-800 dark:text-slate-200 truncate text-xs">{{ f.name }}</p>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{{ formatSize(f.size) }}</p>
-              </div>
+        <ul class="max-h-40 divide-y overflow-y-auto rounded-lg border">
+          <li v-for="(f, idx) in selectedFiles" :key="idx" class="flex items-center gap-3 py-2 pr-2 pl-3">
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium" :title="f.name">{{ f.name }}</p>
+              <p class="text-xs tabular-nums text-muted-foreground">{{ formatSize(f.size) }}</p>
             </div>
-            <button
+            <Button
               v-if="!isUploading"
-              type="button"
-              class="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+              variant="ghost"
+              size="icon-sm"
+              class="text-muted-foreground"
               title="Batalkan berkas ini"
+              aria-label="Batalkan berkas ini"
               @click="removeFile(idx)"
             >
-              <X class="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+              <X />
+            </Button>
+          </li>
+        </ul>
 
-        <!-- Progress Bar when Uploading -->
-        <div v-if="isUploading" class="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5">
-          <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+        <!-- Progres saat mengunggah -->
+        <div v-if="isUploading" class="flex flex-col gap-2 pt-1">
+          <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>Mengunggah berkas...</span>
-            <span class="font-mono font-bold">{{ uploadProgress }}%</span>
+            <span class="tabular-nums">{{ uploadProgress }}%</span>
           </div>
-          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
-              class="bg-slate-900 dark:bg-slate-100 h-1.5 rounded-full transition-all duration-300"
+              class="h-full rounded-full bg-primary transition-all duration-300"
               :style="{ width: uploadProgress + '%' }"
             ></div>
           </div>
@@ -96,43 +86,21 @@
     </div>
 
     <template #footer>
-      <div class="flex items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="isUploading"
-          @click="$emit('update:open', false)"
-        >
-          Batal
-        </Button>
-        <button
-          type="button"
-          class="h-8 px-3.5 rounded-lg text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
-          :disabled="selectedFiles.length === 0 || isUploading"
-          @click="startUpload"
-        >
-          <svg
-            v-if="isUploading"
-            class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-current"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <span>Unggah {{ selectedFiles.length > 0 ? `(${selectedFiles.length}) Berkas` : 'Berkas' }}</span>
-        </button>
-      </div>
+      <Button variant="outline" :disabled="isUploading" @click="$emit('update:open', false)">
+        Batal
+      </Button>
+      <Button :disabled="selectedFiles.length === 0 || isUploading" @click="startUpload">
+        Unggah {{ selectedFiles.length > 0 ? `(${selectedFiles.length}) Berkas` : 'Berkas' }}
+      </Button>
     </template>
   </Dialog>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { Upload, FileText, X } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
 import Dialog from '../ui/Dialog.vue';
-import Button from '../ui/Button.vue';
+import { Button } from '@/components/ui/button';
 import { useTaxStore } from '../../store/taxStore';
 
 const store = useTaxStore();

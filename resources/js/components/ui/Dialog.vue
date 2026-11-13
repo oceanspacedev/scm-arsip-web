@@ -1,74 +1,62 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#17201E]/40 dark:bg-black/70 backdrop-blur-[2px]"
-        @click.self="handleBackdropClick"
+  <!-- Dibangun di atas Dialog reka-ui: fokus terkunci di dalam & kembali ke pemicu, Escape/klik luar
+       hanya menutup lapisan paling atas (menu ⋯, Select, konfirmasi hapus), scroll halaman dikunci. -->
+  <DialogRoot :open="open" @update:open="onOpenChange">
+    <DialogPortal>
+      <DialogOverlay
+        class="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      />
+      <DialogContent
+        v-bind="{ ...$attrs, ...(description ? {} : { 'aria-describedby': undefined }) }"
+        :class="cn(
+          'fixed top-1/2 left-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border bg-background text-foreground shadow-lg outline-none duration-200',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          maxWidth,
+        )"
+        @interact-outside="onInteractOutside"
       >
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0 scale-98 translate-y-2"
-          enter-to-class="opacity-100 scale-100 translate-y-0"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100 scale-100 translate-y-0"
-          leave-to-class="opacity-0 scale-98 translate-y-2"
+        <!-- Header -->
+        <div class="flex shrink-0 flex-col gap-1 border-b py-4 pr-12 pl-6">
+          <DialogTitle class="text-base font-semibold">{{ title }}</DialogTitle>
+          <DialogDescription v-if="description" class="text-sm text-muted-foreground">{{ description }}</DialogDescription>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto px-6 py-5 text-sm">
+          <slot />
+        </div>
+
+        <!-- Footer: tombol rata kanan -->
+        <div v-if="$slots.footer" class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t px-6 py-4">
+          <slot name="footer" />
+        </div>
+
+        <!-- Tombol tutup terakhir di urutan fokus, supaya fokus awal jatuh ke isian pertama -->
+        <DialogClose
+          class="absolute top-3.5 right-4 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
         >
-          <div
-            :class="[
-              'w-full bg-white dark:bg-[#111827] rounded-lg border border-[#DDE4E1] dark:border-slate-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]',
-              maxWidthClass
-            ]"
-          >
-            <!-- Header -->
-            <div class="px-6 py-4 border-b border-[#DDE4E1] dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
-              <div>
-                <h3 class="text-base font-semibold text-[#17201E] dark:text-slate-100">
-                  {{ title }}
-                </h3>
-                <p v-if="description" class="text-xs text-[#66736F] dark:text-slate-400 mt-0.5">
-                  {{ description }}
-                </p>
-              </div>
-              <button
-                type="button"
-                class="text-[#66736F] dark:text-slate-400 hover:text-[#17201E] dark:hover:text-slate-100 p-1.5 rounded-md hover:bg-[#F4F6F5] dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                @click="close"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Body -->
-            <div class="px-6 py-5 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200">
-              <slot />
-            </div>
-
-            <!-- Footer -->
-            <div
-              v-if="$slots.footer"
-              class="px-6 py-3.5 border-t border-[#DDE4E1] dark:border-slate-800 bg-[#FAFBFA] dark:bg-slate-900/60 flex items-center justify-end gap-2.5 shrink-0"
-            >
-              <slot name="footer" />
-            </div>
-          </div>
-        </Transition>
-      </div>
-    </Transition>
-  </Teleport>
+          <X class="size-4" />
+          <span class="sr-only">Tutup</span>
+        </DialogClose>
+      </DialogContent>
+    </DialogPortal>
+  </DialogRoot>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { X } from 'lucide-vue-next';
+import {
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui';
+import { cn } from '@/lib/utils';
+
+defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
   open: {
@@ -95,39 +83,17 @@ const props = defineProps({
 
 const emit = defineEmits(['update:open', 'close']);
 
-const maxWidthClass = computed(() => props.maxWidth);
-
-function close() {
+function onOpenChange(value) {
+  if (value) {
+    emit('update:open', true);
+    return;
+  }
   emit('update:open', false);
   emit('close');
 }
 
-function handleBackdropClick() {
-  if (props.closeOnBackdrop) {
-    close();
-  }
+// Klik di luar panel hanya menutup bila diizinkan (mis. tidak saat sedang mengunggah)
+function onInteractOutside(event) {
+  if (!props.closeOnBackdrop) event.preventDefault();
 }
-
-function handleKeydown(e) {
-  if (e.key === 'Escape' && props.open) {
-    close();
-  }
-}
-
-watch(() => props.open, (val) => {
-  if (val) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
-});
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
-  document.body.style.overflow = '';
-});
 </script>

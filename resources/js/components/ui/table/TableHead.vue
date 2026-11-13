@@ -1,0 +1,14 @@
+<script setup>
+import { cn } from '@/lib/utils';
+
+const props = defineProps({ class: { type: null, default: undefined } });
+</script>
+
+<template>
+  <th
+    data-slot="table-head"
+    :class="cn('h-10 px-2 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0', props.class)"
+  >
+    <slot />
+  </th>
+</template>

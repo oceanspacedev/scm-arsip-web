@@ -1,171 +1,150 @@
 <template>
-  <div class="space-y-4 select-none">
-    <div>
-      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">History</h1>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Dokumen yang masuk ke arsip beserta hasilnya</p>
-    </div>
+  <div class="flex flex-col gap-6">
+    <PageHeader title="History" description="Dokumen yang masuk ke arsip beserta hasilnya." />
 
-    <div class="flex flex-col sm:flex-row gap-2">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Cari berkas, program, nomor, atau pengunggah"
-        class="h-8 w-full sm:max-w-sm px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-slate-400"
-      />
-      <select
-        v-model="status"
-        class="h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-slate-400"
-      >
-        <option value="">Semua status</option>
-        <option v-for="(meta, key) in STATUS" :key="key" :value="key">{{ meta.label }}</option>
-      </select>
-      <select
-        v-model="source"
-        class="h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-slate-400"
-      >
-        <option value="">Semua sumber</option>
-        <option v-for="(label, key) in SOURCE" :key="key" :value="key">{{ label }}</option>
-      </select>
-    </div>
+    <DataTable
+      :columns="columns"
+      :data="logs"
+      :loading="loading && logs.length === 0"
+      :get-row-id="log => String(log.id)"
+      :initial-sorting="[{ id: 'created_at', desc: true }]"
+      :facets="facets"
+      :date-filter="{ column: 'created_at', title: 'Tanggal' }"
+      :global-filter-fn="matchesSearch"
+      :page-sizes="[25, 50, 100]"
+      search-placeholder="Cari berkas, program, nomor…"
+      row-label="catatan"
+      empty-title="Belum ada catatan"
+      empty-description="Dokumen yang diunggah akan tercatat di sini."
+    >
+      <template #cell-created_at="{ row }">
+        <p class="tabular-nums">{{ formatTanggal(row.created_at) }}</p>
+        <p class="text-xs tabular-nums text-muted-foreground">{{ formatClock(row.created_at) }}</p>
+      </template>
 
-    <section class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[760px] text-left text-xs">
-          <thead>
-            <tr class="border-b border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-              <th class="py-2.5 px-4 font-medium">Waktu</th>
-              <th class="py-2.5 px-4 font-medium">Berkas</th>
-              <th class="py-2.5 px-4 font-medium">Program</th>
-              <th class="py-2.5 px-4 font-medium">Hasil</th>
-              <th class="py-2.5 px-4 font-medium">Oleh</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-            <tr v-for="log in logs" :key="log.id" class="align-top hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-              <td class="py-3 px-4 whitespace-nowrap tabular-nums">
-                <p class="text-slate-700 dark:text-slate-300">{{ formatDate(log.created_at) }}</p>
-                <p class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{{ formatClock(log.created_at) }}</p>
-              </td>
-              <td class="py-3 px-4 max-w-[320px]">
-                <!-- Tidak dipotong satu baris: nama berkas sering berawalan sama, bagian pembedanya di ujung -->
-                <p class="line-clamp-3 break-words font-medium text-slate-800 dark:text-slate-200" :title="log.file_name">{{ log.file_name }}</p>
-                <p class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
-                  {{ [TYPE[log.document_type], SOURCE[log.source]].filter(Boolean).join(' · ') }}
-                </p>
-              </td>
-              <td class="py-3 px-4 max-w-[260px]">
-                <router-link
-                  v-if="log.program"
-                  :to="`/programs/${log.program.id}`"
-                  class="block truncate font-medium text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white"
-                  :title="log.program.title"
-                >
-                  {{ log.program.title }}
-                </router-link>
-                <span v-else class="text-slate-400 dark:text-slate-500">-</span>
-                <p v-if="log.program?.company_name" class="mt-0.5 truncate text-[11px] text-slate-400 dark:text-slate-500">{{ log.program.company_name }}</p>
-              </td>
-              <td class="py-3 px-4 max-w-[300px]">
-                <p class="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS[log.status]?.dot"></span>
-                  {{ STATUS[log.status]?.label || log.status }}
-                </p>
-                <p v-if="detail(log)" class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{{ detail(log) }}</p>
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ log.uploaded_by || '-' }}</td>
-            </tr>
+      <!-- Semua teks tampil utuh (boleh beberapa baris), tidak dipotong -->
+      <template #cell-file_name="{ row }">
+        <p class="leading-5 break-words">{{ row.file_name }}</p>
+        <p class="mt-0.5 text-xs text-muted-foreground">{{ [TYPE[row.document_type], SOURCE[row.source]].filter(Boolean).join(' · ') }}</p>
+      </template>
 
-            <tr v-if="logs.length === 0">
-              <td colspan="5" class="py-10 text-center text-slate-400 dark:text-slate-500">
-                {{ loading ? 'Memuat…' : 'Belum ada dokumen yang masuk.' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <template #cell-program="{ row }">
+        <router-link
+          v-if="row.program"
+          :to="`/programs/${row.program.id}`"
+          class="block leading-5 break-words hover:underline"
+        >
+          {{ row.program.title }}
+        </router-link>
+        <span v-else class="text-muted-foreground">—</span>
+        <p v-if="row.program?.company_name" class="mt-0.5 text-xs text-muted-foreground">{{ row.program.company_name }}</p>
+      </template>
 
-      <div
-        v-if="meta.last_page > 1"
-        class="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400"
-      >
-        <span>Halaman {{ meta.current_page }} dari {{ meta.last_page }} · {{ meta.total }} catatan</span>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="h-7 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="loading || meta.current_page <= 1"
-            @click="load(meta.current_page - 1)"
-          >
-            Sebelumnya
-          </button>
-          <button
-            type="button"
-            class="h-7 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="loading || meta.current_page >= meta.last_page"
-            @click="load(meta.current_page + 1)"
-          >
-            Berikutnya
-          </button>
-        </div>
-      </div>
-    </section>
+      <template #cell-status="{ row }">
+        <Badge :variant="STATUS[row.status]?.variant || 'outline'">{{ STATUS[row.status]?.label || row.status }}</Badge>
+        <p v-for="line in detailLines(row)" :key="line" class="mt-1 text-xs tabular-nums break-words text-muted-foreground">{{ line }}</p>
+      </template>
+
+      <template #cell-uploaded_by="{ value }">
+        <span class="text-muted-foreground">{{ value || '—' }}</span>
+      </template>
+    </DataTable>
+
+    <p v-if="truncated" class="text-xs text-muted-foreground">Menampilkan {{ formatNumber(logs.length) }} catatan terbaru.</p>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
-import { watchDebounced } from '@vueuse/core';
+import { computed, onMounted, ref, watch } from 'vue';
+import DataTable from '@/components/data-table/DataTable.vue';
+import { inDateRange, inSelection } from '@/components/data-table/utils';
+import PageHeader from '@/components/layout/PageHeader.vue';
+import { Badge } from '@/components/ui/badge';
+import { formatNumber, formatTanggal } from '@/lib/format';
 import { useTaxStore } from '../store/taxStore';
 import { useDocumentUploadQueue } from '../store/documentUploadQueue';
 
 const STATUS = {
-  matched: { label: 'Masuk', dot: 'bg-emerald-500' },
-  duplicate: { label: 'Sudah ada', dot: 'bg-slate-400' },
-  review: { label: 'Perlu dipilih', dot: 'bg-amber-500' },
-  failed: { label: 'Gagal', dot: 'bg-rose-500' },
-  skipped: { label: 'Dilewati', dot: 'bg-slate-300 dark:bg-slate-600' }
+  matched: { label: 'Masuk', variant: 'success' },
+  duplicate: { label: 'Sudah ada', variant: 'secondary' },
+  review: { label: 'Perlu dipilih', variant: 'warning' },
+  failed: { label: 'Gagal', variant: 'destructive' },
+  skipped: { label: 'Dilewati', variant: 'outline' }
 };
 const SOURCE = { auto: 'Unggah otomatis', manual: 'Unggah manual', whms: 'WHMS' };
 const TYPE = { invoice: 'Invoice', faktur_pajak: 'Faktur Pajak', mou: 'Memo/DO' };
+
+// Semua halaman riwayat dimuat (maks. 20 halaman = 1.000 catatan terbaru), lalu dicari & difilter di tabel
+const MAX_PAGES = 20;
 
 const store = useTaxStore();
 const { counts } = useDocumentUploadQueue();
 
 const logs = ref([]);
-const meta = ref({ current_page: 1, last_page: 1, total: 0 });
 const loading = ref(false);
-const search = ref('');
-const status = ref('');
-const source = ref('');
+const truncated = ref(false);
 
-async function load(page = 1) {
+async function load() {
   loading.value = true;
   try {
-    const result = await store.fetchDocumentLogs({ status: status.value, source: source.value, q: search.value.trim(), page });
-    if (result) {
-      logs.value = result.logs;
-      meta.value = result.meta;
+    const first = await store.fetchDocumentLogs({ page: 1 });
+    if (!first) return;
+    const all = [...first.logs];
+    const lastPage = Math.min(first.meta?.last_page || 1, MAX_PAGES);
+    // Satu per satu: server lokal melayani satu request sekaligus
+    for (let page = 2; page <= lastPage; page++) {
+      const next = await store.fetchDocumentLogs({ page });
+      if (!next) break;
+      all.push(...next.logs);
     }
+    logs.value = all;
+    truncated.value = (first.meta?.last_page || 1) > MAX_PAGES;
   } finally {
     loading.value = false;
   }
 }
 
-watch([status, source], () => load(1));
-watchDebounced(search, () => load(1), { debounce: 300 });
 // Unggahan di latar belakang yang selesai langsung terlihat di sini
-watch(() => counts.value.finished + (counts.value.review || 0), () => load(meta.value.current_page));
+watch(() => counts.value.finished + (counts.value.review || 0), () => load());
 
-onMounted(() => load(1));
+onMounted(load);
 
-function detail(log) {
-  if (log.status !== 'matched') return log.message;
+const timestamp = value => (value ? new Date(value).getTime() : 0);
+
+const columns = [
+  { id: 'created_at', accessorFn: log => timestamp(log.created_at), filterFn: inDateRange, sortDescFirst: true, meta: { label: 'Waktu', sticky: 'left' } },
+  // Tanpa kolom w-full: sisa lebar dibagi ke Berkas, Program, dan Hasil sesuai panjang isinya
+  { id: 'file_name', accessorFn: log => log.file_name || '', sortingFn: 'text', meta: { label: 'Berkas', cellClass: 'min-w-[240px] whitespace-normal' } },
+  { id: 'program', accessorFn: log => log.program?.title || '', sortingFn: 'text', meta: { label: 'Program', cellClass: 'min-w-[200px] whitespace-normal' } },
+  { id: 'status', accessorFn: log => log.status, filterFn: inSelection, meta: { label: 'Hasil', cellClass: 'min-w-[180px] max-w-[300px] whitespace-normal' } },
+  { id: 'uploaded_by', accessorFn: log => log.uploaded_by || '', filterFn: inSelection, meta: { label: 'Oleh' } },
+  { id: 'source', accessorFn: log => log.source, filterFn: inSelection, enableHiding: false, meta: { label: 'Sumber', filterOnly: true } },
+  { id: 'document_type', accessorFn: log => log.document_type || '', filterFn: inSelection, enableHiding: false, meta: { label: 'Jenis', filterOnly: true } },
+];
+
+const facets = computed(() => [
+  { column: 'status', title: 'Hasil', options: Object.entries(STATUS).map(([value, meta]) => ({ value, label: meta.label })) },
+  { column: 'source', title: 'Sumber', options: Object.entries(SOURCE).map(([value, label]) => ({ value, label })) },
+  { column: 'document_type', title: 'Jenis', options: Object.entries(TYPE).map(([value, label]) => ({ value, label })) },
+  { column: 'uploaded_by', title: 'Oleh' },
+]);
+
+// Keterangan hasil per baris: pesan (gagal/perlu dipilih), atau dasar pencocokan + nomor dokumen (masuk)
+function detailLines(log) {
+  if (log.status !== 'matched') return log.message ? [log.message] : [];
   const number = log.number && `${log.document_type === 'faktur_pajak' ? 'No. Faktur' : 'No. Invoice'} ${log.number}`;
-  return [log.reason, number !== log.reason && number].filter(Boolean).join(' · ');
+  return [log.reason, number !== log.reason && number].filter(Boolean);
 }
 
-function formatDate(value) {
-  return value ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value)) : '-';
+function matchesSearch(row, _columnId, query) {
+  const text = String(query || '').toLowerCase().trim();
+  if (!text) return true;
+  const log = row.original;
+  return [log.file_name, log.program?.title, log.program?.company_name, log.number, log.uploaded_by, log.reason, log.message]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .includes(text);
 }
 
 function formatClock(value) {

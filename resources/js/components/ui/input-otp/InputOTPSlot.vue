@@ -14,9 +14,10 @@ const slot = computed(() => context?.value?.slots?.[props.index] || {})
 
 <template>
   <div
+    :data-active="slot.isActive || undefined"
     :class="cn(
-      'relative flex h-11 w-11 items-center justify-center border-y border-r border-slate-300 dark:border-slate-700 text-base font-semibold transition-all first:rounded-l-lg first:border-l last:rounded-r-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs font-mono select-none',
-      slot.isActive && 'z-10 ring-2 ring-blue-600 border-blue-600',
+      'relative flex size-10 items-center justify-center border-y border-r border-input bg-background text-sm font-medium tabular-nums shadow-xs transition-[color,box-shadow] outline-none select-none first:rounded-l-md first:border-l last:rounded-r-md dark:bg-input/30',
+      'data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50',
       props.class
     )"
   >
@@ -25,7 +26,7 @@ const slot = computed(() => context?.value?.slots?.[props.index] || {})
       v-if="slot.hasFakeCaret"
       class="pointer-events-none absolute inset-0 flex items-center justify-center"
     >
-      <div class="h-4 w-px animate-caret-blink bg-slate-900 dark:bg-slate-100 duration-1000" />
+      <div class="h-4 w-px animate-caret-blink bg-foreground" />
     </div>
   </div>
 </template>

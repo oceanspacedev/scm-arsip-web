@@ -1,736 +1,313 @@
 <template>
-  <div class="space-y-4 sm:space-y-6">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Manajemen User
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
-          Kelola akses personel divisi SCM dan Tim Pajak
-        </p>
-      </div>
+  <div class="flex flex-col gap-6">
+    <PageHeader title="Manajemen User" description="Kelola akses personel divisi SCM dan Tim Pajak.">
+      <template #actions>
+        <Button variant="outline" as-child>
+          <router-link to="/permissions">Atur Hak Akses Role</router-link>
+        </Button>
+        <Button @click="openAddModal">Tambah User</Button>
+      </template>
+    </PageHeader>
 
-      <!-- Action: + Tambah User Button & Role Permission Shortcut -->
-      <div class="flex items-center gap-2.5 w-full sm:w-auto">
-        <router-link
-          to="/permissions"
-          class="h-8.5 px-3 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <ShieldCheck class="w-3.5 h-3.5 text-slate-400" />
-          <span>Atur Hak Akses Role</span>
-        </router-link>
-
-        <button
-          type="button"
-          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-          @click="openAddModal"
-        >
-          <Plus class="w-4 h-4" />
-          <span>Tambah User</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Filter Tabs & Stats -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 text-xs">
-      <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px no-scrollbar">
-        <button
-          type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'all' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('all')"
-        >
-          <span>Semua User</span>
-          <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-            {{ allUsers.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'pending' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('pending')"
-        >
-          <span>Menunggu ACC</span>
-          <span
-            class="px-1.5 py-0.5 rounded text-[10px] font-medium"
-            :class="pendingUsers.length > 0 ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'"
-          >
-            {{ pendingUsers.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'approved' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('approved')"
-        >
-          <span>Aktif</span>
-          <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-            {{ approvedUsers.length }}
-          </span>
-        </button>
-      </div>
-
-      <!-- Search Input -->
-      <div class="relative w-full sm:w-64 pb-2">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Cari nama, email, atau no. WA..."
-          class="w-full h-8.5 pl-8.5 pr-3 text-xs rounded-lg border border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-        />
-        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
-      </div>
-    </div>
-
-    <!-- Desktop Users Table (hidden md:block) -->
-    <div class="hidden md:block bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse min-w-[640px]">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              <th class="py-3 px-4">Nama</th>
-              <th class="py-3 px-4">Email</th>
-              <th class="py-3 px-4">No. WhatsApp</th>
-              <th class="py-3 px-4">Peran</th>
-              <th class="py-3 px-4">Dibuat</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-            <tr
-              v-for="user in filteredList"
-              :key="user.id"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
-            >
-              <!-- NAMA -->
-              <td class="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                <div class="flex items-center gap-2.5">
-                  <div
-                    class="w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                  >
-                    {{ getInitials(user.name) }}
-                  </div>
-                  <span class="truncate max-w-[180px] lg:max-w-none">{{ user.name }}</span>
-                </div>
-              </td>
-
-              <!-- EMAIL -->
-              <td class="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-xs">
-                {{ user.email }}
-              </td>
-
-              <!-- NO. WHATSAPP -->
-              <td class="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap font-medium">
-                {{ user.phone || '-' }}
-              </td>
-
-              <!-- PERAN -->
-              <td class="py-3 px-4 whitespace-nowrap">
-                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                  {{ user.role }}
-                </span>
-              </td>
-
-              <!-- DIBUAT -->
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {{ formatDate(user.registered_at) }}
-              </td>
-
-              <!-- STATUS -->
-              <td class="py-3 px-4 whitespace-nowrap">
-                <span class="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    :class="{
-                      'bg-emerald-500': user.status === 'approved',
-                      'bg-amber-500': user.status === 'pending',
-                      'bg-slate-400': user.status === 'rejected'
-                    }"
-                  ></span>
-                  <span>{{ user.status === 'approved' ? 'Aktif' : user.status === 'pending' ? 'Menunggu ACC' : 'Nonaktif' }}</span>
-                </span>
-              </td>
-
-              <!-- AKSI -->
-              <td class="py-3 px-4 text-right whitespace-nowrap">
-                <div class="inline-flex items-center gap-1.5" v-if="user.email !== 'admin@scm.corp'">
-                  <!-- Pending -> ACC -->
-                  <button
-                    v-if="user.status === 'pending'"
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    @click="handleApprove(user)"
-                  >
-                    <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                    <span v-else>ACC</span>
-                  </button>
-
-                  <!-- Active -> Nonaktifkan -->
-                  <button
-                    v-else-if="user.status === 'approved'"
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
-                    @click="handleReject(user)"
-                  >
-                    Nonaktifkan
-                  </button>
-
-                  <!-- Inactive -> Aktifkan -->
-                  <button
-                    v-else
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
-                    @click="handleApprove(user)"
-                  >
-                    Aktifkan
-                  </button>
-
-                  <!-- Edit Icon Button -->
-                  <button
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
-                    @click="openEditModal(user)"
-                    title="Ubah Pengguna"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-
-                  <!-- Trash Delete Icon Button -->
-                  <button
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
-                    @click="promptDelete(user)"
-                    title="Hapus Akun"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <span v-else class="text-[11px] text-slate-400 font-medium">
-                  Super Admin
-                </span>
-              </td>
-            </tr>
-
-            <!-- Empty State Desktop -->
-            <tr v-if="filteredList.length === 0">
-              <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                <Users class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p class="font-medium text-slate-600 dark:text-slate-300">Tidak ada data pengguna yang sesuai.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Mobile Cards View (block md:hidden) -->
-    <div class="block md:hidden space-y-3">
-      <div
-        v-for="user in filteredList"
-        :key="user.id"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 space-y-3 transition-colors"
-      >
-        <!-- Card Top: Avatar, Name, Role & Status -->
-        <div class="flex items-start justify-between gap-2.5">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div
-              class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-            >
-              {{ getInitials(user.name) }}
-            </div>
-            <div class="min-w-0">
-              <h3 class="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate leading-tight">
-                {{ user.name }}
-              </h3>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                  {{ user.role }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Status Badge -->
-          <span class="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium shrink-0">
-            <span
-              class="w-1.5 h-1.5 rounded-full"
-              :class="{
-                'bg-emerald-500': user.status === 'approved',
-                'bg-amber-500': user.status === 'pending',
-                'bg-slate-400': user.status === 'rejected'
-              }"
-            ></span>
-            <span>{{ user.status === 'approved' ? 'Aktif' : user.status === 'pending' ? 'Menunggu' : 'Nonaktif' }}</span>
-          </span>
-        </div>
-
-        <!-- Card Middle: Contact & Info -->
-        <div class="rounded-lg p-2.5 space-y-1.5 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
-          <div class="flex items-center gap-2 truncate">
-            <Mail class="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span class="font-mono text-[11px] truncate select-all text-slate-700 dark:text-slate-300">{{ user.email }}</span>
-          </div>
-
-          <div v-if="user.phone" class="flex items-center gap-2 truncate">
-            <Phone class="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span class="font-mono text-[11px] text-slate-700 dark:text-slate-300">{{ user.phone }}</span>
-          </div>
-
-          <div class="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[10px]">
-            <Calendar class="w-3.5 h-3.5 shrink-0" />
-            <span>Terdaftar: {{ formatDate(user.registered_at) }}</span>
-          </div>
-        </div>
-
-        <!-- Card Bottom: Action Buttons -->
-        <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800">
-          <div v-if="user.email === 'admin@scm.corp'">
-            <span class="text-[11px] text-slate-400 font-medium">
-              Super Admin Sistem
+    <div class="flex flex-col gap-4">
+      <!-- Tab mengikuti ?tab= di URL; submenu sidebar menautkan ke URL yang sama -->
+      <Tabs :model-value="activeFilter" @update:model-value="setActiveFilter">
+        <TabsList aria-label="Saring user menurut status">
+          <TabsTrigger v-for="tab in tabs" :key="tab.value" :value="tab.value">
+            {{ tab.label }}
+            <span :class="['text-xs tabular-nums', tab.attention ? 'text-warning' : 'text-muted-foreground']">
+              {{ formatNumber(tab.count) }}
             </span>
-          </div>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-          <template v-else>
-            <!-- Action Buttons (left aligned: Edit & Delete) -->
-            <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                :disabled="processingId === user.id"
-                class="h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                @click="openEditModal(user)"
-                title="Ubah Pengguna"
-              >
-                <Pencil class="w-3.5 h-3.5" />
-                <span>Ubah</span>
-              </button>
-
-              <button
-                type="button"
-                :disabled="processingId === user.id"
-                class="h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                @click="promptDelete(user)"
-                title="Hapus Akun"
-              >
-                <Trash2 class="w-3.5 h-3.5" />
-                <span>Hapus</span>
-              </button>
-            </div>
-
-            <div class="flex items-center gap-1.5">
-              <!-- Pending -> ACC -->
-              <button
-                v-if="user.status === 'pending'"
-                type="button"
-                :disabled="processingId === user.id"
-                class="h-7 px-3 rounded-md text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                @click="handleApprove(user)"
-              >
-                <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                <Check v-else class="w-3.5 h-3.5" />
-                <span>ACC Akun</span>
-              </button>
-
-              <!-- Active -> Nonaktifkan -->
-              <button
-                v-else-if="user.status === 'approved'"
-                type="button"
-                :disabled="processingId === user.id"
-                class="h-7 px-2.5 rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
-                @click="handleReject(user)"
-              >
-                Nonaktifkan
-              </button>
-
-              <!-- Inactive -> Aktifkan -->
-              <button
-                v-else
-                type="button"
-                :disabled="processingId === user.id"
-                class="h-7 px-3 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
-                @click="handleApprove(user)"
-              >
-                <Check class="w-3.5 h-3.5" />
-                <span>Aktifkan</span>
-              </button>
-            </div>
-          </template>
-        </div>
-      </div>
-
-      <!-- Empty State Mobile -->
-      <div
-        v-if="filteredList.length === 0"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 dark:text-slate-500"
+      <DataTable
+        :columns="columns"
+        :data="filteredList"
+        :loading="loading"
+        :get-row-id="user => String(user.id)"
+        :initial-sorting="initialSorting"
+        :facets="facets"
+        :global-filter-fn="userMatchesSearch"
+        search-placeholder="Cari nama, email, atau no. WA…"
+        row-label="user"
+        row-class="h-16"
+        storage-key="scm_users_kolom_v1"
+        :empty-title="emptyState.title"
+        :empty-description="emptyState.description"
       >
-        <Users class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-        <p class="font-medium text-slate-600 dark:text-slate-300 text-xs">Tidak ada data pengguna yang sesuai.</p>
-      </div>
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-3">
+            <Avatar :initials="getInitials(row.name)" />
+            <div class="min-w-0">
+              <p class="break-words">{{ row.name }}</p>
+              <p class="text-xs break-all text-muted-foreground">{{ row.email || '—' }}</p>
+            </div>
+          </div>
+        </template>
+
+        <template #cell-phone="{ row }">
+          <span v-if="row.phone" class="tabular-nums">{{ row.phone }}</span>
+          <span v-else class="text-muted-foreground">—</span>
+        </template>
+
+        <template #cell-role="{ row }">
+          <div class="flex items-center gap-1.5">
+            <Badge v-if="row.role" variant="secondary">{{ row.role }}</Badge>
+            <span v-else class="text-muted-foreground">—</span>
+            <!-- Akun utama: tidak bisa diubah/dihapus, jadi kolom aksinya kosong -->
+            <Badge v-if="isSuperAdmin(row)" variant="outline">Super Admin</Badge>
+          </div>
+        </template>
+
+        <template #cell-registered_at="{ row }">
+          <span class="tabular-nums">{{ formatTanggal(row.registered_at) }}</span>
+        </template>
+
+        <template #cell-status="{ row }">
+          <Badge :variant="statusOf(row).variant">{{ statusOf(row).label }}</Badge>
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div v-if="!isSuperAdmin(row)" class="flex items-center justify-end gap-2">
+            <!-- Persetujuan tetap satu klik untuk akun yang menunggu ACC -->
+            <Button
+              v-if="row.status === 'pending'"
+              variant="outline"
+              size="sm"
+              :disabled="processingId === row.id"
+              @click="handleApprove(row)"
+            >
+              ACC
+            </Button>
+            <DropdownMenu :modal="false">
+              <DropdownMenuTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :disabled="processingId === row.id"
+                  :aria-label="`Aksi untuk ${row.name}`"
+                >
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-40">
+                <DropdownMenuItem @select="openEditModal(row)">Ubah</DropdownMenuItem>
+                <DropdownMenuItem v-if="row.status === 'pending'" @select="handleReject(row)">Tolak</DropdownMenuItem>
+                <DropdownMenuItem v-else-if="row.status === 'approved'" @select="handleReject(row)">Nonaktifkan</DropdownMenuItem>
+                <DropdownMenuItem v-else @select="handleApprove(row)">Aktifkan</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" @select="promptDelete(row)">Hapus</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </template>
+      </DataTable>
     </div>
 
-    <!-- Modal: + Tambah User Baru -->
-    <Teleport to="body">
-      <div
-        v-if="isAddModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
-        @click.self="isAddModalOpen = false"
-      >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
-          <!-- Modal Header -->
-          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
-            <div>
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Tambah User Baru
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Tambahkan personel internal untuk akses SCM TaxVault
-              </p>
-            </div>
-            <button
-              type="button"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              @click="isAddModalOpen = false"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </div>
+    <!-- Tambah user -->
+    <Dialog
+      v-model:open="isAddModalOpen"
+      title="Tambah User Baru"
+      description="Tambahkan personel internal untuk akses SCM TaxVault."
+      max-width="max-w-lg"
+    >
+      <form id="add-user-form" class="grid gap-4 md:grid-cols-2" @submit.prevent="submitAddUser">
+        <p v-if="addError" role="alert" class="rounded-md bg-destructive/10 px-3 py-2 text-destructive md:col-span-2">
+          {{ addError }}
+        </p>
 
-          <!-- Form Body -->
-          <form @submit.prevent="submitAddUser" class="p-5 sm:p-6 space-y-3.5 overflow-y-auto flex-1 text-xs">
-            <div
-              v-if="addError"
-              class="p-2.5 rounded-lg bg-red-50 dark:bg-rose-950/60 border border-red-200 dark:border-rose-900 text-xs text-red-700 dark:text-rose-300 flex items-center gap-2"
-            >
-              <AlertCircle class="w-4 h-4 shrink-0" />
-              <span>{{ addError }}</span>
-            </div>
+        <FormField label="Nama Lengkap" for="add-user-name" required class="md:col-span-2">
+          <Input id="add-user-name" v-model="addForm.name" type="text" placeholder="Contoh: Budi Santoso" required />
+        </FormField>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                Nama Lengkap <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="addForm.name"
-                type="text"
-                placeholder="Contoh: Budi Santoso"
-                required
-                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
-              />
-            </div>
+        <FormField label="Email" for="add-user-email" required>
+          <Input id="add-user-email" v-model="addForm.email" type="email" placeholder="nama@perusahaan.com" required />
+        </FormField>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Email <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="addForm.email"
-                  type="email"
-                  placeholder="nama@perusahaan.com"
-                  required
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono"
-                />
-              </div>
+        <FormField label="Nomor WhatsApp" for="add-user-phone">
+          <Input id="add-user-phone" v-model="addForm.phone" type="text" placeholder="081234567890" class="tabular-nums" />
+        </FormField>
 
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Nomor WhatsApp
-                </label>
-                <input
-                  v-model="addForm.phone"
-                  type="text"
-                  placeholder="081234567890"
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono"
-                />
-              </div>
-            </div>
+        <FormField label="Peran / Role" for="add-user-role" required>
+          <NativeSelect id="add-user-role" v-model="addForm.role" required>
+            <option v-for="role in ROLE_OPTIONS" :key="role" :value="role">{{ role }}</option>
+          </NativeSelect>
+        </FormField>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                Peran / Role <span class="text-red-500">*</span>
-              </label>
-              <select
-                v-model="addForm.role"
-                required
-                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
-              >
-                <option value="Admin SCM">Admin SCM</option>
-                <option value="Staff Gudang">Staff Gudang</option>
-                <option value="Staff Finance">Staff Finance</option>
-                <option value="Staff SCM">Staff SCM</option>
-              </select>
-            </div>
+        <FormField label="Kata Sandi" for="add-user-password" required>
+          <Input
+            id="add-user-password"
+            v-model="addForm.password"
+            type="password"
+            placeholder="Minimal 6 karakter"
+            autocomplete="new-password"
+            minlength="6"
+            required
+          />
+        </FormField>
+      </form>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                Kata Sandi <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="addForm.password"
-                type="password"
-                placeholder="Minimal 6 karakter"
-                required
-                minlength="6"
-                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
-              />
-            </div>
+      <template #footer>
+        <Button type="button" variant="outline" @click="isAddModalOpen = false">Batal</Button>
+        <Button type="submit" form="add-user-form" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Menyimpan…' : 'Simpan & Buat Akun' }}
+        </Button>
+      </template>
+    </Dialog>
 
-            <!-- Footer Buttons -->
-            <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
-              <button
-                type="button"
-                class="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                @click="isAddModalOpen = false"
-              >
-                Batal
-              </button>
+    <!-- Ubah user -->
+    <Dialog
+      v-model:open="isEditModalOpen"
+      title="Ubah Data Pengguna"
+      description="Perbarui informasi akun, hak akses, dan status pengguna."
+      max-width="max-w-lg"
+    >
+      <form id="edit-user-form" class="grid gap-4 md:grid-cols-2" @submit.prevent="submitEditUser">
+        <p v-if="editError" role="alert" class="rounded-md bg-destructive/10 px-3 py-2 text-destructive md:col-span-2">
+          {{ editError }}
+        </p>
 
-              <button
-                type="submit"
-                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                :disabled="isSubmitting"
-              >
-                <span v-if="isSubmitting" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                <span v-else>Simpan & Buat Akun</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+        <FormField label="Nama Lengkap" for="edit-user-name" required class="md:col-span-2">
+          <Input id="edit-user-name" v-model="editForm.name" type="text" required />
+        </FormField>
 
-    <!-- Modal: Ubah User -->
-    <Teleport to="body">
-      <div
-        v-if="isEditModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
-        @click.self="isEditModalOpen = false"
-      >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
-          <!-- Modal Header -->
-          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
-            <div>
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Ubah Data Pengguna
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Perbarui informasi akun, hak akses, dan status pengguna
-              </p>
-            </div>
-            <button
-              type="button"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              @click="isEditModalOpen = false"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </div>
+        <FormField label="Email" for="edit-user-email" required>
+          <Input id="edit-user-email" v-model="editForm.email" type="email" required />
+        </FormField>
 
-          <!-- Form Body -->
-          <form @submit.prevent="submitEditUser" class="p-5 sm:p-6 space-y-3.5 overflow-y-auto flex-1 text-xs">
-            <div
-              v-if="editError"
-              class="p-2.5 rounded-lg bg-red-50 dark:bg-rose-950/60 border border-red-200 dark:border-rose-900 text-xs text-red-700 dark:text-rose-300 flex items-center gap-2"
-            >
-              <AlertCircle class="w-4 h-4 shrink-0" />
-              <span>{{ editError }}</span>
-            </div>
+        <FormField label="Nomor WhatsApp" for="edit-user-phone">
+          <Input id="edit-user-phone" v-model="editForm.phone" type="text" placeholder="081234567890" class="tabular-nums" />
+        </FormField>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                Nama Lengkap <span class="text-red-500">*</span>
-              </label>
-              <input
-                v-model="editForm.name"
-                type="text"
-                required
-                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors"
-              />
-            </div>
+        <FormField label="Peran / Role" for="edit-user-role" required>
+          <NativeSelect id="edit-user-role" v-model="editForm.role" required>
+            <option v-for="role in ROLE_OPTIONS" :key="role" :value="role">{{ role }}</option>
+          </NativeSelect>
+        </FormField>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Email <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="editForm.email"
-                  type="email"
-                  required
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors font-mono"
-                />
-              </div>
+        <FormField label="Status Akun" for="edit-user-status" required>
+          <NativeSelect id="edit-user-status" v-model="editForm.status" required>
+            <option value="approved">Aktif (Approved)</option>
+            <option value="pending">Menunggu ACC (Pending)</option>
+            <option value="rejected">Nonaktif (Rejected)</option>
+          </NativeSelect>
+        </FormField>
 
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Nomor WhatsApp
-                </label>
-                <input
-                  v-model="editForm.phone"
-                  type="text"
-                  placeholder="081234567890"
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors font-mono"
-                />
-              </div>
-            </div>
+        <FormField
+          label="Ganti Kata Sandi (Opsional)"
+          for="edit-user-password"
+          helper="Minimal 6 karakter."
+          class="md:col-span-2"
+        >
+          <Input
+            id="edit-user-password"
+            v-model="editForm.password"
+            type="password"
+            placeholder="Kosongkan jika tidak ingin mengubah sandi"
+            autocomplete="new-password"
+            minlength="6"
+          />
+        </FormField>
+      </form>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Peran / Role <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="editForm.role"
-                  required
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
-                >
-                  <option value="Admin SCM">Admin SCM</option>
-                  <option value="Staff Gudang">Staff Gudang</option>
-                  <option value="Staff Finance">Staff Finance</option>
-                  <option value="Staff SCM">Staff SCM</option>
-                </select>
-              </div>
+      <template #footer>
+        <Button type="button" variant="outline" :disabled="isEditing" @click="isEditModalOpen = false">Batal</Button>
+        <Button type="submit" form="edit-user-form" :disabled="isEditing">
+          {{ isEditing ? 'Menyimpan…' : 'Simpan Perubahan' }}
+        </Button>
+      </template>
+    </Dialog>
 
-              <div class="space-y-1">
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Status Akun <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="editForm.status"
-                  required
-                  class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
-                >
-                  <option value="approved">Aktif (Approved)</option>
-                  <option value="pending">Menunggu ACC (Pending)</option>
-                  <option value="rejected">Nonaktif (Rejected)</option>
-                </select>
-              </div>
-            </div>
+    <!-- Konfirmasi hapus -->
+    <AlertDialog :open="Boolean(userToDelete)" @update:open="open => !open && (userToDelete = null)">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus akun pengguna?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus akun
+            <span class="font-medium text-foreground">{{ deleteDisplay?.name }}</span>? Data yang dihapus tidak dapat dipulihkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                Ganti Kata Sandi (Opsional)
-              </label>
-              <input
-                v-model="editForm.password"
-                type="password"
-                placeholder="Kosongkan jika tidak ingin mengubah sandi"
-                minlength="6"
-                class="w-full h-8.5 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500"
-              />
-            </div>
+        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-lg border p-3 text-sm">
+          <dt class="text-muted-foreground">Email</dt>
+          <dd class="truncate" :title="deleteDisplay?.email">{{ deleteDisplay?.email || '—' }}</dd>
+          <dt class="text-muted-foreground">Peran</dt>
+          <dd class="truncate">{{ deleteDisplay?.role || '—' }}</dd>
+        </dl>
 
-            <!-- Footer Buttons -->
-            <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
-              <button
-                type="button"
-                :disabled="isEditing"
-                class="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
-                @click="isEditModalOpen = false"
-              >
-                Batal
-              </button>
-
-              <button
-                type="submit"
-                class="px-4 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-60 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                :disabled="isEditing"
-              >
-                <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                <span v-else>Simpan Perubahan</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Custom In-App Confirmation Modal for Delete -->
-    <Teleport to="body">
-      <div
-        v-if="userToDelete"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
-        @click.self="userToDelete = null"
-      >
-        <div class="w-full max-w-sm bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto">
-            <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
-          </div>
-
-          <div class="space-y-1">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Hapus Akun Pengguna?
-            </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
-              Apakah Anda yakin ingin menghapus akun <strong class="text-slate-800 dark:text-slate-200">{{ userToDelete.name }}</strong>?
-            </p>
-          </div>
-
-          <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 text-left text-xs space-y-1 text-slate-600 dark:text-slate-300">
-            <div class="flex justify-between">
-              <span class="text-slate-500 dark:text-slate-400">Email:</span>
-              <span class="font-mono text-slate-800 dark:text-slate-200 text-[11px] truncate max-w-[180px]">{{ userToDelete.email }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-500 dark:text-slate-400">Peran:</span>
-              <span class="font-medium text-slate-800 dark:text-slate-200">{{ userToDelete.role }}</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2.5 pt-1">
-            <button
-              type="button"
-              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer"
-              @click="userToDelete = null"
-              :disabled="processingId === userToDelete.id"
-            >
-              Batal
-            </button>
-
-            <button
-              type="button"
-              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-              @click="confirmDelete"
-              :disabled="processingId === userToDelete.id"
-            >
-              <span v-if="processingId === userToDelete.id" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span v-else>Ya, Hapus</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isDeleting">Batal</AlertDialogCancel>
+          <!-- Tombol biasa (bukan AlertDialogAction) supaya dialog tetap terbuka selama proses hapus -->
+          <Button variant="destructive" :disabled="isDeleting" @click="confirmDelete">
+            {{ isDeleting ? 'Menghapus…' : 'Ya, Hapus' }}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Plus, Search, Trash2, X, AlertCircle, Users, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil, ShieldCheck } from 'lucide-vue-next';
+import { MoreHorizontal } from 'lucide-vue-next';
+import DataTable from '@/components/data-table/DataTable.vue';
+import { inSelection } from '@/components/data-table/utils';
+import PageHeader from '@/components/layout/PageHeader.vue';
+import Dialog from '@/components/ui/Dialog.vue';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatNumber, formatTanggal, parseDate } from '@/lib/format';
 import { useTaxStore } from '../store/taxStore';
 
 const route = useRoute();
 const router = useRouter();
 const store = useTaxStore();
 
-onMounted(() => {
+const allUsers = computed(() => store.allUsers.value);
+const pendingUsers = computed(() => store.pendingUsers.value);
+const approvedUsers = computed(() => allUsers.value.filter(u => u.status === 'approved'));
+
+// Skeleton hanya saat belum ada data sama sekali dan daftar user sedang diambil
+const loading = ref(false);
+
+onMounted(async () => {
   const role = store.currentUser.value?.role || '';
   const isAdmin = role === 'Admin SCM' || role.toLowerCase().includes('admin');
   if (!isAdmin) {
     router.replace('/dashboard');
     return;
   }
-  store.fetchUsers();
+  loading.value = allUsers.value.length === 0;
+  try {
+    await store.fetchUsers();
+  } finally {
+    loading.value = false;
+  }
 });
 
 const activeFilter = ref('all');
@@ -760,7 +337,6 @@ function setActiveFilter(tab) {
     }
   });
 }
-const searchQuery = ref('');
 const processingId = ref(null);
 const userToDelete = ref(null);
 
@@ -790,10 +366,7 @@ const editForm = reactive({
   password: ''
 });
 
-const allUsers = computed(() => store.allUsers.value);
-const pendingUsers = computed(() => store.pendingUsers.value);
-const approvedUsers = computed(() => allUsers.value.filter(u => u.status === 'approved'));
-
+// Daftar sesuai tab. Pencarian (nama, email, no. WA, peran) & filter peran ada di toolbar tabel.
 const filteredList = computed(() => {
   let list = allUsers.value;
 
@@ -803,22 +376,107 @@ const filteredList = computed(() => {
     list = list.filter(u => u.status === 'approved');
   }
 
-  const query = searchQuery.value.trim().toLowerCase();
-  if (query) {
-    list = list.filter(u =>
-      (u.name && u.name.toLowerCase().includes(query)) ||
-      (u.email && u.email.toLowerCase().includes(query)) ||
-      (u.phone && u.phone.includes(query)) ||
-      (u.role && u.role.toLowerCase().includes(query))
-    );
-  }
-
   return list;
 });
 
-function getAvatarColorClass(role) {
-  return 'bg-slate-100 text-slate-700 border border-slate-200';
+// ---- Tampilan ----
+
+const ROLE_OPTIONS = ['Admin SCM', 'Staff Gudang', 'Staff Finance', 'Staff SCM'];
+const SUPER_ADMIN_EMAIL = 'admin@scm.corp';
+const isSuperAdmin = user => user.email === SUPER_ADMIN_EMAIL;
+
+// Label status sama seperti sebelumnya; status lain dianggap nonaktif
+const STATUS = {
+  approved: { label: 'Aktif', variant: 'success' },
+  pending: { label: 'Menunggu ACC', variant: 'warning' },
+  rejected: { label: 'Nonaktif', variant: 'destructive' },
+};
+const statusOf = user => STATUS[user.status] || STATUS.rejected;
+
+const tabs = computed(() => [
+  { value: 'all', label: 'Semua User', count: allUsers.value.length },
+  { value: 'pending', label: 'Menunggu ACC', count: pendingUsers.value.length, attention: pendingUsers.value.length > 0 },
+  { value: 'approved', label: 'Aktif', count: approvedUsers.value.length },
+]);
+
+// Urutan bawaan sama dengan urutan dari server (terbaru dulu)
+const initialSorting = [{ id: 'registered_at', desc: true }];
+
+const columns = [
+  {
+    id: 'name',
+    accessorFn: user => user.name || '',
+    sortingFn: 'text',
+    enableHiding: false,
+    // Tanpa w-full: sisa lebar dibagi rata ke semua kolom, jadi tidak ada celah besar setelah nama
+    meta: { label: 'Nama', cellClass: 'min-w-[240px]' },
+  },
+  {
+    id: 'phone',
+    accessorFn: user => user.phone || '',
+    enableSorting: false,
+    meta: { label: 'No. WhatsApp' },
+  },
+  {
+    id: 'role',
+    accessorFn: user => user.role || '',
+    sortingFn: 'text',
+    filterFn: inSelection,
+    meta: { label: 'Peran' },
+  },
+  {
+    id: 'registered_at',
+    accessorFn: user => parseDate(user.registered_at)?.getTime() || 0,
+    sortDescFirst: true,
+    meta: { label: 'Terdaftar' },
+  },
+  {
+    id: 'status',
+    accessorFn: user => user.status || '',
+    meta: { label: 'Status' },
+  },
+  {
+    id: 'actions',
+    enableSorting: false,
+    enableHiding: false,
+    meta: { label: 'Aksi', srOnlyHeader: true, align: 'right', sticky: 'right', cellClass: 'w-12' },
+  },
+];
+
+const facets = [{ column: 'role', title: 'Peran' }];
+
+// Pencarian sama seperti sebelumnya: nama, email, no. WhatsApp, atau peran
+function userMatchesSearch(row, _columnId, value) {
+  const query = String(value || '').trim().toLowerCase();
+  if (!query) return true;
+  const u = row.original;
+  return Boolean(
+    (u.name && u.name.toLowerCase().includes(query)) ||
+    (u.email && u.email.toLowerCase().includes(query)) ||
+    (u.phone && String(u.phone).includes(query)) ||
+    (u.role && u.role.toLowerCase().includes(query))
+  );
 }
+
+const emptyState = computed(() => {
+  if (filteredList.value.length) {
+    return { title: 'Tidak ada data pengguna yang sesuai', description: 'Coba ubah kata kunci pencarian atau filter.' };
+  }
+  if (activeFilter.value === 'pending') {
+    return { title: 'Tidak ada pengajuan tertunda', description: 'Semua pendaftaran akun baru telah diverifikasi dan diproses.' };
+  }
+  if (activeFilter.value === 'approved') {
+    return { title: 'Belum ada user aktif', description: 'User yang sudah di-ACC akan tampil di sini.' };
+  }
+  return { title: 'Belum ada user', description: 'Tambahkan user baru lewat tombol Tambah User.' };
+});
+
+// Isi dialog hapus tetap terlihat selama animasi menutup
+const deleteDisplay = ref(null);
+watch(userToDelete, user => {
+  if (user) deleteDisplay.value = user;
+});
+const isDeleting = computed(() => Boolean(userToDelete.value) && processingId.value === userToDelete.value.id);
 
 function getInitials(name) {
   if (!name) return 'U';
@@ -827,31 +485,7 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getRoleBadgeClass(role) {
-  const r = (role || '').toLowerCase();
-  if (r.includes('admin')) {
-    return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800';
-  }
-  if (r.includes('gudang')) {
-    return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
-  }
-  if (r.includes('finance') || r.includes('pajak')) {
-    return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
-  }
-  return 'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800';
-}
-
-function formatDate(dateStr) {
-  if (!dateStr || dateStr === '-') return '-';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-  } catch (e) {
-    return dateStr;
-  }
-}
+// ---- Aksi (tidak berubah) ----
 
 async function handleApprove(user) {
   if (processingId.value) return;

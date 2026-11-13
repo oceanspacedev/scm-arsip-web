@@ -1,469 +1,345 @@
 <template>
-  <div v-if="program" class="space-y-6 select-none max-w-7xl mx-auto pb-10">
-    <!-- Judul, ringkasan, dan status -->
-    <div>
-      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-        {{ program.program_name }}
-      </h1>
-      <p v-if="canViewMasterColumns" class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        {{ program.supplier }} · {{ program.category }} · {{ program.brand || getProgramBrand(program) }}
-      </p>
-      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-xs text-slate-500 dark:text-slate-400">
-        <span class="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-          <span
-            class="w-1.5 h-1.5 rounded-full"
-            :class="{
-              'bg-emerald-600': completeness.count === 3,
-              'bg-amber-500': completeness.count > 0 && completeness.count < 3,
-              'bg-slate-400': completeness.count === 0
-            }"
-          ></span>
-          {{ statusBadgeText }}
-        </span>
-        <span class="text-slate-300 dark:text-slate-600">·</span>
-        <span>Diarsipkan oleh {{ uploaderName }} · diperbarui {{ formatDate(program.program_date) }}</span>
-      </div>
-    </div>
+  <div v-if="program" class="flex flex-col gap-6">
+    <PageHeader :title="program.program_name" :description="headerDescription">
+      <template #actions>
+        <Badge :variant="completenessVariant">{{ statusBadgeText }}</Badge>
+      </template>
+    </PageHeader>
 
-    <!-- Dokumen: tiga kartu berjejer -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <section
-        v-for="cat in documentCategories"
-        :key="cat.type"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col"
-      >
-        <div class="flex items-center justify-between gap-3 mb-3 min-h-[28px]">
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+    <!-- Dokumen: tiga kartu berjejer (Invoice | Faktur Pajak | Memo/DO), bertumpuk di layar sempit -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <Card v-for="cat in documentCategories" :key="cat.type" class="flex min-w-0 flex-col">
+        <CardHeader class="flex-row items-center justify-between gap-3 p-5 pb-3">
+          <!-- Tinggi minimum setinggi tombol, supaya isi ketiga kartu sejajar walau tombol Tambah tidak tampil -->
+          <CardTitle class="flex min-h-8 items-center gap-2">
             {{ cat.label }}
-            <span v-if="getDocs(cat.type).length > 0" class="ml-1 text-xs font-normal text-slate-400 dark:text-slate-500 tabular-nums">
+            <span v-if="getDocs(cat.type).length > 0" class="font-normal tabular-nums text-muted-foreground">
               {{ getDocs(cat.type).length }}
             </span>
-          </h3>
-          <button
+          </CardTitle>
+          <Button
             v-if="getDocs(cat.type).length > 0 && canUploadDoc(cat.type)"
-            type="button"
-            class="px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            variant="outline"
+            size="sm"
             title="Unggah berkas tambahan"
             @click="openUpload(cat.type, cat.label)"
           >
             Tambah
-          </button>
-        </div>
+          </Button>
+        </CardHeader>
 
-        <!-- Daftar berkas -->
-        <ul v-if="getDocs(cat.type).length > 0" class="-mx-2 max-h-[208px] overflow-y-auto">
-          <li
-            v-for="(doc, dIdx) in getDocs(cat.type)"
-            :key="doc.id || doc.file_name || dIdx"
-            class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+        <CardContent class="@container flex flex-1 flex-col p-5 pt-0">
+          <!-- Daftar berkas: aksi di kanan bila kartu cukup lebar, di bawah nama berkas bila sempit -->
+          <ul v-if="getDocs(cat.type).length > 0" class="-mx-2 max-h-52 divide-y overflow-y-auto px-2">
+            <li
+              v-for="(doc, dIdx) in getDocs(cat.type)"
+              :key="doc.id || doc.file_name || dIdx"
+              class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0 @xs:flex-row @xs:items-center @xs:gap-3"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="line-clamp-2 text-sm font-medium break-words" :title="doc.file_name">{{ doc.file_name }}</p>
+                <p class="truncate text-xs tabular-nums text-muted-foreground">{{ docMeta(doc) }}</p>
+              </div>
+              <div class="-ml-2 flex shrink-0 items-center @xs:-mr-2 @xs:ml-0">
+                <Button variant="ghost" size="sm" class="px-2 text-muted-foreground" @click="openPreviewDoc(doc)">
+                  Lihat
+                </Button>
+                <Button variant="ghost" size="sm" class="px-2 text-muted-foreground" @click="downloadDocItem(doc)">
+                  Unduh
+                </Button>
+                <Button
+                  v-if="canDeleteDoc(cat.type)"
+                  variant="ghost"
+                  size="sm"
+                  class="px-2 text-muted-foreground hover:text-destructive"
+                  @click="deleteDocItem(doc, cat.label)"
+                >
+                  Hapus
+                </Button>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Belum ada berkas: area unggah, atau keterangan bila tidak berhak mengunggah -->
+          <button
+            v-else-if="canUploadDoc(cat.type)"
+            type="button"
+            class="flex min-h-24 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center transition-colors outline-none hover:border-ring hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            @click="openUpload(cat.type, cat.label)"
           >
-            <div class="min-w-0 flex-1">
-              <p class="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
-                {{ doc.file_name }}
-              </p>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
-                {{ formatUploadDate(doc.uploaded_at || program.program_date) }}
-              </p>
-            </div>
-            <div class="flex items-center shrink-0">
-              <button
-                type="button"
-                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
-                title="Pratinjau berkas"
-                @click="openPreviewDoc(doc)"
-              >
-                <Eye class="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
-                title="Unduh berkas"
-                @click="downloadDocItem(doc)"
-              >
-                <Download class="w-4 h-4" />
-              </button>
-              <button
-                v-if="canDeleteDoc(cat.type)"
-                type="button"
-                class="p-1.5 rounded-md text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                title="Hapus berkas ini"
-                @click="deleteDocItem(doc, cat.label)"
-              >
-                <Trash2 class="w-4 h-4" />
-              </button>
-            </div>
-          </li>
-        </ul>
-
-        <!-- Belum ada berkas: area unggah, atau keterangan bila tidak berhak mengunggah -->
-        <button
-          v-else-if="canUploadDoc(cat.type)"
-          type="button"
-          class="flex-1 min-h-[96px] rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors flex flex-col items-center justify-center gap-1 cursor-pointer"
-          @click="openUpload(cat.type, cat.label)"
-        >
-          <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Unggah {{ cat.label }}</span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG · maks. 15 MB</span>
-        </button>
-        <div
-          v-else
-          class="flex-1 min-h-[96px] rounded-lg border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-1 px-3 text-center"
-        >
-          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Belum ada berkas</span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-500">
-            {{ cat.type === 'mou' ? 'Diunggah oleh Tim Gudang / SCM' : 'Diunggah oleh Tim Finance / SCM' }}
-          </span>
-        </div>
-      </section>
+            <span class="text-sm font-medium">Unggah {{ cat.label }}</span>
+            <span class="text-xs text-muted-foreground">PDF, JPG, PNG · maks. 15 MB</span>
+          </button>
+          <div
+            v-else
+            class="flex min-h-24 flex-1 flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center"
+          >
+            <span class="text-sm text-muted-foreground">Belum ada berkas</span>
+            <span class="text-xs text-muted-foreground">
+              {{ cat.type === 'mou' ? 'Diunggah oleh Tim Gudang / SCM' : 'Diunggah oleh Tim Finance / SCM' }}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- Rincian: nilai & perpajakan, serta data program -->
     <div
       v-if="canViewFinanceColumns || canViewMasterColumns"
       class="grid grid-cols-1 gap-4"
-      :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
+      :class="canViewFinanceColumns && canViewMasterColumns && 'lg:grid-cols-2'"
     >
-      <section v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col">
-        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai & Perpajakan</h3>
+      <Card v-if="canViewFinanceColumns" class="flex min-w-0 flex-col">
+        <CardHeader class="p-5 pb-4">
+          <CardTitle>Nilai & Perpajakan</CardTitle>
+        </CardHeader>
+        <CardContent class="@container flex flex-1 flex-col p-5 pt-0">
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-4 @lg:grid-cols-3 @4xl:grid-cols-6">
+            <div v-for="field in invoiceFields" :key="field.label" class="min-w-0">
+              <dt class="text-xs text-muted-foreground">{{ field.label }}</dt>
+              <dd class="mt-1 text-sm tabular-nums break-words">{{ field.value || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-xs text-muted-foreground">Status Payment</dt>
+              <dd class="mt-1">
+                <Select
+                  v-if="canEditFinance || isAdmin"
+                  :model-value="normalizePayStatus(program.payment_status)"
+                  @update:model-value="handlePaymentStatusChange"
+                >
+                  <SelectTrigger size="sm" class="w-full max-w-48" aria-label="Ubah status payment">
+                    <SelectValue v-slot="{ selectedLabel }" class="min-w-0 truncate">
+                      {{ selectedLabel.length ? selectedLabel.join(', ') : formatPaymentStatus(program.payment_status) }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge v-else :variant="paymentBadgeVariant(program.payment_status)">
+                  {{ formatPaymentStatus(program.payment_status) }}
+                </Badge>
+              </dd>
+            </div>
+          </dl>
 
-        <dl class="px-5 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
-          <div v-for="field in invoiceFields" :key="field.label" class="min-w-0">
-            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
-            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
-          </div>
-        </dl>
-
-        <dl class="mx-5 mt-5 border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-          <div v-for="row in amountRows" :key="row.label" class="py-2 flex items-center justify-between text-xs">
-            <dt class="text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
-            <dd class="font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(row.value) }}</dd>
-          </div>
-        </dl>
-
-        <div class="mt-auto px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xs font-medium text-slate-700 dark:text-slate-300" title="DPP + PPN (termasuk pajak)">Total Payment</span>
-            <div class="relative inline-flex items-center group">
-              <span
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors select-none"
-                :class="[
-                  getPaymentBadgeClass(program.payment_status),
-                  (!canEditFinance && !isAdmin) ? 'opacity-85' : ''
-                ]"
-              >
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
-                <span>{{ formatPaymentStatus(program.payment_status) }}</span>
-                <ChevronDown v-if="canEditFinance || isAdmin" class="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
-              </span>
-              <select
-                :value="normalizePayStatus(program.payment_status)"
-                :disabled="!canEditFinance && !isAdmin"
-                @change="handlePaymentStatusChange($event.target.value)"
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-                title="Ubah Status Payment"
-              >
-                <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
+          <div class="mt-auto pt-5">
+            <dl class="divide-y border-y text-sm">
+              <div v-for="row in amountRows" :key="row.label" class="flex items-center justify-between gap-4 py-2">
+                <dt class="text-muted-foreground">{{ row.label }}</dt>
+                <dd class="tabular-nums">{{ formatRupiah(row.value) }}</dd>
+              </div>
+            </dl>
+            <div class="flex items-center justify-between gap-4 pt-4">
+              <span class="text-sm font-medium" title="DPP + PPN (termasuk pajak)">Total Payment</span>
+              <span class="text-base font-semibold tabular-nums">{{ formatRupiah(program.total_invoice) }}</span>
             </div>
           </div>
-          <span class="text-base font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-            {{ formatRupiah(program.total_invoice) }}
-          </span>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
-        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Data Program & Supplier</h3>
-
-        <dl class="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
-          <div v-for="field in programFields" :key="field.label" class="min-w-0">
-            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
-            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
-          </div>
-        </dl>
-      </section>
+      <Card v-if="canViewMasterColumns" class="min-w-0">
+        <CardHeader class="p-5 pb-4">
+          <CardTitle>Data Program & Supplier</CardTitle>
+        </CardHeader>
+        <CardContent class="@container p-5 pt-0">
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-4 @3xl:grid-cols-3">
+            <div v-for="field in programFields" :key="field.label" class="min-w-0">
+              <dt class="text-xs text-muted-foreground">{{ field.label }}</dt>
+              <dd class="mt-1 text-sm break-words" :class="{ 'tabular-nums': field.numeric }">{{ field.value || '—' }}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
     </div>
 
-    <!-- Edit Program Modal -->
-    <div
-      v-if="isEditModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+    <!-- Ubah data program -->
+    <Dialog
+      v-model:open="isEditModalOpen"
+      title="Ubah Data Program"
+      :description="`Wewenang: ${store.currentUser.value?.role || 'Pengguna'}`"
+      max-width="max-w-xl"
     >
-      <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs" @click="isEditModalOpen = false"></div>
-      <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Ubah Data Program</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Wewenang: {{ store.currentUser.value?.role || 'Pengguna' }}</p>
+      <form :id="EDIT_FORM_ID" class="flex flex-col gap-6" @submit.prevent="saveEditProgram">
+        <!-- Data Purchase & Vendor -->
+        <section class="flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-base font-semibold">Data Purchase & Pengadaan</h3>
+            <span v-if="!canEditPurchase" class="text-xs text-muted-foreground">Hanya baca</span>
           </div>
-          <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" @click="isEditModalOpen = false">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
 
-        <form @submit.prevent="saveEditProgram" class="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
-          <!-- Section 1: Data Purchase & Vendor -->
-          <div class="space-y-3">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Purchase & Pengadaan</span>
-              <span v-if="!canEditPurchase" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
-            </div>
+          <FormField label="Nama Program" for="detail-edit-name">
+            <Input id="detail-edit-name" v-model="editForm.program_name" type="text" required :disabled="!canEditPurchase" />
+          </FormField>
 
-            <div>
-              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Program</label>
-              <input
-                v-model="editForm.program_name"
-                type="text"
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Nama Supplier" for="detail-edit-supplier">
+              <NativeSelect
+                id="detail-edit-supplier"
+                v-model="editForm.supplier"
                 required
                 :disabled="!canEditPurchase"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Supplier</label>
-                <select
-                  v-model="editForm.supplier"
-                  required
-                  @change="onEditSupplierChange"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
-                    {{ s.name }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">NPWP Supplier</label>
-                <input
-                  v-model="editForm.npwp"
-                  type="text"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-                <select
-                  v-model="editForm.company_name"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="c in availableCompanies" :key="c" :value="c">
-                    {{ c }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. PO / SJ</label>
-                <input
-                  v-model="editForm.po_sj_number"
-                  type="text"
-                  placeholder="PO/SCM/2026/001"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
-                <select
-                  v-model="editForm.category"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="cat in availableCategories" :key="cat" :value="cat">
-                    {{ cat }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
-                <select
-                  v-model="editForm.brand"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="b in availableBrands" :key="b" :value="b">
-                    {{ b }}
-                  </option>
-                </select>
-              </div>
-            </div>
+                @change="onEditSupplierChange"
+              >
+                <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">{{ s.name }}</option>
+              </NativeSelect>
+            </FormField>
+            <FormField label="NPWP Supplier" for="detail-edit-npwp">
+              <Input id="detail-edit-npwp" v-model="editForm.npwp" type="text" class="tabular-nums" :disabled="!canEditPurchase" />
+            </FormField>
           </div>
 
-          <!-- Section 2: Data Nilai & Perpajakan -->
-          <div class="space-y-3 pt-2">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Nilai & Faktur Pajak</span>
-              <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
-            </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Company Name" for="detail-edit-company">
+              <NativeSelect id="detail-edit-company" v-model="editForm.company_name" :disabled="!canEditPurchase">
+                <option v-for="c in availableCompanies" :key="c" :value="c">{{ c }}</option>
+              </NativeSelect>
+            </FormField>
+            <FormField label="No. PO / SJ" for="detail-edit-posj">
+              <Input
+                id="detail-edit-posj"
+                v-model="editForm.po_sj_number"
+                type="text"
+                placeholder="PO/SCM/2026/001"
+                class="tabular-nums"
+                :disabled="!canEditPurchase"
+              />
+            </FormField>
+          </div>
 
-            <!-- No. Invoice & Status Payment -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
-                <input
-                  v-model="editForm.invoice_number"
-                  type="text"
-                  placeholder="Contoh: INV/2026/001"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
-                <select
-                  :value="normalizePayStatus(editForm.payment_status)"
-                  @change="editForm.payment_status = $event.target.value"
-                  :disabled="!canEditFinance && !isAdmin"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Kategori" for="detail-edit-category">
+              <NativeSelect id="detail-edit-category" v-model="editForm.category" :disabled="!canEditPurchase">
+                <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Brand" for="detail-edit-brand">
+              <NativeSelect id="detail-edit-brand" v-model="editForm.brand" :disabled="!canEditPurchase">
+                <option v-for="b in availableBrands" :key="b" :value="b">{{ b }}</option>
+              </NativeSelect>
+            </FormField>
+          </div>
+        </section>
 
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai DPP (IDR)</label>
-                <input
-                  v-model.number="editForm.dpp"
-                  type="number"
-                  required
-                  :disabled="!canEditFinance"
-                  @input="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tarif PPN</label>
-                <select
-                  v-model="editForm.ppn_rate"
-                  :disabled="!canEditFinance"
-                  @change="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option value="0.11">11% (Standar)</option>
-                  <option value="0.12">12%</option>
-                  <option value="0">0% (Non-PPN)</option>
-                </select>
-                <p v-if="editForm.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">Non-PPN (0%)</p>
-                <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">PPN {{ Number(editForm.ppn_rate) * 100 }}%</p>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPN (IDR)</label>
-                <input
-                  :value="editForm.ppn"
-                  type="number"
-                  readonly
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-not-allowed"
-                />
-              </div>
-            </div>
-            <!-- Total Invoice -->
-            <div>
-              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice (IDR)</label>
-              <input
-                :value="editForm.dpp + editForm.ppn"
+        <!-- Data Nilai & Perpajakan -->
+        <section class="flex flex-col gap-4 border-t pt-6">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-base font-semibold">Data Nilai & Faktur Pajak</h3>
+            <span v-if="!canEditFinance" class="text-xs text-muted-foreground">Hanya baca</span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="No. Invoice" for="detail-edit-invoice">
+              <Input
+                id="detail-edit-invoice"
+                v-model="editForm.invoice_number"
+                type="text"
+                placeholder="Contoh: INV/2026/001"
+                class="tabular-nums"
+                :disabled="!canEditFinance"
+              />
+            </FormField>
+            <FormField label="Status Payment" for="detail-edit-payment">
+              <NativeSelect
+                id="detail-edit-payment"
+                :model-value="normalizePayStatus(editForm.payment_status)"
+                :disabled="!canEditFinance && !isAdmin"
+                @change="editForm.payment_status = $event.target.value"
+              >
+                <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </NativeSelect>
+            </FormField>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <FormField label="Nilai DPP (IDR)" for="detail-edit-dpp">
+              <!-- Hitung ulang setelah nilai DPP tersimpan ke form -->
+              <Input
+                id="detail-edit-dpp"
+                v-model.number="editForm.dpp"
                 type="number"
-                readonly
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
+                required
+                class="tabular-nums"
+                :disabled="!canEditFinance"
+                @update:model-value="calculateTaxes"
               />
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{{ formatRupiah(editForm.dpp + editForm.ppn) }}</p>
-            </div>
-
-            <!-- Jenis PPh & Nilai PPh -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Jenis PPh</label>
-                <select
-                  v-model="editForm.pph_type"
-                  :disabled="!canEditFinance"
-                  @change="onPphTypeChange"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option value="NON_PPH">Non PPh</option>
-                  <option value="PPH_21">PPh 21 (2,5%)</option>
-                  <option value="PPH_23">PPh 23 (2%)</option>
-                  <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
-                  <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPh (IDR)</label>
-                <input
-                  v-model.number="editForm.pph"
-                  type="number"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-                  {{ formatRupiah(editForm.pph || 0) }}
-                </p>
-              </div>
-            </div>
-
-            <!-- No. Faktur Pajak & Tanggal Faktur Pajak -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Faktur Pajak</label>
-                <input
-                  v-model="editForm.faktur_number"
-                  type="text"
-                  placeholder="010.000-25.00000001"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: XXX.XXX-XX.XXXXXXXX</p>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Faktur Pajak</label>
-                <input
-                  v-model="editForm.faktur_date"
-                  type="date"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
+            </FormField>
+            <FormField
+              label="Tarif PPN"
+              for="detail-edit-ppn-rate"
+              :helper="editForm.ppn_rate === '0' ? 'Non-PPN (0%)' : `PPN ${Math.round(Number(editForm.ppn_rate) * 100)}%`"
+            >
+              <NativeSelect id="detail-edit-ppn-rate" v-model="editForm.ppn_rate" :disabled="!canEditFinance" @change="calculateTaxes">
+                <option value="0.11">11% (Standar)</option>
+                <option value="0.12">12%</option>
+                <option value="0">0% (Non-PPN)</option>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Nilai PPN (IDR)" for="detail-edit-ppn">
+              <Input id="detail-edit-ppn" :model-value="editForm.ppn" type="number" readonly class="bg-muted tabular-nums" />
+            </FormField>
           </div>
 
-          <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              :disabled="isSavingEdit"
-              class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="isEditModalOpen = false"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              :disabled="isSavingEdit"
-              class="px-5 py-2 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-            >
-              <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span>{{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <FormField label="Total Invoice (IDR)" for="detail-edit-total" :helper="formatRupiah(editForm.dpp + editForm.ppn)">
+            <Input
+              id="detail-edit-total"
+              :model-value="editForm.dpp + editForm.ppn"
+              type="number"
+              readonly
+              class="bg-muted tabular-nums"
+            />
+          </FormField>
 
-    <!-- Upload Document Modal -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Jenis PPh" for="detail-edit-pph-type">
+              <NativeSelect id="detail-edit-pph-type" v-model="editForm.pph_type" :disabled="!canEditFinance" @change="onPphTypeChange">
+                <option value="NON_PPH">Non PPh</option>
+                <option value="PPH_21">PPh 21 (2,5%)</option>
+                <option value="PPH_23">PPh 23 (2%)</option>
+                <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
+                <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Nilai PPh (IDR)" for="detail-edit-pph" :helper="formatRupiah(editForm.pph || 0)">
+              <Input id="detail-edit-pph" v-model.number="editForm.pph" type="number" class="tabular-nums" :disabled="!canEditFinance" />
+            </FormField>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="No. Faktur Pajak" for="detail-edit-faktur" helper="Format: XXX.XXX-XX.XXXXXXXX">
+              <Input
+                id="detail-edit-faktur"
+                v-model="editForm.faktur_number"
+                type="text"
+                placeholder="010.000-25.00000001"
+                class="tabular-nums"
+                :disabled="!canEditFinance"
+              />
+            </FormField>
+            <FormField label="Tanggal Faktur Pajak" for="detail-edit-faktur-date">
+              <Input
+                id="detail-edit-faktur-date"
+                v-model="editForm.faktur_date"
+                type="date"
+                class="tabular-nums"
+                :disabled="!canEditFinance"
+              />
+            </FormField>
+          </div>
+        </section>
+      </form>
+
+      <template #footer>
+        <Button variant="outline" :disabled="isSavingEdit" @click="isEditModalOpen = false">Batal</Button>
+        <Button type="submit" :form="EDIT_FORM_ID" :disabled="isSavingEdit">
+          {{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}
+        </Button>
+      </template>
+    </Dialog>
+
+    <!-- Unggah dokumen -->
     <DocumentUploadModal
       v-model:open="isUploadModalOpen"
       :docType="uploadTargetType"
@@ -471,139 +347,102 @@
       @uploaded="handleDocumentUploaded"
     />
 
-    <!-- Document Preview Sheet -->
+    <!-- Pratinjau dokumen -->
     <DocumentPreviewSheet
       v-model:open="isPreviewSheetOpen"
       :document="selectedPreviewDoc"
       :program="program"
     />
 
-    <!-- Modal Konfirmasi Hapus Berkas Dokumen -->
-    <Teleport to="body">
-      <div
-        v-if="docToDelete"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
-      >
-        <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto mb-3 border border-slate-200 dark:border-slate-700">
-            <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
-          </div>
+    <!-- Konfirmasi hapus berkas dokumen -->
+    <AlertDialog
+      :open="Boolean(docToDelete)"
+      @update:open="open => { if (!open && !isDeletingDoc) docToDelete = null }"
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus berkas dokumen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus berkas {{ docToDelete?.label }}? Tindakan ini tidak dapat dibatalkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <dl
+          v-if="docToDelete?.fileName"
+          class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-lg border px-4 py-3 text-sm"
+        >
+          <dt class="text-muted-foreground">Tipe dokumen</dt>
+          <dd class="text-right">{{ docToDelete.label }}</dd>
+          <dt class="text-muted-foreground">Nama file</dt>
+          <dd class="truncate text-right" :title="docToDelete.fileName">{{ docToDelete.fileName }}</dd>
+        </dl>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isDeletingDoc">Batal</AlertDialogCancel>
+          <!-- Tombol biasa (bukan AlertDialogAction) supaya dialog tetap terbuka selama berkas dihapus -->
+          <Button variant="destructive" :disabled="isDeletingDoc" @click="confirmDeleteDoc">
+            {{ isDeletingDoc ? 'Menghapus...' : 'Hapus' }}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 text-center mb-1">
-            Hapus Berkas Dokumen?
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-center leading-relaxed mb-4">
-            Apakah Anda yakin ingin menghapus berkas <strong class="text-slate-800 dark:text-slate-200">{{ docToDelete.label }}</strong>? Tindakan ini tidak dapat dibatalkan.
-          </p>
-
-          <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 mb-4 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-500 dark:text-slate-400">Tipe Dokumen:</span>
-              <span class="font-medium text-slate-800 dark:text-slate-200">{{ docToDelete.label }}</span>
-            </div>
-            <div v-if="docToDelete.fileName" class="flex items-center justify-between mt-1 pt-1 border-t border-slate-200 dark:border-slate-800">
-              <span class="text-slate-500 dark:text-slate-400">Nama File:</span>
-              <span class="font-mono text-slate-700 dark:text-slate-300 truncate max-w-[160px]">{{ docToDelete.fileName }}</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              :disabled="isDeletingDoc"
-              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="docToDelete = null"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              :disabled="isDeletingDoc"
-              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-              @click="confirmDeleteDoc"
-            >
-              <Loader2 v-if="isDeletingDoc" class="w-3.5 h-3.5 animate-spin" />
-              <Trash2 v-else class="w-3.5 h-3.5" />
-              <span>{{ isDeletingDoc ? 'Menghapus...' : 'Ya, Hapus' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Modal Konfirmasi Hapus Program -->
-    <Teleport to="body">
-      <div
-        v-if="isDeleteProgramModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
-      >
-        <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto mb-3 border border-slate-200 dark:border-slate-700">
-            <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
-          </div>
-
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 text-center mb-1">
-            Hapus Program Ini?
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-center leading-relaxed mb-4">
-            Apakah Anda yakin ingin menghapus program <strong class="text-slate-800 dark:text-slate-200">{{ program?.program_name }}</strong>? Seluruh berkas perpajakan terkait akan dihapus.
-          </p>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              class="w-full py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer"
-              @click="isDeleteProgramModalOpen = false"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              class="w-full py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-              @click="executeDeleteProgram"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              <span>Ya, Hapus Program</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <!-- Konfirmasi hapus program -->
+    <AlertDialog v-model:open="isDeleteProgramModalOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus program ini?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus program "{{ program?.program_name }}"? Seluruh berkas perpajakan terkait akan dihapus.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" @click="executeDeleteProgram">Hapus</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 
-  <!-- Not Found State -->
-  <div v-else class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center space-y-3">
-    <FileText class="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-    <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Program Tidak Ditemukan</h3>
-    <p class="text-xs text-slate-500 dark:text-slate-400">Program mungkin telah dihapus atau URL tidak sesuai.</p>
-    <router-link
-      to="/programs"
-      class="inline-flex items-center gap-2 px-4 py-2 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
-    >
-      <ArrowLeft class="w-3.5 h-3.5" />
-      <span>Kembali ke Arsip Program</span>
-    </router-link>
+  <!-- Program tidak ditemukan -->
+  <div v-else class="flex flex-col gap-6">
+    <PageHeader title="Detail Program" />
+    <Card class="flex flex-col items-center gap-2 px-6 py-12 text-center">
+      <p class="text-base font-semibold">Program tidak ditemukan</p>
+      <p class="text-sm text-muted-foreground">Program mungkin telah dihapus atau URL tidak sesuai.</p>
+      <Button as-child variant="outline" class="mt-4">
+        <router-link to="/programs">Kembali ke Arsip Program</router-link>
+      </Button>
+    </Card>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import PageHeader from '@/components/layout/PageHeader.vue';
+import Dialog from '@/components/ui/Dialog.vue';
 import {
-  ArrowLeft,
-  Trash2,
-  FileText,
-  Eye,
-  Download,
-  ChevronDown,
-  X,
-  Loader2
-} from 'lucide-vue-next';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNpwp, formatRupiah, formatTanggal } from '@/lib/format';
 import DocumentUploadModal from '../components/detail/DocumentUploadModal.vue';
 import DocumentPreviewSheet from '../components/detail/DocumentPreviewSheet.vue';
+import { paymentBadgeVariant } from '../components/programs/programTable';
 import {
   useTaxStore,
-  formatRupiah,
   formatDate,
   formatUploadDate,
   getCompleteness,
@@ -652,16 +491,44 @@ const documentCategories = [
   { type: 'mou', label: 'Memo/DO' }
 ];
 
-// Rincian kartu bawah: label di atas nilai supaya ringkas
+// Form edit dikirim lewat tombol di footer dialog (di luar elemen <form>)
+const EDIT_FORM_ID = 'program-detail-edit-form';
+
+// Deskripsi judul halaman: No. PO/SJ · tanggal · supplier (PO/SJ & supplier hanya untuk yang boleh melihat data master)
+const headerDescription = computed(() => {
+  const p = program.value;
+  if (!p) return '';
+  const date = p.program_date ? formatTanggal(p.program_date) : '';
+  const parts = canViewMasterColumns.value
+    ? [p.po_sj_number || getProgramPoSjNumber(p), date, p.supplier]
+    : [date];
+  return parts.filter(Boolean).join(' · ');
+});
+
+// Warna status hanya untuk makna: lengkap = success, sebagian = warning, belum ada = netral
+const completenessVariant = computed(() => {
+  if (completeness.value.count === 3) return 'success';
+  return completeness.value.count > 0 ? 'warning' : 'outline';
+});
+
+// Keterangan baris berkas: ukuran · waktu unggah (tanpa waktu unggah: tanggal program)
+function docMeta(doc) {
+  const uploaded = doc.uploaded_at
+    ? formatUploadDate(doc.uploaded_at)
+    : (program.value?.program_date ? formatTanggal(program.value.program_date) : '');
+  return [doc.file_size, uploaded].filter(Boolean).join(' · ');
+}
+
+// Rincian kartu bawah: label di atas nilai supaya ringkas. Tanggal & NPWP diformat seperti di Arsip Program.
 const invoiceFields = computed(() => {
   const p = program.value;
   if (!p) return [];
   return [
     { label: 'No. Invoice', value: p.invoice_number },
-    { label: 'Tanggal Invoice', value: formatDate(p.program_date) },
-    { label: 'Jatuh Tempo', value: formatDueDate(p.program_date) },
+    { label: 'Tanggal Invoice', value: formatTanggal(p.program_date) },
+    { label: 'Jatuh Tempo', value: formatTanggal(formatDueDate(p.program_date)) },
     { label: 'No. Faktur Pajak', value: p.faktur_number },
-    { label: 'Tanggal Faktur Pajak', value: p.faktur_date ? formatDate(p.faktur_date) : '' }
+    { label: 'Tanggal Faktur Pajak', value: p.faktur_date ? formatTanggal(p.faktur_date) : '' }
   ];
 });
 
@@ -680,14 +547,15 @@ const programFields = computed(() => {
   if (!p) return [];
   return [
     { label: 'Company Name', value: p.company_name || getProgramCompanyName(p) },
-    { label: 'No. PO / SJ', value: p.po_sj_number || getProgramPoSjNumber(p) },
+    { label: 'No. PO / SJ', value: p.po_sj_number || getProgramPoSjNumber(p), numeric: true },
     { label: 'Nama Supplier', value: p.supplier },
-    { label: 'NPWP Supplier', value: p.npwp || '02.010.121.3-071.000' },
+    { label: 'NPWP Supplier', value: formatNpwp(p.npwp), numeric: true },
     { label: 'Kategori', value: p.category },
     { label: 'Brand', value: p.brand || getProgramBrand(p) },
     { label: 'Bulan / Masa Pajak', value: `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}` },
-    { label: 'Nomor Memo/DO', value: p.mou_number || `DO/SCM/2026/${String(p.id).padStart(3, '0')}` },
-    { label: 'Periode', value: `${formatDate(p.program_date)} – ${formatDueDate(p.program_date)}` }
+    // Kosong ditampilkan "—" (dulu diisi nomor contoh DO/SCM/2026/…, yang tampak seperti nomor asli)
+    { label: 'Nomor Memo/DO', value: p.mou_number, numeric: true },
+    { label: 'Periode', value: `${formatTanggal(p.program_date)} – ${formatTanggal(formatDueDate(p.program_date))}`, numeric: true }
   ];
 });
 
@@ -963,20 +831,6 @@ function formatPaymentStatus(status) {
   if (lower === 'paid' || lower === 'lunas' || lower === 'paid (lunas)') return 'Paid';
   if (lower === 'waiting payment') return 'Waiting Payment';
   return s;
-}
-
-function getPaymentBadgeClass(status) {
-  return 'bg-slate-50/90 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200/90 dark:border-slate-700/80 hover:bg-slate-100/90 dark:hover:bg-slate-700/70 hover:border-slate-300 dark:hover:border-slate-600';
-}
-
-function getPaymentDotClass(status) {
-  const norm = normalizePayStatus(status);
-  const s = String(norm).toLowerCase();
-  if (s === 'cbd') return 'bg-amber-500';
-  if (s === 'tempo') return 'bg-blue-500';
-  if (s === 'paid' || s === 'lunas') return 'bg-emerald-500';
-  if (s === 'waiting payment' || s.includes('waiting')) return 'bg-rose-500';
-  return 'bg-blue-500';
 }
 
 const masterPaymentStatuses = computed(() => store.masterPaymentStatuses.value);
