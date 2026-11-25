@@ -30,7 +30,7 @@
             <Upload class="w-5 h-5 stroke-[2]" />
           </div>
           <div>
-            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
+            <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">
               Tarik berkas ke sini atau <span class="text-slate-900 dark:text-slate-100 underline font-semibold hover:text-black dark:hover:text-white">pilih dari komputer</span>
             </p>
             <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -50,7 +50,7 @@
             :disabled="isUploading"
             @click="selectedFiles = []"
           >
-            Hapus Semua
+            Hapus semua
           </button>
         </div>
 
@@ -83,11 +83,11 @@
         <div v-if="isUploading" class="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5">
           <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
             <span>Mengunggah berkas...</span>
-            <span class="font-mono font-bold">{{ uploadProgress }}%</span>
+            <span class="font-mono font-semibold">{{ uploadProgress }}%</span>
           </div>
           <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
             <div
-              class="bg-slate-900 dark:bg-slate-100 h-1.5 rounded-full transition-all duration-300"
+              class="bg-slate-900 dark:bg-slate-100 h-1.5 rounded-full transition-[width] duration-300"
               :style="{ width: uploadProgress + '%' }"
             ></div>
           </div>

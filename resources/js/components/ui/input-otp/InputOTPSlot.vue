@@ -15,8 +15,8 @@ const slot = computed(() => context?.value?.slots?.[props.index] || {})
 <template>
   <div
     :class="cn(
-      'relative flex h-11 w-11 items-center justify-center border-y border-r border-slate-300 dark:border-slate-700 text-base font-semibold transition-all first:rounded-l-lg first:border-l last:rounded-r-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs font-mono select-none',
-      slot.isActive && 'z-10 ring-2 ring-blue-600 border-blue-600',
+      'relative flex h-11 w-11 items-center justify-center border-y border-r border-slate-300 dark:border-slate-700 text-base font-medium tabular-nums transition-colors first:rounded-l-lg first:border-l last:rounded-r-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 select-none',
+      slot.isActive && 'z-10 ring-2 ring-blue-500/30 border-blue-500 dark:border-blue-400',
       props.class
     )"
   >

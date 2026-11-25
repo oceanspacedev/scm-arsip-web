@@ -10,11 +10,11 @@
     ></div>
 
     <!-- Modal Dialog -->
-    <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-2xl border border-slate-200/90 dark:border-slate-800 w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-98 duration-150 font-sans text-slate-800 dark:text-slate-200">
+    <div class="relative bg-white dark:bg-graphite-card rounded-xl shadow-2xl border border-slate-200/90 dark:border-slate-800 w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-98 duration-150 font-sans text-slate-800 dark:text-slate-200">
       <!-- Header -->
       <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 flex items-center justify-between">
         <div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">
+          <h3 class="text-base font-semibold text-slate-900 dark:text-white leading-tight">
             Persetujuan Akun Pengguna (ACC Admin)
           </h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -35,13 +35,13 @@
         <button
           type="button"
           class="pb-2.5 border-b-2 transition-colors flex items-center gap-2 cursor-pointer"
-          :class="activeTab === 'pending' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeTab === 'pending' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="activeTab = 'pending'"
         >
-          <span>Menunggu Persetujuan</span>
+          <span>Menunggu persetujuan</span>
           <span
             v-if="pendingUsers.length > 0"
-            class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-400 border border-amber-300/40"
+            class="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-400 border border-amber-300/40"
           >
             {{ pendingUsers.length }}
           </span>
@@ -50,10 +50,10 @@
         <button
           type="button"
           class="pb-2.5 border-b-2 transition-colors flex items-center gap-2 cursor-pointer"
-          :class="activeTab === 'all' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeTab === 'all' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
           @click="activeTab = 'all'"
         >
-          <span>Semua Akun</span>
+          <span>Semua akun</span>
           <span class="text-slate-400 dark:text-slate-500 font-normal">({{ allUsers.length }})</span>
         </button>
       </div>
@@ -64,7 +64,7 @@
         <div v-if="activeTab === 'pending'" class="space-y-3">
           <div v-if="pendingUsers.length === 0" class="py-12 text-center text-slate-400 space-y-2">
             <CheckCircle2 class="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
-            <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tidak Ada Pengajuan Tertunda</p>
+            <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tidak ada pengajuan tertunda</p>
             <p class="text-xs max-w-sm mx-auto text-slate-500 dark:text-slate-400">
               Semua pendaftaran akun baru telah diverifikasi dan diproses.
             </p>
@@ -73,11 +73,11 @@
           <div
             v-for="user in pendingUsers"
             :key="user.id"
-            class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-all shadow-2xs"
+            class="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-colors shadow-2xs"
           >
             <div class="space-y-1">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-bold text-slate-900 dark:text-white text-sm">{{ user.name }}</span>
+                <span class="font-semibold text-slate-900 dark:text-white text-sm">{{ user.name }}</span>
                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                   {{ user.role }}
                 </span>
@@ -134,7 +134,7 @@
         <!-- Tab 2: Semua Pengguna -->
         <div v-else class="border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
           <table class="w-full text-left text-xs min-w-[500px]">
-            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-400 dark:text-slate-500">
               <tr>
                 <th class="py-2.5 px-3.5">Nama & Kontak</th>
                 <th class="py-2.5 px-3.5">Role</th>
@@ -226,10 +226,10 @@
     <Teleport to="body">
       <div
         v-if="userToDelete"
-        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-colors"
         @click.self="cancelDelete"
       >
-        <div class="w-full max-w-sm bg-white dark:bg-[#111827] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all p-6 text-center space-y-4">
+        <div class="w-full max-w-sm bg-white dark:bg-graphite-card rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-colors p-6 text-center space-y-4">
           <!-- Danger Icon -->
           <div class="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center mx-auto shadow-2xs">
             <Trash2 class="w-6 h-6" />
@@ -237,7 +237,7 @@
 
           <!-- Header Text -->
           <div class="space-y-1">
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-white">
               Hapus Akun Pengguna?
             </h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">

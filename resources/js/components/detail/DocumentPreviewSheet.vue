@@ -14,7 +14,7 @@
         @click.self="close"
       >
         <div
-          class="bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          class="bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           <!-- Header -->
           <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 gap-4">
@@ -104,7 +104,7 @@
             <!-- Generic file fallback -->
             <div
               v-else-if="actualFileUrl"
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+              class="text-center p-8 max-w-md bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
             >
               <p class="font-semibold text-slate-900 dark:text-slate-100 text-sm">{{ document?.file_name }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400">Berkas ini dapat diunduh langsung untuk dibuka pada perangkat Anda.</p>
@@ -120,7 +120,7 @@
             <!-- Empty state -->
             <div
               v-else
-              class="text-center p-8 max-w-md bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
+              class="text-center p-8 max-w-md bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
             >
               <h4 class="font-semibold text-slate-800 dark:text-slate-200 text-sm">Berkas Belum Tersedia</h4>
               <p class="text-xs text-slate-500 dark:text-slate-400">

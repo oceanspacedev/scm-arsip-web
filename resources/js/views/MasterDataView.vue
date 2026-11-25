@@ -1,20 +1,20 @@
 <template>
-  <div class="space-y-4 font-sans text-xs select-none">
+  <div class="space-y-4 text-sm">
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Data Master
+        <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">
+          Data master
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Kelola referensi Kategori Program, Brand, Company, Kode Gudang, Supplier, Status Payment, dan Aturan PPN
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Kelola referensi kategori program, brand, company, kode gudang, supplier, status pembayaran, dan aturan PPN
         </p>
       </div>
 
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors cursor-pointer flex items-center gap-1.5"
           @click="openResetModal"
           title="Reset semua data master ke pengaturan default sistem"
         >
@@ -32,14 +32,14 @@
           :key="tab.id"
           type="button"
           @click="changeTab(tab.id)"
-          class="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap"
+          class="inline-flex items-center gap-1.5 px-3 py-3 text-sm border-b-2 transition-colors cursor-pointer whitespace-nowrap"
           :class="activeTab === tab.id
             ? 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100'
             : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
         >
           <span>{{ tab.label }}</span>
           <span
-            class="text-[11px] tabular-nums"
+            class="text-xs tabular-nums"
             :class="activeTab === tab.id ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500'"
           >
             {{ getTabCount(tab.id) }}
@@ -49,14 +49,14 @@
     </div>
 
     <!-- Main Card Container -->
-    <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
       <!-- Toolbar Bar (Title + Search + Action Button) -->
       <div class="px-4 py-3 sm:px-5 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-xs font-semibold text-slate-900 dark:text-slate-100">
+          <h2 class="text-sm font-medium text-slate-900 dark:text-slate-100">
             {{ currentTabLabel }}
           </h2>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             <span v-if="activeTab === 'ppn_rules'">
               Pilih tarif PPN tiap kategori: 0% (Non-PPN) atau 11%.
             </span>
@@ -77,7 +77,7 @@
               v-model="searchQuery"
               type="text"
               :placeholder="`Cari ${currentTabLabel.toLowerCase()}...`"
-              class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
+              class="w-full h-9 pl-8 pr-7 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
             />
             <button
               v-if="searchQuery"
@@ -92,11 +92,11 @@
           <button
             v-if="activeTab !== 'ppn_rules'"
             type="button"
-            class="h-8 px-3 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
+            class="h-8 px-3 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
             @click="openAddModal"
           >
             <Plus class="w-3.5 h-3.5" />
-            <span>Tambah {{ currentTabLabel }}</span>
+            <span>Tambah {{ currentTabNoun }}</span>
           </button>
         </div>
       </div>
@@ -142,7 +142,7 @@
         >
           <div class="min-w-0">
             <p class="font-medium text-slate-900 dark:text-slate-100 truncate">{{ w.code }}</p>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate" :title="w.location ? `${w.name} · ${w.location}` : w.name">
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate" :title="w.location ? `${w.name} · ${w.location}` : w.name">
               {{ w.name }}<template v-if="w.location"> · {{ w.location }}</template>
             </p>
           </div>
@@ -176,7 +176,7 @@
         >
           <div class="min-w-0">
             <p class="font-medium text-slate-900 dark:text-slate-100 truncate" :title="s.name">{{ s.name }}</p>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate tabular-nums">
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate tabular-nums">
               {{ s.npwp || 'NPWP belum diisi' }}<template v-if="s.phone"> · {{ s.phone }}</template>
             </p>
           </div>
@@ -218,7 +218,7 @@
               :key="opt.label"
               type="button"
               :disabled="togglingCategory === cat"
-              class="px-2 py-0.5 rounded text-[11px] tabular-nums transition-colors cursor-pointer disabled:cursor-wait"
+              class="px-2 py-0.5 rounded text-xs tabular-nums transition-colors cursor-pointer disabled:cursor-wait"
               :class="isCategoryNonPpn(cat) === opt.nonPpn
                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium'
                 : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
@@ -236,7 +236,7 @@
           <span v-if="searchQuery">Tidak ditemukan data untuk kata kunci "{{ searchQuery }}"</span>
           <span v-else>Belum ada data {{ currentTabLabel.toLowerCase() }}.</span>
         </p>
-        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
           <span v-if="searchQuery">Periksa kembali kata kunci pencarian Anda.</span>
           <span v-else>Tambahkan data baru dengan tombol di bawah.</span>
         </p>
@@ -245,16 +245,16 @@
             v-if="searchQuery"
             type="button"
             @click="searchQuery = ''"
-            class="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer"
+            class="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors cursor-pointer"
           >
-            Bersihkan Pencarian
+            Bersihkan pencarian
           </button>
           <button
             type="button"
             @click="openAddModal"
-            class="px-3.5 py-1.5 rounded-lg font-medium text-xs transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
+            class="px-3.5 py-1.5 rounded-lg font-medium text-sm transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
           >
-            + Tambah {{ currentTabLabel }}
+            + Tambah {{ currentTabNoun }}
           </button>
         </div>
       </div>
@@ -267,11 +267,11 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="isAddModalOpen = false"
       >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+        <div class="w-full max-w-md bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
           <!-- Modal Header -->
-          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827]">
+          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-graphite-card">
             <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Tambah {{ currentTabLabel }} Baru
+              Tambah {{ currentTabNoun }} baru
             </h3>
             <button
               type="button"
@@ -455,9 +455,9 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="isEditModalOpen = false"
       >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+        <div class="w-full max-w-md bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
           <!-- Modal Header -->
-          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827]">
+          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-graphite-card">
             <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Edit {{ currentTabLabel }}
             </h3>
@@ -578,7 +578,7 @@
                 type="submit"
                 class="px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
-                Simpan Perubahan
+                Simpan perubahan
               </button>
             </div>
           </form>
@@ -593,7 +593,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="itemToDelete = null"
       >
-        <div class="w-full max-w-sm bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
+        <div class="w-full max-w-sm bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
           <div>
             <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Hapus Item Data Master?
@@ -630,7 +630,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="isResetModalOpen = false"
       >
-        <div class="w-full max-w-sm bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
+        <div class="w-full max-w-sm bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
           <div>
             <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Reset ke Default Sistem?
@@ -678,12 +678,12 @@ const itemToDelete = ref(null);
 const isResetModalOpen = ref(false);
 
 const tabs = [
-  { id: 'categories', label: 'Kategori Program' },
+  { id: 'categories', label: 'Kategori program' },
   { id: 'brands', label: 'Brand' },
-  { id: 'companies', label: 'Company Name' },
-  { id: 'warehouses', label: 'Kode Gudang' },
+  { id: 'companies', label: 'Company' },
+  { id: 'warehouses', label: 'Kode gudang' },
   { id: 'suppliers', label: 'Supplier & NPWP' },
-  { id: 'payment_statuses', label: 'Status Payment' },
+  { id: 'payment_statuses', label: 'Status pembayaran' },
   { id: 'ppn_rules', label: 'Aturan PPN' },
 ];
 
@@ -708,6 +708,11 @@ const currentTab = computed(() => {
 });
 
 const currentTabLabel = computed(() => currentTab.value.label);
+// Label di tengah kalimat ("Tambah kategori program"), kecuali singkatan seperti PPN
+const currentTabNoun = computed(() => {
+  const label = currentTabLabel.value;
+  return label.charAt(0).toLowerCase() + label.slice(1);
+});
 
 const isGridTab = computed(() => {
   return (

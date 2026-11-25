@@ -54,7 +54,7 @@
         <template v-for="section in sections" :key="section.label">
           <p
             v-if="sections.length > 1"
-            class="px-2.5 pt-2 pb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500"
+            class="px-2.5 pt-2 pb-1 text-xs font-medium text-slate-400 dark:text-slate-500"
           >
             {{ section.label }}
           </p>

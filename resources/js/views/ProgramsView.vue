@@ -1,39 +1,47 @@
 <template>
-  <div class="space-y-3 select-none">
-    <!-- Page Header matching screenshot -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0">
+  <div class="space-y-4">
+    <!-- Judul + ringkasan hasil filter -->
+    <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-3 min-w-0">
       <div class="min-w-0">
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Arsip Program SCM
+        <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">
+          Arsip program SCM
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Daftar program beserta kelengkapan dokumen perpajakan
+        <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+          <span><span class="text-slate-900 dark:text-slate-100 tabular-nums">{{ summary.count }}</span> program</span>
+          <template v-if="canViewFinance">
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <span>Total invoice <span class="text-slate-900 dark:text-slate-100 tabular-nums">{{ formatRupiah(summary.totalInvoice) }}</span></span>
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <span>DPP <span class="text-slate-900 dark:text-slate-100 tabular-nums">{{ formatRupiah(summary.totalDpp) }}</span></span>
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <span>PPN <span class="text-slate-900 dark:text-slate-100 tabular-nums">{{ formatRupiah(summary.totalPpn) }}</span></span>
+          </template>
         </p>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
         <!-- Unggah invoice & faktur pajak massal: tiap berkas otomatis masuk ke programnya -->
         <button
           v-if="canUploadFinanceDocs"
           type="button"
-          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer whitespace-nowrap"
           @click="isBulkUploadOpen = true"
         >
-          Unggah Invoice & Faktur
+          Unggah dokumen
         </button>
 
         <!-- Excel: import & ekspor dalam satu menu (masing-masing sesuai hak akses) -->
         <div v-if="canImportProgram || canExportProgram" ref="excelMenuRef" class="relative flex-1 sm:flex-initial">
           <button
             type="button"
-            class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
+            class="w-full inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer whitespace-nowrap"
             aria-haspopup="menu"
             :aria-expanded="isExcelMenuOpen"
             @click="isExcelMenuOpen = !isExcelMenuOpen"
           >
             Excel
-            <ChevronDown class="w-3 h-3 text-slate-400 transition-transform" :class="{ 'rotate-180': isExcelMenuOpen }" />
+            <ChevronDown class="w-4 h-4 text-slate-400 transition-transform" :stroke-width="1.75" :class="{ 'rotate-180': isExcelMenuOpen }" />
           </button>
 
           <div
@@ -45,16 +53,16 @@
               v-if="canImportProgram"
               type="button"
               role="menuitem"
-              class="w-full px-3 py-1.5 text-left text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               @click="runExcelAction(() => store.openImportModal())"
             >
-              Import Excel
+              Impor Excel
             </button>
             <button
               v-if="canExportProgram"
               type="button"
               role="menuitem"
-              class="w-full px-3 py-1.5 text-left text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              class="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               @click="runExcelAction(handleExport)"
             >
               Ekspor Excel
@@ -66,10 +74,10 @@
         <button
           v-if="canAddProgram"
           type="button"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
           @click="isAddSheetOpen = true"
         >
-          Tambah Program
+          Tambah program
         </button>
       </div>
     </div>
@@ -97,7 +105,7 @@ import ProgramToolbar from '../components/programs/ProgramToolbar.vue';
 import ProgramTable from '../components/programs/ProgramTable.vue';
 import AddProgramSheet from '../components/programs/AddProgramSheet.vue';
 import BulkDocumentUploadModal from '../components/programs/BulkDocumentUploadModal.vue';
-import { useTaxStore } from '../store/taxStore';
+import { useTaxStore, formatRupiah } from '../store/taxStore';
 
 const store = useTaxStore();
 const isAddSheetOpen = ref(false);
@@ -106,6 +114,18 @@ const canUploadFinanceDocs = computed(() => store.canUploadDoc('invoice') || sto
 const canAddProgram = computed(() => store.canAddProgram.value);
 const canImportProgram = computed(() => store.canImportProgram.value);
 const canExportProgram = computed(() => store.canExportProgram.value);
+const canViewFinance = computed(() => store.canViewFinanceColumns.value);
+
+// Ringkasan program yang sedang tampil (ikut filter)
+const summary = computed(() => {
+  const list = store.filteredPrograms.value;
+  return list.reduce((acc, p) => {
+    acc.totalInvoice += Number(p.total_invoice) || 0;
+    acc.totalDpp += Number(p.dpp) || 0;
+    acc.totalPpn += Number(p.ppn) || 0;
+    return acc;
+  }, { count: list.length, totalInvoice: 0, totalDpp: 0, totalPpn: 0 });
+});
 
 function handleExport() {
   store.exportToCsv();

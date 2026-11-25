@@ -1,449 +1,194 @@
 <template>
-  <Dialog
-    :open="open"
-    title="Tambah Program SCM"
-    description="Lengkapi data program & perpajakan. Nilai PPN, total dan PPh dihitung otomatis dari DPP."
-    maxWidth="max-w-2xl"
-    @update:open="$emit('update:open', $event)"
-  >
-    <form @submit.prevent="handleSubmit" class="space-y-4 text-xs select-none">
-      <!-- SECTION 1: DATA PROGRAM -->
-      <div>
-        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider uppercase mb-3 font-sans flex items-center gap-1.5">
-          <span>DATA PROGRAM</span>
-        </h4>
-
-        <!-- Row 1: Nama Program, Kategori Program & Brand -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NAMA PROGRAM <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.program_name"
-              type="text"
-              placeholder="Contoh: Program Supply Chain Optimization"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
+  <!-- Dialog tambah program: tata letak sama dengan dialog ubah program -->
+  <Teleport to="body">
+    <div v-if="open" :class="f.dialogOverlay" @click.self="close">
+      <form :class="f.dialogPanel" role="dialog" aria-labelledby="add-program-title" @submit.prevent="handleSubmit">
+        <div :class="f.dialogHeader">
+          <div class="min-w-0">
+            <h2 id="add-program-title" class="text-base font-medium text-slate-900 dark:text-slate-100">Tambah program</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">PPN, total, dan PPh dihitung otomatis dari DPP</p>
           </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              KATEGORI PROGRAM <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.category"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option v-for="cat in masterCategories" :key="cat" :value="cat">
-                {{ cat }}
-              </option>
-              <option value="__custom__">+ Ketik Kategori Lain...</option>
-            </select>
-            <input
-              v-if="form.category === '__custom__'"
-              v-model="customCategory"
-              type="text"
-              placeholder="Ketik kategori baru"
-              required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              BRAND
-            </label>
-            <select
-              v-model="form.brand"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option v-for="b in masterBrands" :key="b" :value="b">
-                {{ b }}
-              </option>
-              <option value="__custom__">+ Ketik Brand Lain...</option>
-            </select>
-            <input
-              v-if="form.brand === '__custom__'"
-              v-model="customBrand"
-              type="text"
-              placeholder="Ketik nama brand baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
+          <button type="button" :class="f.closeButton" aria-label="Tutup" @click="close">
+            <X class="w-4 h-4" :stroke-width="1.75" />
+          </button>
         </div>
 
-        <!-- Row 1.5: Company Name, Kode Gudang & No. PO / SJ -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              COMPANY NAME
-            </label>
-            <select
-              v-model="form.company_name"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option v-for="c in masterCompanies" :key="c" :value="c">
-                {{ c }}
-              </option>
-              <option value="__custom__">+ Ketik Company Lain...</option>
-            </select>
-            <input
-              v-if="form.company_name === '__custom__'"
-              v-model="customCompany"
-              type="text"
-              placeholder="Ketik nama company baru"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
+        <div :class="f.dialogBody">
+          <!-- Data program -->
+          <section>
+            <div :class="f.sectionHead">
+              <h3 :class="f.sectionTitle">Data program</h3>
+              <span class="text-xs text-slate-500 dark:text-slate-400"><span class="text-rose-500">*</span> wajib diisi</span>
+            </div>
+            <div :class="f.fieldGrid">
+              <div class="sm:col-span-2">
+                <label for="ap-name" :class="f.fieldLabel">Nama program <span class="text-rose-500">*</span></label>
+                <input id="ap-name" v-model="form.program_name" type="text" required placeholder="Program Supply Chain Optimization" :class="f.fieldInput" />
+              </div>
 
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              KODE GUDANG
-            </label>
-            <select
-              v-model="form.kode_gudang"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer font-mono"
-            >
-              <option value="">-- Pilih Kode Gudang --</option>
-              <option v-for="w in masterWarehouses" :key="w.code" :value="w.code">
-                {{ w.code }} - {{ w.name }}
-              </option>
-              <option value="__custom__">+ Ketik Kode Gudang Lain...</option>
-            </select>
-            <input
-              v-if="form.kode_gudang === '__custom__'"
-              v-model="customWarehouse"
-              type="text"
-              placeholder="Contoh: GDG-JKT-03"
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors uppercase font-mono"
-            />
-          </div>
+              <div>
+                <label id="ap-category" :class="f.fieldLabel">Kategori <span class="text-rose-500">*</span></label>
+                <SearchSelect v-model="form.category" labelledby="ap-category" search-placeholder="Cari kategori" :options="categoryOptions" />
+                <input v-if="form.category === '__custom__'" v-model="customCategory" type="text" required placeholder="Kategori baru" :class="[f.fieldInput, 'mt-2']" />
+              </div>
+              <div>
+                <label id="ap-brand" :class="f.fieldLabel">Brand</label>
+                <SearchSelect v-model="form.brand" labelledby="ap-brand" search-placeholder="Cari brand" :options="brandOptions" />
+                <input v-if="form.brand === '__custom__'" v-model="customBrand" type="text" placeholder="Brand baru" :class="[f.fieldInput, 'mt-2']" />
+              </div>
 
-          <div class="md:col-span-4">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. PO / SJ
-            </label>
-            <input
-              v-model="form.po_sj_number"
-              type="text"
-              placeholder="Contoh: PO/2025/1016 / SJ-1016"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-          </div>
+              <div>
+                <label id="ap-supplier" :class="f.fieldLabel">Supplier <span class="text-rose-500">*</span></label>
+                <SearchSelect
+                  :model-value="form.supplier"
+                  labelledby="ap-supplier"
+                  placeholder="Pilih supplier"
+                  search-placeholder="Cari supplier"
+                  :options="supplierOptions"
+                  @update:model-value="(v) => { form.supplier = v; onSupplierChange(); }"
+                />
+                <input v-if="form.supplier === '__custom__'" v-model="customSupplier" type="text" required placeholder="Nama supplier baru" :class="[f.fieldInput, 'mt-2']" />
+              </div>
+              <div>
+                <label for="ap-npwp" :class="f.fieldLabel">NPWP supplier</label>
+                <input id="ap-npwp" v-model="form.npwp" type="text" placeholder="01.234.567.8-901.000" :class="[f.fieldInput, 'tabular-nums']" />
+                <p :class="f.fieldHint">Terisi dari data master supplier</p>
+              </div>
+
+              <div>
+                <label id="ap-company" :class="f.fieldLabel">Company</label>
+                <SearchSelect v-model="form.company_name" labelledby="ap-company" search-placeholder="Cari company" :options="companyOptions" />
+                <input v-if="form.company_name === '__custom__'" v-model="customCompany" type="text" placeholder="Nama company baru" :class="[f.fieldInput, 'mt-2']" />
+              </div>
+              <div>
+                <label for="ap-po" :class="f.fieldLabel">No. PO/SJ</label>
+                <input id="ap-po" v-model="form.po_sj_number" type="text" placeholder="PO/2025/1016" :class="[f.fieldInput, 'tabular-nums']" />
+              </div>
+
+              <div>
+                <label id="ap-warehouse" :class="f.fieldLabel">Kode gudang</label>
+                <SearchSelect v-model="form.kode_gudang" labelledby="ap-warehouse" placeholder="Belum dipilih" search-placeholder="Cari kode gudang" :options="warehouseOptions" />
+                <input v-if="form.kode_gudang === '__custom__'" v-model="customWarehouse" type="text" placeholder="GDG-JKT-03" :class="[f.fieldInput, 'mt-2 uppercase']" />
+              </div>
+              <div>
+                <label for="ap-memo" :class="f.fieldLabel">No. memo/DO</label>
+                <input id="ap-memo" v-model="form.mou_number" type="text" placeholder="DO/SCM/2026/088" :class="[f.fieldInput, 'tabular-nums']" />
+              </div>
+
+              <div>
+                <label for="ap-start" :class="f.fieldLabel">Periode mulai</label>
+                <input id="ap-start" v-model="form.start_date" type="date" :class="f.fieldInput" />
+              </div>
+              <div>
+                <label for="ap-end" :class="f.fieldLabel">Periode selesai</label>
+                <input id="ap-end" v-model="form.end_date" type="date" :class="f.fieldInput" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Invoice dan pajak -->
+          <section>
+            <div :class="f.sectionHead">
+              <h3 :class="f.sectionTitle">Invoice dan pajak</h3>
+            </div>
+            <div :class="f.fieldGrid">
+              <div class="sm:col-span-2">
+                <label for="ap-invoice" :class="f.fieldLabel">No. invoice <span class="text-rose-500">*</span></label>
+                <input id="ap-invoice" v-model="form.invoice_number" type="text" required placeholder="INV/SCM/2025/1042" :class="[f.fieldInput, 'tabular-nums']" />
+              </div>
+
+              <div>
+                <label for="ap-date" :class="f.fieldLabel">Tanggal invoice <span class="text-rose-500">*</span></label>
+                <input id="ap-date" v-model="form.program_date" type="date" required :class="f.fieldInput" />
+              </div>
+              <div>
+                <label for="ap-due" :class="f.fieldLabel">Jatuh tempo</label>
+                <input id="ap-due" v-model="form.due_date" type="date" :class="f.fieldInput" />
+              </div>
+
+              <div>
+                <label for="ap-dpp" :class="f.fieldLabel">DPP <span class="text-rose-500">*</span></label>
+                <input id="ap-dpp" v-model.number="form.dpp" type="number" min="0" step="1000" required :class="f.fieldNumber" />
+              </div>
+              <div>
+                <label id="ap-ppn-rate" :class="f.fieldLabel">Tarif PPN</label>
+                <SearchSelect v-model="form.ppn_rate" labelledby="ap-ppn-rate" :options="PPN_RATE_OPTIONS" />
+                <p :class="f.fieldHint">{{ form.ppn_rate === '0' ? 'Kategori ini tidak dikenai PPN' : 'Menyesuaikan kategori secara otomatis' }}</p>
+              </div>
+
+              <div>
+                <label id="ap-pph-type" :class="f.fieldLabel">Jenis PPh</label>
+                <SearchSelect v-model="form.pph_type" labelledby="ap-pph-type" :options="PPH_TYPE_OPTIONS" />
+              </div>
+              <div></div>
+
+              <div>
+                <label for="ap-faktur" :class="f.fieldLabel">No. faktur pajak</label>
+                <input id="ap-faktur" v-model="form.tax_invoice_number" type="text" placeholder="010.000-25.00000001" :class="[f.fieldInput, 'tabular-nums']" />
+                <p :class="f.fieldHint">Format XXX.XXX-XX.XXXXXXXX</p>
+              </div>
+              <div>
+                <label for="ap-faktur-date" :class="f.fieldLabel">Tanggal faktur pajak</label>
+                <input id="ap-faktur-date" v-model="form.tax_invoice_date" type="date" :class="f.fieldInput" />
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="ap-notes" :class="f.fieldLabel">Catatan pemeriksaan pajak</label>
+                <textarea
+                  id="ap-notes"
+                  v-model="form.tax_notes"
+                  rows="2"
+                  placeholder="Catatan kepatuhan pajak, verifikasi e-Faktur, nomor registrasi DJP"
+                  :class="[f.fieldInput, 'h-auto py-2 resize-none']"
+                ></textarea>
+              </div>
+
+              <label class="sm:col-span-2 flex items-center gap-2 w-fit text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input v-model="form.is_verified" type="checkbox" class="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
+                Sudah diverifikasi Tim Pajak
+              </label>
+            </div>
+
+            <dl :class="f.summaryBox">
+              <div :class="f.summaryRow">
+                <dt class="text-slate-500 dark:text-slate-400">DPP</dt>
+                <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(Number(form.dpp) || 0) }}</dd>
+              </div>
+              <div :class="f.summaryRow">
+                <dt class="text-slate-500 dark:text-slate-400">PPN {{ Math.round(Number(form.ppn_rate) * 100) }}%</dt>
+                <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(calculatedPpn) }}</dd>
+              </div>
+              <div :class="f.summaryRow">
+                <dt class="font-medium text-slate-900 dark:text-slate-100">Total invoice</dt>
+                <dd class="tabular-nums font-medium text-slate-900 dark:text-slate-100">{{ formatRupiah(calculatedTotal) }}</dd>
+              </div>
+              <div v-if="form.pph_type !== 'NON_PPH'" :class="f.summaryRow">
+                <dt class="text-slate-500 dark:text-slate-400">PPh dipotong</dt>
+                <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(calculatedPph) }}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
 
-        <!-- Row 2: Nama Supplier & NPWP Supplier -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NAMA SUPPLIER <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.supplier"
-              required
-              @change="onSupplierChange"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option value="" disabled>-- Pilih Supplier --</option>
-              <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
-                {{ s.name }}
-              </option>
-              <option value="__custom__">+ Ketik Supplier Lain...</option>
-            </select>
-            <input
-              v-if="form.supplier === '__custom__'"
-              v-model="customSupplier"
-              type="text"
-              placeholder="Ketik nama supplier baru"
-              required
-              class="mt-1.5 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NPWP SUPPLIER
-            </label>
-            <input
-              v-model="form.npwp"
-              type="text"
-              placeholder="01.234.567.8-901.000"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XX.XXX.XXX.X-XXX.XXX</p>
-          </div>
+        <div :class="f.dialogFooter">
+          <button type="button" :class="f.buttonSecondary" @click="close">Batal</button>
+          <button type="submit" :class="f.buttonPrimary" :disabled="isSaving">
+            <span v-if="isSaving" class="w-4 h-4 rounded-full border-2 border-current/30 border-t-current animate-spin"></span>
+            {{ isSaving ? 'Menyimpan…' : 'Simpan program' }}
+          </button>
         </div>
-
-        <!-- Row 3: Nomor Memo / DO & Periode -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NOMOR MEMO / DO
-            </label>
-            <input
-              v-model="form.mou_number"
-              type="text"
-              placeholder="Contoh: DO/SCM/2026/088 atau MEMO/088"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              PERIODE MULAI
-            </label>
-            <input
-              v-model="form.start_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              PERIODE SELESAI
-            </label>
-            <input
-              v-model="form.end_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- SECTION 2: INVOICE & PERPAJAKAN -->
-      <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider uppercase mb-3 font-sans flex items-center gap-1.5">
-          <span>INVOICE & PERPAJAKAN</span>
-        </h4>
-
-        <!-- Row 4: No. Invoice, Tanggal Invoice, Jatuh Tempo -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. INVOICE <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.invoice_number"
-              type="text"
-              placeholder="Contoh: INV/SCM/2025/1042"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TANGGAL INVOICE <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.program_date"
-              type="date"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              JATUH TEMPO
-            </label>
-            <input
-              v-model="form.due_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-        </div>
-
-        <!-- Row 5: Nilai DPP (Rp) & Tarif PPN -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-7">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI DPP (RP) <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model.number="form.dpp"
-              type="number"
-              min="0"
-              step="1000"
-              required
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
-              {{ formatRupiah(form.dpp || 0) }}
-            </p>
-          </div>
-
-          <div class="md:col-span-5">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TARIF PPN <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="form.ppn_rate"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option value="0.11">11% (Standar)</option>
-              <option value="0.12">12%</option>
-              <option value="0">0% (Non-PPN)</option>
-            </select>
-            <p v-if="form.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-              Kategori Non-PPN (PPN 0%)
-            </p>
-            <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-1 font-medium">
-              Dikenakan PPN 11%
-            </p>
-          </div>
-        </div>
-
-        <!-- Row 6: Nilai PPN (Rp) & Total Invoice (Rp) -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI PPN (RP)
-            </label>
-            <input
-              :value="calculatedPpn"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-              Dihitung otomatis dari DPP
-            </p>
-          </div>
-
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TOTAL INVOICE (RP)
-            </label>
-            <input
-              :value="calculatedTotal"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs font-bold text-slate-900 dark:text-white font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
-              {{ formatRupiah(calculatedTotal) }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Row 7: Jenis PPh & Nilai PPh (Rp) -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              JENIS PPH
-            </label>
-            <select
-              v-model="form.pph_type"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors cursor-pointer"
-            >
-              <option value="NON_PPH">Non PPh</option>
-              <option value="PPH_21">PPh 21 (2,5%)</option>
-              <option value="PPH_23">PPh 23 (2%)</option>
-              <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
-              <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-            </select>
-          </div>
-
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NILAI PPH (RP)
-            </label>
-            <input
-              :value="calculatedPph"
-              type="number"
-              readonly
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 font-mono cursor-not-allowed"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
-              {{ formatRupiah(calculatedPph) }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Row 8: No. Faktur Pajak & Tanggal Faktur Pajak -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              NO. FAKTUR PAJAK
-            </label>
-            <input
-              v-model="form.tax_invoice_number"
-              type="text"
-              placeholder="010.000-25.00000001"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors font-mono"
-            />
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format: XXX.XXX-XX.XXXXXXXX</p>
-          </div>
-
-          <div class="md:col-span-6">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-              TANGGAL FAKTUR PAJAK
-            </label>
-            <input
-              v-model="form.tax_invoice_date"
-              type="date"
-              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors"
-            />
-          </div>
-        </div>
-
-        <!-- Row 9: Catatan Pemeriksaan Pajak -->
-        <div class="mb-3">
-          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 font-sans">
-            CATATAN PEMERIKSAAN PAJAK
-          </label>
-          <textarea
-            v-model="form.tax_notes"
-            rows="2"
-            placeholder="Catatan kepatuhan pajak, verifikasi e-Faktur, nomor registrasi DJP..."
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-colors resize-none"
-          ></textarea>
-        </div>
-
-        <!-- Row 10: Sudah diverifikasi Tim Pajak -->
-        <div class="flex items-center gap-2 pt-1">
-          <input
-            id="is_verified"
-            v-model="form.is_verified"
-            type="checkbox"
-            class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-slate-400 cursor-pointer"
-          />
-          <label for="is_verified" class="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-            Sudah diverifikasi Tim Pajak
-          </label>
-        </div>
-      </div>
-
-      <!-- Action Buttons Footer -->
-      <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-        <button
-          type="button"
-          class="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-colors cursor-pointer"
-          @click="$emit('update:open', false)"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          class="px-4 py-2 text-xs rounded-lg transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium"
-        >
-          Simpan
-        </button>
-      </div>
-    </form>
-  </Dialog>
+      </form>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import Dialog from '../ui/Dialog.vue';
+import { onKeyStroke } from '@vueuse/core';
+import { X } from 'lucide-vue-next';
+import SearchSelect from '../ui/SearchSelect.vue';
+import * as f from './formStyles';
+import { PPH_TYPE_OPTIONS } from './formStyles';
 import { useTaxStore, formatRupiah, isNonPpnCategory } from '../../store/taxStore';
 
 const props = defineProps({
@@ -468,6 +213,35 @@ const customBrand = ref('');
 const customCompany = ref('');
 const customWarehouse = ref('');
 const customSupplier = ref('');
+
+// Opsi dropdown ({ value, label }); "__custom__" membuka isian manual di bawahnya
+const withCustom = (list, label) => [...list, { value: '__custom__', label }];
+const categoryOptions = computed(() => withCustom(masterCategories.value.map(c => ({ value: c, label: c })), '+ Kategori lain (ketik manual)'));
+const brandOptions = computed(() => withCustom(masterBrands.value.map(b => ({ value: b, label: b })), '+ Brand lain (ketik manual)'));
+const companyOptions = computed(() => withCustom(masterCompanies.value.map(c => ({ value: c, label: c })), '+ Company lain (ketik manual)'));
+const supplierOptions = computed(() => withCustom(
+  masterSuppliers.value.map(s => ({ value: s.name, label: s.name, hint: s.npwp || '' })),
+  '+ Supplier lain (ketik manual)'
+));
+const warehouseOptions = computed(() => withCustom(
+  [{ value: '', label: 'Belum dipilih' }, ...masterWarehouses.value.map(w => ({ value: w.code, label: w.code, hint: w.name !== w.code ? w.name : '' }))],
+  '+ Kode gudang lain (ketik manual)'
+));
+const PPN_RATE_OPTIONS = [
+  { value: '0.11', label: '11% (standar)' },
+  { value: '0.12', label: '12%' },
+  { value: '0', label: '0% (non-PPN)' },
+];
+
+const isSaving = ref(false);
+
+function close() {
+  emit('update:open', false);
+}
+
+onKeyStroke('Escape', () => {
+  if (props.open) close();
+});
 
 function onSupplierChange() {
   if (form.supplier === '__custom__') {
@@ -602,6 +376,8 @@ async function handleSubmit() {
     store.addMasterItem('suppliers', { name: finalSupplier, npwp: form.npwp || '' });
   }
 
+  if (isSaving.value) return;
+  isSaving.value = true;
   const created = await store.addProgram({
     program_name: form.program_name,
     category: finalCategory || 'Promosi',
@@ -627,7 +403,7 @@ async function handleSubmit() {
     tax_notes: form.tax_notes,
     is_verified: form.is_verified,
     documents: []
-  });
+  }).finally(() => { isSaving.value = false; });
 
   // Ditolak server (mis. data sudah terdaftar): biarkan form terbuka agar bisa diperbaiki
   if (!created) return;

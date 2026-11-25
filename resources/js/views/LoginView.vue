@@ -1,488 +1,331 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-[#090D16] flex flex-col items-center justify-center p-4 font-sans text-slate-800 dark:text-slate-200 transition-colors relative">
-    <!-- Top Right Theme Toggle -->
-    <div class="absolute top-4 right-4">
-      <button
-        type="button"
-        @click="toggleDark()"
-        class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-        :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
-      >
-        <Sun v-if="isDark" class="w-4 h-4 text-amber-400" />
-        <Moon v-else class="w-4 h-4 text-slate-600" />
-      </button>
-    </div>
-
-    <!-- Main Card Container using shadcn-vue Card components -->
-    <Card
-      :class="[
-        'w-full bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all my-auto',
-        isRegisterMode ? 'max-w-lg' : 'max-w-[420px]'
-      ]"
+  <div class="relative min-h-screen flex flex-col items-center justify-center px-4 py-16 bg-slate-50 dark:bg-graphite-page text-slate-900 dark:text-slate-100">
+    <button
+      type="button"
+      class="absolute top-4 right-4 h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+      :aria-label="isDark ? 'Beralih ke tema terang' : 'Beralih ke tema gelap'"
+      :title="isDark ? 'Tema terang' : 'Tema gelap'"
+      @click="toggleDark()"
     >
-      <!-- ============================================== -->
-      <!-- VIEW 1: LOGIN FORM                             -->
-      <!-- ============================================== -->
-      <template v-if="!isRegisterMode && !isOtpStep">
-        <!-- Card Header: Clean Title & Description (Sign Up moved to bottom) -->
-        <CardHeader class="pb-4 pt-6 px-6 sm:px-7">
-          <CardTitle class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
-            Supply Chain Management
-          </CardTitle>
-          <CardDescription class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {{ loginTab === 'whatsapp' ? 'Masukkan nomor WhatsApp terdaftar untuk verifikasi OTP' : 'Masukkan email dan kata sandi untuk masuk ke sistem' }}
-          </CardDescription>
-        </CardHeader>
+      <Sun v-if="isDark" class="w-4 h-4" :stroke-width="1.75" />
+      <Moon v-else class="w-4 h-4" :stroke-width="1.75" />
+    </button>
 
-        <CardContent class="px-6 sm:px-7 pb-7 space-y-4">
+    <div :class="['w-full', isRegisterMode && !registerSuccess ? 'max-w-[480px]' : 'max-w-[400px]']">
+      <!-- Nama produk dan tiga dokumen yang diarsipkan (tanpa logo) -->
+      <div class="text-center mb-8">
+        <p class="text-lg font-medium leading-none">SCM TaxVault</p>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Invoice · Faktur pajak · Memo/DO</p>
+      </div>
 
-          <!-- Error / Pending / Not Registered Alert -->
-          <div
-            v-if="errorMessage"
-            class="p-3.5 rounded-lg border text-xs flex flex-col gap-2 animate-in fade-in duration-150"
-            :class="isPendingAlert ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-400' : isNotRegisteredAlert ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-300' : 'bg-rose-50 dark:rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400'"
-          >
-            <div class="flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-              <div class="flex-1 text-xs">
-                <p class="font-semibold" v-if="isPendingAlert">Akun Menunggu Persetujuan</p>
-                <p class="font-semibold" v-else-if="isNotRegisteredAlert">Nomor Belum Terdaftar</p>
-                <p class="mt-0.5 leading-relaxed">{{ errorMessage }}</p>
+      <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-graphite-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none">
+        <!-- ============================================== -->
+        <!-- MASUK: email & kata sandi / WhatsApp           -->
+        <!-- ============================================== -->
+        <template v-if="!isRegisterMode && !isOtpStep">
+          <div class="p-6 sm:p-8">
+            <h1 class="text-xl font-medium leading-7">Masuk</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {{ loginTab === 'whatsapp' ? 'Kode OTP dikirim ke WhatsApp yang terdaftar' : 'Gunakan email dan kata sandi akun Anda' }}
+            </p>
+
+            <div v-if="errorMessage" role="alert" :class="['mt-6 rounded-lg border px-4 py-3 text-sm', alertClass]">
+              <div class="flex items-start gap-3">
+                <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" :stroke-width="1.75" />
+                <div class="flex-1 leading-5">
+                  <p v-if="isPendingAlert" class="font-medium">Akun menunggu persetujuan</p>
+                  <p v-else-if="isNotRegisteredAlert" class="font-medium">Nomor belum terdaftar</p>
+                  <p :class="{ 'mt-1 opacity-90': isPendingAlert || isNotRegisteredAlert }">{{ errorMessage }}</p>
+                </div>
               </div>
-            </div>
-
-            <!-- Direct registration CTA if phone number is not registered in database -->
-            <button
-              v-if="isNotRegisteredAlert"
-              type="button"
-              class="w-full py-2 px-3 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 mt-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              @click="redirectToRegisterWithPhone"
-            >
-              <span>Registrasi Akun Baru Sekarang</span>
-              <ArrowRight class="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <!-- Tab 1: Email & Password Form -->
-          <form v-if="loginTab === 'password'" @submit.prevent="handlePasswordSubmit" class="space-y-4">
-            <!-- Email Field -->
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-slate-900 dark:text-slate-200">
-                Email
-              </label>
-              <input
-                v-model="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-            </div>
-
-            <!-- Password Field (Lupa password removed) -->
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-slate-900 dark:text-slate-200">
-                Password
-              </label>
-              <div class="relative">
-                <input
-                  v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
-                  required
-                  class="w-full h-10 px-3.5 pr-10 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-                <button
-                  type="button"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer p-0.5"
-                  @click="showPassword = !showPassword"
-                >
-                  <EyeOff v-if="showPassword" class="w-4 h-4" />
-                  <Eye v-else class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <!-- Remember Me -->
-            <div class="flex items-center">
-              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
-                <input
-                  v-model="rememberMe"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-slate-400 cursor-pointer accent-blue-600"
-                />
-                <span>Ingat saya di perangkat ini</span>
-              </label>
-            </div>
-
-            <!-- Main Blue Button: Login -->
-            <button
-              type="submit"
-              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              :disabled="isLoading"
-            >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span v-else>Login</span>
-            </button>
-
-            <!-- Divider: atau login dengan -->
-            <div class="relative flex items-center justify-center pt-1">
-              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
-              <span class="bg-white dark:bg-[#111827] px-3 text-[11px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
-                atau login dengan
-              </span>
-              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
-            </div>
-
-            <!-- WhatsApp button with Authentic WhatsApp Icon -->
-            <button
-              type="button"
-              class="w-full h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs transition-all flex items-center justify-center gap-2.5 shadow-2xs cursor-pointer group"
-              @click="loginTab = 'whatsapp'; errorMessage = ''"
-            >
-              <svg class="w-4 h-4 shrink-0 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12C2 13.82 2.484 15.522 3.327 16.991L2 22L7.151 20.697C8.583 21.523 10.237 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z" fill="#25D366" />
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M17.472 14.382C17.171 14.232 15.692 13.504 15.416 13.404C15.14 13.304 14.94 13.254 14.739 13.554C14.539 13.854 13.962 14.532 13.787 14.732C13.612 14.932 13.436 14.957 13.135 14.807C12.835 14.657 11.868 14.34 10.721 13.317C9.575 12.295 8.801 11.033 8.575 10.647C8.35 10.261 8.551 10.052 8.701 9.902C8.836 9.767 9.002 9.551 9.152 9.376C9.302 9.201 9.352 9.076 9.453 8.876C9.553 8.676 9.503 8.5 9.428 8.35C9.353 8.2 8.751 6.718 8.501 6.115C8.257 5.527 8.009 5.607 7.824 5.598C7.649 5.59 7.448 5.588 7.247 5.588C7.047 5.588 6.721 5.663 6.445 5.964C6.169 6.264 5.392 6.992 5.392 8.472C5.392 9.952 6.47 11.382 6.621 11.583C6.772 11.783 8.743 14.823 11.762 16.128C12.48 16.438 13.041 16.624 13.478 16.763C14.2 16.993 14.856 16.96 15.375 16.883C15.953 16.796 17.155 16.156 17.406 15.454C17.657 14.752 17.657 14.151 17.582 14.025C17.506 13.899 17.306 13.824 17.005 13.674" fill="white" />
-              </svg>
-              <span>WhatsApp</span>
-            </button>
-          </form>
-
-          <!-- Tab 2: WhatsApp OTP Form -->
-          <form v-else @submit.prevent="handleWhatsAppSubmit" class="space-y-4">
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-slate-900 dark:text-slate-200">
-                Nomor WhatsApp / Email Terdaftar
-              </label>
-              <input
-                v-model="identifier"
-                type="text"
-                placeholder="Contoh: 081224290502"
-                required
-                class="w-full h-10 px-3.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                Kode verifikasi OTP 6-digit akan dikirimkan ke WhatsApp Anda.
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              :disabled="isLoading"
-            >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span v-else>Kirim Kode OTP</span>
-            </button>
-
-            <!-- Divider: atau login dengan -->
-            <div class="relative flex items-center justify-center pt-1">
-              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
-              <span class="bg-white dark:bg-[#111827] px-3 text-[11px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
-                atau login dengan
-              </span>
-              <div class="border-t border-slate-200 dark:border-slate-800 w-full"></div>
-            </div>
-
-            <!-- Email & Sandi button -->
-            <button
-              type="button"
-              class="w-full h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs transition-all flex items-center justify-center gap-2 shadow-2xs cursor-pointer group"
-              @click="loginTab = 'password'; errorMessage = ''"
-            >
-              <Mail class="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              <span>Email & Kata Sandi</span>
-            </button>
-          </form>
-        </CardContent>
-
-        <!-- Card Footer: Sign Up moved to bottom -->
-        <CardFooter class="px-6 sm:px-7 pb-6 pt-3 flex items-center justify-center border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-          <span>Belum punya akun?</span>
-          <button
-            type="button"
-            class="ml-1.5 font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors"
-            @click="goToRegister"
-          >
-            Registrasi sekarang
-          </button>
-        </CardFooter>
-      </template>
-
-      <!-- ============================================== -->
-      <!-- VIEW 2: OTP VERIFICATION SCREEN (shadcn input-otp) -->
-      <!-- ============================================== -->
-      <template v-else-if="!isRegisterMode && isOtpStep">
-        <CardHeader class="pt-6 px-6 sm:px-7 pb-4">
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-xs font-semibold mb-2 border border-blue-200 dark:border-blue-900/60 w-fit">
-            <Smartphone class="w-3.5 h-3.5" />
-            <span>Verifikasi WhatsApp OTP</span>
-          </div>
-          <CardTitle class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Masukkan Kode OTP
-          </CardTitle>
-          <CardDescription class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Kode verifikasi 6-digit telah dikirimkan ke <strong class="text-slate-800 dark:text-slate-200 font-mono">{{ maskedPhone }}</strong>.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent class="px-6 sm:px-7 pb-7 space-y-4">
-          <div
-            v-if="errorMessage"
-            class="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-900/60 text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2"
-          >
-            <AlertCircle class="w-4 h-4 shrink-0" />
-            <span>{{ errorMessage }}</span>
-          </div>
-
-          <form @submit.prevent="handleOtpVerify" class="space-y-5">
-            <div class="space-y-3 flex flex-col items-center">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 text-center">
-                Kode Verifikasi (6 Angka)
-              </label>
-
-              <!-- Official shadcn-vue InputOTP Component -->
-              <InputOTP
-                v-model="otpInput"
-                :maxlength="6"
-                @complete="handleOtpVerify"
+              <button
+                v-if="isNotRegisteredAlert"
+                type="button"
+                :class="[secondaryButtonClass, 'mt-3 h-9']"
+                @click="redirectToRegisterWithPhone"
               >
-                <InputOTPGroup>
-                  <InputOTPSlot :index="0" />
-                  <InputOTPSlot :index="1" />
-                  <InputOTPSlot :index="2" />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
-                  <InputOTPSlot :index="3" />
-                  <InputOTPSlot :index="4" />
-                  <InputOTPSlot :index="5" />
-                </InputOTPGroup>
-              </InputOTP>
+                <span>Daftar akun baru</span>
+                <ArrowRight class="w-4 h-4" :stroke-width="1.75" />
+              </button>
             </div>
 
-            <button
-              type="submit"
-              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              :disabled="isLoading || otpInput.length < 6"
-            >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span v-else>Verifikasi & Masuk</span>
-            </button>
-          </form>
+            <!-- Email & kata sandi -->
+            <form v-if="loginTab === 'password'" class="mt-6" @submit.prevent="handlePasswordSubmit">
+              <div class="space-y-4">
+                <div>
+                  <label for="login-email" :class="labelClass">Email</label>
+                  <input
+                    id="login-email"
+                    v-model="email"
+                    type="email"
+                    autocomplete="username"
+                    placeholder="nama@perusahaan.com"
+                    required
+                    :class="inputClass"
+                  />
+                </div>
 
-          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <label for="login-password" :class="labelClass">Kata sandi</label>
+                  <div class="relative">
+                    <input
+                      id="login-password"
+                      v-model="password"
+                      :type="showPassword ? 'text' : 'password'"
+                      autocomplete="current-password"
+                      required
+                      :class="[inputClass, 'pr-10']"
+                    />
+                    <button
+                      type="button"
+                      class="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+                      @click="showPassword = !showPassword"
+                    >
+                      <EyeOff v-if="showPassword" class="w-4 h-4" :stroke-width="1.75" />
+                      <Eye v-else class="w-4 h-4" :stroke-width="1.75" />
+                    </button>
+                  </div>
+                </div>
+
+                <label class="flex items-center gap-2 w-fit cursor-pointer text-sm text-slate-600 dark:text-slate-400">
+                  <input
+                    v-model="rememberMe"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-blue-600 cursor-pointer"
+                  />
+                  <span>Ingat saya di perangkat ini</span>
+                </label>
+              </div>
+
+              <button type="submit" :class="[primaryButtonClass, 'mt-6']" :disabled="isLoading">
+                <span v-if="isLoading" :class="spinnerClass"></span>
+                <span v-else>Masuk</span>
+              </button>
+
+              <div class="my-4 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+                <span>atau</span>
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+              </div>
+
+              <button type="button" :class="secondaryButtonClass" @click="loginTab = 'whatsapp'; errorMessage = ''">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12C2 13.82 2.484 15.522 3.327 16.991L2 22L7.151 20.697C8.583 21.523 10.237 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z" fill="#25D366" />
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M17.472 14.382C17.171 14.232 15.692 13.504 15.416 13.404C15.14 13.304 14.94 13.254 14.739 13.554C14.539 13.854 13.962 14.532 13.787 14.732C13.612 14.932 13.436 14.957 13.135 14.807C12.835 14.657 11.868 14.34 10.721 13.317C9.575 12.295 8.801 11.033 8.575 10.647C8.35 10.261 8.551 10.052 8.701 9.902C8.836 9.767 9.002 9.551 9.152 9.376C9.302 9.201 9.352 9.076 9.453 8.876C9.553 8.676 9.503 8.5 9.428 8.35C9.353 8.2 8.751 6.718 8.501 6.115C8.257 5.527 8.009 5.607 7.824 5.598C7.649 5.59 7.448 5.588 7.247 5.588C7.047 5.588 6.721 5.663 6.445 5.964C6.169 6.264 5.392 6.992 5.392 8.472C5.392 9.952 6.47 11.382 6.621 11.583C6.772 11.783 8.743 14.823 11.762 16.128C12.48 16.438 13.041 16.624 13.478 16.763C14.2 16.993 14.856 16.96 15.375 16.883C15.953 16.796 17.155 16.156 17.406 15.454C17.657 14.752 17.657 14.151 17.582 14.025C17.506 13.899 17.306 13.824 17.005 13.674" fill="white" />
+                </svg>
+                <span>Masuk dengan WhatsApp</span>
+              </button>
+            </form>
+
+            <!-- WhatsApp OTP -->
+            <form v-else class="mt-6" @submit.prevent="handleWhatsAppSubmit">
+              <div>
+                <label for="login-identifier" :class="labelClass">Nomor WhatsApp atau email</label>
+                <input
+                  id="login-identifier"
+                  v-model="identifier"
+                  type="text"
+                  inputmode="email"
+                  autocomplete="username"
+                  placeholder="0812 3456 7890"
+                  required
+                  :class="[inputClass, 'tabular-nums']"
+                />
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Kode 6 digit dikirim lewat WhatsApp, berlaku 5 menit</p>
+              </div>
+
+              <button type="submit" :class="[primaryButtonClass, 'mt-6']" :disabled="isLoading">
+                <span v-if="isLoading" :class="spinnerClass"></span>
+                <span v-else>Kirim kode OTP</span>
+              </button>
+
+              <div class="my-4 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+                <span>atau</span>
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+              </div>
+
+              <button type="button" :class="secondaryButtonClass" @click="loginTab = 'password'; errorMessage = ''">
+                <Mail class="w-4 h-4 text-slate-500 dark:text-slate-400" :stroke-width="1.75" />
+                <span>Masuk dengan email</span>
+              </button>
+            </form>
+          </div>
+
+          <div :class="footerClass">
+            <span>Belum punya akun?</span>
+            <button type="button" :class="linkClass" @click="goToRegister">Daftar</button>
+          </div>
+        </template>
+
+        <!-- ============================================== -->
+        <!-- VERIFIKASI OTP                                 -->
+        <!-- ============================================== -->
+        <template v-else-if="!isRegisterMode && isOtpStep">
+          <div class="p-6 sm:p-8">
+            <h1 class="text-xl font-medium leading-7">Masukkan kode OTP</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Kode 6 digit dikirim ke <span class="text-slate-900 dark:text-slate-100 tabular-nums">{{ maskedPhone }}</span>
+            </p>
+
+            <div v-if="errorMessage" role="alert" :class="['mt-6 rounded-lg border px-4 py-3 text-sm flex items-start gap-3', alertClass]">
+              <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" :stroke-width="1.75" />
+              <span class="leading-5">{{ errorMessage }}</span>
+            </div>
+
+            <form class="mt-6" @submit.prevent="handleOtpVerify">
+              <label class="sr-only">Kode verifikasi</label>
+              <div class="flex justify-center">
+                <InputOTP v-model="otpInput" :maxlength="6" @complete="handleOtpVerify">
+                  <InputOTPGroup>
+                    <InputOTPSlot :index="0" />
+                    <InputOTPSlot :index="1" />
+                    <InputOTPSlot :index="2" />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot :index="3" />
+                    <InputOTPSlot :index="4" />
+                    <InputOTPSlot :index="5" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <button type="submit" :class="[primaryButtonClass, 'mt-6']" :disabled="isLoading || otpInput.length < 6">
+                <span v-if="isLoading" :class="spinnerClass"></span>
+                <span v-else>Verifikasi dan masuk</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="flex items-center justify-between px-6 sm:px-8 py-4 border-t border-slate-200 dark:border-slate-800 text-sm">
             <button
               type="button"
-              class="hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1.5"
+              class="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
               @click="backToLoginForm"
             >
-              <ArrowLeft class="w-3.5 h-3.5" />
-              <span>Ganti Akun</span>
+              <ArrowLeft class="w-4 h-4" :stroke-width="1.75" />
+              <span>Ganti akun</span>
             </button>
-
             <button
               type="button"
-              class="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer disabled:text-slate-400 dark:disabled:text-slate-600 disabled:no-underline"
+              :class="[linkClass, 'tabular-nums disabled:text-slate-400 dark:disabled:text-slate-500 disabled:no-underline disabled:cursor-default']"
               :disabled="resendCooldown > 0"
               @click="handleResendOtp"
             >
-              <span v-if="resendCooldown > 0">Kirim Ulang ({{ resendCooldown }}s)</span>
-              <span v-else>Kirim Ulang OTP</span>
+              {{ resendCooldown > 0 ? `Kirim ulang dalam ${resendCooldown} dtk` : 'Kirim ulang kode' }}
             </button>
           </div>
-        </CardContent>
-      </template>
+        </template>
 
-      <!-- ============================================== -->
-      <!-- VIEW 3: REGISTRATION FORM                       -->
-      <!-- ============================================== -->
-      <template v-else-if="isRegisterMode">
-        <CardHeader class="pb-4 pt-6 px-6 sm:px-7">
-          <CardTitle class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Formulir Pendaftaran
-          </CardTitle>
-          <CardDescription class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Lengkapi data Anda untuk pengajuan akun baru
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent class="px-6 sm:px-7 pb-7">
-          <!-- Register Success State -->
-          <div v-if="registerSuccess" class="space-y-5 text-center py-2">
-            <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/60 flex items-center justify-center mx-auto">
-              <Check class="w-6 h-6 stroke-[2.5]" />
+        <!-- ============================================== -->
+        <!-- PENDAFTARAN                                    -->
+        <!-- ============================================== -->
+        <template v-else-if="isRegisterMode">
+          <!-- Pendaftaran terkirim -->
+          <div v-if="registerSuccess" class="p-6 sm:p-8">
+            <div class="h-10 w-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Check class="w-5 h-5" :stroke-width="2" />
             </div>
+            <h1 class="mt-4 text-xl font-medium leading-7">Pendaftaran terkirim</h1>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Akun Anda aktif setelah disetujui admin SCM. Pemberitahuan dikirim lewat WhatsApp.
+            </p>
 
-            <div class="space-y-1.5">
-              <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                Pendaftaran Berhasil Diajukan
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                Pengajuan akun Anda telah tersimpan dan menunggu persetujuan Administrator SCM.
-              </p>
-            </div>
-
-            <div class="bg-slate-50 dark:bg-slate-900/60 rounded-lg p-3.5 border border-slate-200 dark:border-slate-800 text-xs space-y-2 text-left max-w-sm mx-auto">
-              <div class="flex items-center justify-between">
-                <span class="text-slate-400 dark:text-slate-500">Nama</span>
-                <span class="font-semibold text-slate-900 dark:text-white">{{ registeredData.name }}</span>
+            <dl class="mt-6 rounded-lg border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800 text-sm">
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-slate-500 dark:text-slate-400">Nama</dt>
+                <dd class="text-right">{{ registeredData.name }}</dd>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="text-slate-400 dark:text-slate-500">Email</span>
-                <span class="font-mono text-slate-800 dark:text-slate-200">{{ registeredData.email }}</span>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-slate-500 dark:text-slate-400">Email</dt>
+                <dd class="text-right truncate">{{ registeredData.email }}</dd>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="text-slate-400 dark:text-slate-500">Role Diajukan</span>
-                <span class="font-medium text-slate-800 dark:text-slate-200">{{ registeredData.role }}</span>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-slate-500 dark:text-slate-400">Role</dt>
+                <dd class="text-right">{{ registeredData.role }}</dd>
               </div>
-              <div class="flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-slate-800">
-                <span class="text-slate-400 dark:text-slate-500">Status</span>
-                <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-slate-500 dark:text-slate-400">Status</dt>
+                <dd class="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  <span>Menunggu ACC Admin</span>
-                </span>
+                  <span>Menunggu persetujuan</span>
+                </dd>
               </div>
-            </div>
+            </dl>
 
-            <div class="pt-2 max-w-sm mx-auto">
-              <button
-                type="button"
-                class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                @click="backToLoginForm"
-              >
-                Kembali ke Halaman Login
-              </button>
-            </div>
+            <button type="button" :class="[secondaryButtonClass, 'mt-6']" @click="backToLoginForm">
+              Kembali ke halaman masuk
+            </button>
           </div>
 
-          <!-- Registration Form Fields -->
-          <form v-else @submit.prevent="handleRegisterSubmit" class="space-y-3.5">
-            <div
-              v-if="errorMessage"
-              class="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-900/60 text-xs text-rose-700 dark:text-rose-400 flex items-center gap-2"
-            >
-              <AlertCircle class="w-4 h-4 shrink-0" />
-              <span>{{ errorMessage }}</span>
-            </div>
+          <template v-else>
+            <div class="p-6 sm:p-8">
+              <h1 class="text-xl font-medium leading-7">Daftar akun</h1>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Akun baru aktif setelah disetujui admin SCM
+              </p>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Nama Lengkap <span class="text-rose-500">*</span>
-              </label>
-              <input
-                v-model="regForm.name"
-                type="text"
-                placeholder="Nama sesuai identitas kantor"
-                required
-                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Nomor WhatsApp <span class="text-rose-500">*</span>
-                </label>
-                <input
-                  v-model="regForm.phone"
-                  type="text"
-                  placeholder="Contoh: 081234567890"
-                  required
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
+              <div v-if="errorMessage" role="alert" :class="['mt-6 rounded-lg border px-4 py-3 text-sm flex items-start gap-3', alertClass]">
+                <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" :stroke-width="1.75" />
+                <span class="leading-5">{{ errorMessage }}</span>
               </div>
 
-              <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Alamat Email <span class="text-rose-500">*</span>
-                </label>
-                <input
-                  v-model="regForm.email"
-                  type="email"
-                  placeholder="nama@perusahaan.com"
-                  required
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
+              <form class="mt-6" @submit.prevent="handleRegisterSubmit">
+                <div class="space-y-4">
+                  <div>
+                    <label for="reg-name" :class="labelClass">Nama lengkap</label>
+                    <input id="reg-name" v-model="regForm.name" type="text" autocomplete="name" placeholder="Nama sesuai identitas kantor" required :class="inputClass" />
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label for="reg-phone" :class="labelClass">Nomor WhatsApp</label>
+                      <input id="reg-phone" v-model="regForm.phone" type="tel" autocomplete="tel" placeholder="0812 3456 7890" required :class="[inputClass, 'tabular-nums']" />
+                    </div>
+                    <div>
+                      <label for="reg-email" :class="labelClass">Email</label>
+                      <input id="reg-email" v-model="regForm.email" type="email" autocomplete="email" placeholder="nama@perusahaan.com" required :class="inputClass" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="reg-role" :class="labelClass">Role yang diajukan</label>
+                    <select id="reg-role" v-model="regForm.role" required :class="[inputClass, 'cursor-pointer']">
+                      <option value="Staff Gudang">Staff Gudang</option>
+                      <option value="Staff Finance">Staff Finance</option>
+                      <option value="Staff SCM">Staff SCM</option>
+                    </select>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label for="reg-password" :class="labelClass">Kata sandi</label>
+                      <input id="reg-password" v-model="regForm.password" type="password" autocomplete="new-password" placeholder="Minimal 6 karakter" required minlength="6" :class="inputClass" />
+                    </div>
+                    <div>
+                      <label for="reg-password2" :class="labelClass">Ulangi kata sandi</label>
+                      <input id="reg-password2" v-model="regForm.passwordConfirmation" type="password" autocomplete="new-password" required minlength="6" :class="inputClass" />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" :class="[primaryButtonClass, 'mt-6']" :disabled="isLoading">
+                  <span v-if="isLoading" :class="spinnerClass"></span>
+                  <span v-else>Kirim pendaftaran</span>
+                </button>
+              </form>
             </div>
 
-            <div class="space-y-1">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Pengajuan Jabatan / Role <span class="text-rose-500">*</span>
-              </label>
-              <select
-                v-model="regForm.role"
-                required
-                class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium"
-              >
-                <option value="Staff Gudang">Staff Gudang</option>
-                <option value="Staff Finance">Staff Finance</option>
-                <option value="Staff SCM">Staff SCM</option>
-              </select>
+            <div :class="footerClass">
+              <span>Sudah punya akun?</span>
+              <button type="button" :class="linkClass" @click="backToLoginForm">Masuk</button>
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Kata Sandi <span class="text-rose-500">*</span>
-                </label>
-                <input
-                  v-model="regForm.password"
-                  type="password"
-                  placeholder="Minimal 6 karakter"
-                  required
-                  minlength="6"
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Konfirmasi Kata Sandi <span class="text-rose-500">*</span>
-                </label>
-                <input
-                  v-model="regForm.passwordConfirmation"
-                  type="password"
-                  placeholder="Ketik ulang kata sandi"
-                  required
-                  minlength="6"
-                  class="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-hidden transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div class="p-2.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-[11px] text-blue-950 dark:text-blue-300 flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-              <span>
-                Akun baru akan diverifikasi oleh Administrator sebelum dapat login ke sistem.
-              </span>
-            </div>
-
-            <button
-              type="submit"
-              class="w-full h-10 rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              :disabled="isLoading"
-            >
-              <span v-if="isLoading" class="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span v-else>Daftar Sekarang</span>
-            </button>
-          </form>
-        </CardContent>
-
-        <!-- Registration Card Footer: Login link at bottom -->
-        <CardFooter v-if="!registerSuccess" class="px-6 sm:px-7 pb-6 pt-3 flex items-center justify-center border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-          <span>Sudah memiliki akun?</span>
-          <button
-            type="button"
-            class="ml-1.5 font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors"
-            @click="backToLoginForm"
-          >
-            Masuk sekarang
-          </button>
-        </CardFooter>
-      </template>
-    </Card>
+          </template>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -497,19 +340,10 @@ import {
   EyeOff,
   ArrowLeft,
   ArrowRight,
-  Smartphone,
   Sun,
   Moon,
   Mail,
 } from 'lucide-vue-next';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 import {
   InputOTP,
   InputOTPGroup,
@@ -524,6 +358,27 @@ const isDark = useDark({
   valueLight: ''
 });
 const toggleDark = useToggle(isDark);
+
+// Gaya kontrol bersama untuk semua langkah (masuk, OTP, daftar)
+const labelClass = 'block mb-2 text-sm font-medium text-slate-700 dark:text-slate-300';
+const inputClass = 'w-full h-10 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-colors';
+const buttonBase = 'w-full h-10 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500';
+// Aksi utama: isi warna teks utama (gelap di tema terang, putih tulang di tema gelap)
+const primaryButtonClass = `${buttonBase} bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white`;
+const secondaryButtonClass = `${buttonBase} border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700`;
+const spinnerClass = 'w-4 h-4 rounded-full border-2 border-current/30 border-t-current animate-spin';
+const linkClass = 'font-medium text-blue-600 dark:text-blue-400 hover:underline underline-offset-4 cursor-pointer';
+const footerClass = 'flex items-center justify-center gap-1 px-6 sm:px-8 py-4 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-400';
+
+const alertClass = computed(() => {
+  if (isPendingAlert.value) {
+    return 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300';
+  }
+  if (isNotRegisteredAlert.value) {
+    return 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:border-blue-900/50 dark:text-blue-300';
+  }
+  return 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900/50 dark:text-rose-300';
+});
 
 const router = useRouter();
 const route = useRoute();

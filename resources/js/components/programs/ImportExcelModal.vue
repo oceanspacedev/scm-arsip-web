@@ -10,7 +10,7 @@
     ></div>
 
     <!-- Modal Dialog -->
-    <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+    <div class="relative bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl overflow-hidden z-10 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
       <!-- Header -->
       <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div>
@@ -165,7 +165,7 @@
               class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               @click="resetFile"
             >
-              Ganti File
+              Ganti file
             </button>
           </div>
 
@@ -173,7 +173,7 @@
           <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
             <div class="overflow-x-auto max-h-72">
               <table class="w-full text-left text-xs border-collapse">
-                <thead class="sticky top-0 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium uppercase text-[10px] whitespace-nowrap">
+                <thead class="sticky top-0 bg-white dark:bg-graphite-card border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs whitespace-nowrap">
                   <tr>
                     <th class="py-2.5 px-3">NO</th>
                     <th class="py-2.5 px-2.5 whitespace-nowrap">TANGGAL</th>
@@ -192,7 +192,7 @@
                     <th class="py-2.5 px-3 text-center whitespace-nowrap">STATUS PAYMENT</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#111827]">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-graphite-card">
                   <tr
                     v-for="(row, idx) in parsedRows.slice(0, 15)"
                     :key="idx"

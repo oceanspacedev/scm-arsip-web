@@ -156,4 +156,22 @@ class DocumentUploadLogTest extends TestCase
         $this->getJson('/api/document-logs?status=failed')->assertJsonCount(1, 'logs')->assertJsonPath('logs.0.file_name', 'lama.pdf');
         $this->getJson('/api/document-logs?q=dealer')->assertJsonCount(1, 'logs')->assertJsonPath('logs.0.file_name', 'baru.pdf');
     }
+
+    public function test_history_page_size_follows_per_page_within_limits()
+    {
+        foreach (range(1, 12) as $i) {
+            DocumentUploadLog::create(['file_name' => "berkas-{$i}.pdf", 'source' => 'auto', 'status' => 'failed']);
+        }
+
+        $this->getJson('/api/document-logs?per_page=10')
+            ->assertOk()
+            ->assertJsonCount(10, 'logs')
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('meta.total', 12);
+
+        $this->getJson('/api/document-logs?per_page=10&page=2')->assertJsonCount(2, 'logs');
+
+        // Di luar batas 10–100 ditolak, bukan diam-diam memuat ribuan baris
+        $this->getJson('/api/document-logs?per_page=5000')->assertStatus(422);
+    }
 }

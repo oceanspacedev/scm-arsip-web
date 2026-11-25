@@ -40,13 +40,13 @@ const routes = [
                 path: 'programs',
                 name: 'programs',
                 component: ProgramsView,
-                meta: { title: 'Arsip Program - SCM TaxVault' }
+                meta: { title: 'Arsip program - SCM TaxVault' }
             },
             {
                 path: 'programs/:id',
                 name: 'program-detail',
                 component: ProgramDetailView,
-                meta: { title: 'Detail Program - SCM TaxVault' }
+                meta: { title: 'Detail program - SCM TaxVault' }
             },
             {
                 path: 'history',
@@ -58,19 +58,19 @@ const routes = [
                 path: 'users',
                 name: 'users',
                 component: UsersView,
-                meta: { title: 'Manajemen User - SCM TaxVault' }
+                meta: { title: 'Manajemen user - SCM TaxVault' }
             },
             {
                 path: 'permissions',
                 name: 'permissions',
                 component: () => import('../views/RolePermissionsView.vue'),
-                meta: { title: 'Hak Akses & Role - SCM TaxVault' }
+                meta: { title: 'Hak akses & role - SCM TaxVault' }
             },
             {
                 path: 'master-data',
                 name: 'master-data',
                 component: () => import('../views/MasterDataView.vue'),
-                meta: { title: 'Data Master - SCM TaxVault' }
+                meta: { title: 'Data master - SCM TaxVault' }
             },
             {
                 path: 'settings',

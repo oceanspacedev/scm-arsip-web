@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="public/images/scm_logo.jpg" alt="Logo SCM TaxVault" width="150">
-</p>
-
 <h1 align="center">SCM TaxVault</h1>
 
 <p align="center">

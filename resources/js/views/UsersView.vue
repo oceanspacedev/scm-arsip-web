@@ -1,245 +1,167 @@
 <template>
-  <div class="space-y-4 sm:space-y-6">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+  <div class="space-y-4">
+    <!-- Judul + aksi -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Manajemen User
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
-          Kelola akses personel divisi SCM dan Tim Pajak
-        </p>
+        <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">Manajemen user</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Kelola akses personel divisi SCM dan Tim Pajak</p>
       </div>
 
-      <!-- Action: + Tambah User Button & Role Permission Shortcut -->
-      <div class="flex items-center gap-2.5 w-full sm:w-auto">
+      <div class="flex items-center gap-2 w-full sm:w-auto">
         <router-link
           to="/permissions"
-          class="h-8.5 px-3 w-full sm:w-auto justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          class="h-9 px-3 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
         >
-          <ShieldCheck class="w-3.5 h-3.5 text-slate-400" />
-          <span>Atur Hak Akses Role</span>
+          <ShieldCheck class="w-4 h-4 text-slate-500 dark:text-slate-400" :stroke-width="1.75" />
+          <span>Atur hak akses role</span>
         </router-link>
-
         <button
           type="button"
-          class="h-8.5 px-3.5 w-full sm:w-auto justify-center rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
+          class="h-9 px-4 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition-colors cursor-pointer"
           @click="openAddModal"
         >
-          <Plus class="w-4 h-4" />
-          <span>Tambah User</span>
+          <Plus class="w-4 h-4" :stroke-width="1.75" />
+          <span>Tambah user</span>
         </button>
       </div>
     </div>
 
-    <!-- Filter Tabs & Stats -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 text-xs">
-      <div class="flex gap-4 sm:gap-6 overflow-x-auto pb-2 -mb-px no-scrollbar">
+    <!-- Tab status + pencarian -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-200 dark:border-slate-800">
+      <div class="flex gap-6 overflow-x-auto -mb-px no-scrollbar text-sm">
         <button
+          v-for="tab in tabs"
+          :key="tab.value"
           type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'all' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('all')"
+          class="pb-3 border-b-2 inline-flex items-center gap-2 shrink-0 whitespace-nowrap transition-colors cursor-pointer"
+          :class="activeFilter === tab.value
+            ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100 font-medium'
+            : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'"
+          @click="setActiveFilter(tab.value)"
         >
-          <span>Semua User</span>
-          <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-            {{ allUsers.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'pending' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('pending')"
-        >
-          <span>Menunggu ACC</span>
+          <span>{{ tab.label }}</span>
           <span
-            class="px-1.5 py-0.5 rounded text-[10px] font-medium"
-            :class="pendingUsers.length > 0 ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'"
-          >
-            {{ pendingUsers.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="pb-2 border-b-2 font-medium transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          :class="activeFilter === 'approved' ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-          @click="setActiveFilter('approved')"
-        >
-          <span>Aktif</span>
-          <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-            {{ approvedUsers.length }}
-          </span>
+            class="tabular-nums text-xs"
+            :class="tab.value === 'pending' && tab.count > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'"
+          >{{ tab.count }}</span>
         </button>
       </div>
 
-      <!-- Search Input -->
-      <div class="relative w-full sm:w-64 pb-2">
+      <div class="relative w-full sm:w-72 pb-3">
+        <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" :stroke-width="1.75" />
         <input
           v-model="searchQuery"
-          type="text"
-          placeholder="Cari nama, email, atau no. WA..."
-          class="w-full h-8.5 pl-8.5 pr-3 text-xs rounded-lg border border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:outline-hidden transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+          type="search"
+          aria-label="Cari user"
+          placeholder="Cari nama, email, atau nomor WA"
+          class="w-full h-9 pl-9 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
         />
-        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
       </div>
     </div>
 
-    <!-- Desktop Users Table (hidden md:block) -->
-    <div class="hidden md:block bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <!-- Tabel user (desktop) -->
+    <div class="hidden md:block bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse min-w-[640px]">
+        <table class="w-full text-left text-[13px] border-collapse">
           <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            <tr class="bg-slate-50 dark:bg-[#171719] border-b border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
               <th class="py-3 px-4">Nama</th>
-              <th class="py-3 px-4">Email</th>
               <th class="py-3 px-4">No. WhatsApp</th>
               <th class="py-3 px-4">Peran</th>
-              <th class="py-3 px-4">Dibuat</th>
+              <th class="py-3 px-4">Terdaftar</th>
               <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4 text-right">Aksi</th>
+              <th class="py-3 px-4"><span class="sr-only">Aksi</span></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+          <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800">
             <tr
-              v-for="user in filteredList"
+              v-for="user in paginatedUsers"
               :key="user.id"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+              class="hover:bg-slate-50 dark:hover:bg-[#1e1e20] transition-colors"
             >
-              <!-- NAMA -->
-              <td class="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                <div class="flex items-center gap-2.5">
-                  <div
-                    class="w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                  >
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <span class="w-8 h-8 rounded-full inline-flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">
                     {{ getInitials(user.name) }}
+                  </span>
+                  <div class="min-w-0">
+                    <p class="font-medium text-slate-900 dark:text-slate-100 leading-5 truncate">{{ user.name }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ user.email }}</p>
                   </div>
-                  <span class="truncate max-w-[180px] lg:max-w-none">{{ user.name }}</span>
                 </div>
               </td>
-
-              <!-- EMAIL -->
-              <td class="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-xs">
-                {{ user.email }}
-              </td>
-
-              <!-- NO. WHATSAPP -->
-              <td class="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap font-medium">
-                {{ user.phone || '-' }}
-              </td>
-
-              <!-- PERAN -->
+              <td class="py-3 px-4 whitespace-nowrap tabular-nums text-slate-700 dark:text-slate-300">{{ user.phone || '-' }}</td>
+              <td class="py-3 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300">{{ user.role }}</td>
+              <td class="py-3 px-4 whitespace-nowrap tabular-nums text-slate-500 dark:text-slate-400">{{ formatDate(user.registered_at) }}</td>
               <td class="py-3 px-4 whitespace-nowrap">
-                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                  {{ user.role }}
+                <span class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="statusDot(user.status)"></span>
+                  {{ statusLabel(user.status) }}
                 </span>
               </td>
-
-              <!-- DIBUAT -->
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {{ formatDate(user.registered_at) }}
-              </td>
-
-              <!-- STATUS -->
               <td class="py-3 px-4 whitespace-nowrap">
-                <span class="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    :class="{
-                      'bg-emerald-500': user.status === 'approved',
-                      'bg-amber-500': user.status === 'pending',
-                      'bg-slate-400': user.status === 'rejected'
-                    }"
-                  ></span>
-                  <span>{{ user.status === 'approved' ? 'Aktif' : user.status === 'pending' ? 'Menunggu ACC' : 'Nonaktif' }}</span>
-                </span>
-              </td>
-
-              <!-- AKSI -->
-              <td class="py-3 px-4 text-right whitespace-nowrap">
-                <div class="inline-flex items-center gap-1.5" v-if="user.email !== 'admin@scm.corp'">
-                  <!-- Pending -> ACC -->
+                <div v-if="user.email !== 'admin@scm.corp'" class="flex items-center justify-end gap-1">
                   <button
-                    v-if="user.status === 'pending'"
                     type="button"
                     :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-                    @click="handleApprove(user)"
+                    class="h-8 px-3 mr-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                    :class="user.status === 'pending'
+                      ? 'border-transparent bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                    @click="user.status === 'approved' ? handleReject(user) : handleApprove(user)"
                   >
-                    <span v-if="processingId === user.id" class="w-3 h-3 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                    <span v-else>ACC</span>
+                    <span v-if="processingId === user.id" class="w-3 h-3 rounded-full border-2 border-current/30 border-t-current animate-spin"></span>
+                    {{ user.status === 'pending' ? 'ACC' : user.status === 'approved' ? 'Nonaktifkan' : 'Aktifkan' }}
                   </button>
-
-                  <!-- Active -> Nonaktifkan -->
-                  <button
-                    v-else-if="user.status === 'approved'"
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
-                    @click="handleReject(user)"
-                  >
-                    Nonaktifkan
-                  </button>
-
-                  <!-- Inactive -> Aktifkan -->
-                  <button
-                    v-else
-                    type="button"
-                    :disabled="processingId === user.id"
-                    class="h-7 px-2.5 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
-                    @click="handleApprove(user)"
-                  >
-                    Aktifkan
-                  </button>
-
-                  <!-- Edit Icon Button -->
                   <button
                     type="button"
                     :disabled="processingId === user.id"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+                    aria-label="Ubah user"
+                    title="Ubah"
                     @click="openEditModal(user)"
-                    title="Ubah Pengguna"
                   >
-                    <Pencil class="w-3.5 h-3.5" />
+                    <Pencil class="w-4 h-4" :stroke-width="1.75" />
                   </button>
-
-                  <!-- Trash Delete Icon Button -->
                   <button
                     type="button"
                     :disabled="processingId === user.id"
-                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer flex items-center justify-center disabled:opacity-50"
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                    aria-label="Hapus user"
+                    title="Hapus"
                     @click="promptDelete(user)"
-                    title="Hapus Akun"
                   >
-                    <Trash2 class="w-3.5 h-3.5" />
+                    <Trash2 class="w-4 h-4" :stroke-width="1.75" />
                   </button>
                 </div>
-                <span v-else class="text-[11px] text-slate-400 font-medium">
-                  Super Admin
-                </span>
+                <p v-else class="text-right text-xs text-slate-400 dark:text-slate-500">Super admin</p>
               </td>
             </tr>
 
-            <!-- Empty State Desktop -->
             <tr v-if="filteredList.length === 0">
-              <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                <Users class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p class="font-medium text-slate-600 dark:text-slate-300">Tidak ada data pengguna yang sesuai.</p>
+              <td colspan="6" class="py-16 text-center">
+                <Users class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" :stroke-width="1.5" />
+                <p class="mt-3 text-sm text-slate-700 dark:text-slate-300">Tidak ada user yang cocok</p>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        v-model:page="currentPage"
+        v-model:page-size="pageSize"
+        :total="filteredList.length"
+        item-label="user"
+      />
     </div>
 
     <!-- Mobile Cards View (block md:hidden) -->
     <div class="block md:hidden space-y-3">
       <div
-        v-for="user in filteredList"
+        v-for="user in paginatedUsers"
         :key="user.id"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 space-y-3 transition-colors"
+        class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 space-y-3 transition-colors"
       >
         <!-- Card Top: Avatar, Name, Role & Status -->
         <div class="flex items-start justify-between gap-2.5">
@@ -371,11 +293,19 @@
       <!-- Empty State Mobile -->
       <div
         v-if="filteredList.length === 0"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 dark:text-slate-500"
+        class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 dark:text-slate-500"
       >
         <Users class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
         <p class="font-medium text-slate-600 dark:text-slate-300 text-xs">Tidak ada data pengguna yang sesuai.</p>
       </div>
+      <TablePagination
+        v-if="filteredList.length > 0"
+        v-model:page="currentPage"
+        v-model:page-size="pageSize"
+        :total="filteredList.length"
+        item-label="user"
+        class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800"
+      />
     </div>
 
     <!-- Modal: + Tambah User Baru -->
@@ -385,12 +315,12 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="isAddModalOpen = false"
       >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="w-full max-w-md bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
           <!-- Modal Header -->
-          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
+          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-graphite-card shrink-0">
             <div>
               <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Tambah User Baru
+                Tambah user baru
               </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Tambahkan personel internal untuk akses SCM TaxVault
@@ -516,12 +446,12 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="isEditModalOpen = false"
       >
-        <div class="w-full max-w-md bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="w-full max-w-md bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col">
           <!-- Modal Header -->
-          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#111827] shrink-0">
+          <div class="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-graphite-card shrink-0">
             <div>
               <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Ubah Data Pengguna
+                Ubah data pengguna
               </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Perbarui informasi akun, hak akses, dan status pengguna
@@ -647,7 +577,7 @@
                 :disabled="isEditing"
               >
                 <span v-if="isEditing" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                <span v-else>Simpan Perubahan</span>
+                <span v-else>Simpan perubahan</span>
               </button>
             </div>
           </form>
@@ -662,7 +592,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
         @click.self="userToDelete = null"
       >
-        <div class="w-full max-w-sm bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
+        <div class="w-full max-w-sm bg-white dark:bg-graphite-card rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-5 text-center space-y-3.5">
           <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto">
             <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
           </div>
@@ -718,6 +648,7 @@ import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Plus, Search, Trash2, X, AlertCircle, Users, Eye, EyeOff, Mail, Phone, Calendar, Check, Pencil, ShieldCheck } from 'lucide-vue-next';
 import { useTaxStore } from '../store/taxStore';
+import TablePagination from '../components/ui/TablePagination.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -815,6 +746,37 @@ const filteredList = computed(() => {
 
   return list;
 });
+
+const tabs = computed(() => [
+  { value: 'all', label: 'Semua user', count: allUsers.value.length },
+  { value: 'pending', label: 'Menunggu ACC', count: pendingUsers.value.length },
+  { value: 'approved', label: 'Aktif', count: approvedUsers.value.length },
+]);
+
+// Pagination
+const pageSize = ref(10);
+const currentPage = ref(1);
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredList.value.slice(start, start + pageSize.value);
+});
+watch([activeFilter, searchQuery], () => { currentPage.value = 1; });
+watch(filteredList, (list) => {
+  const lastPage = Math.max(1, Math.ceil(list.length / pageSize.value));
+  if (currentPage.value > lastPage) currentPage.value = lastPage;
+});
+
+function statusLabel(status) {
+  if (status === 'approved') return 'Aktif';
+  if (status === 'pending') return 'Menunggu ACC';
+  return 'Nonaktif';
+}
+
+function statusDot(status) {
+  if (status === 'approved') return 'bg-emerald-500';
+  if (status === 'pending') return 'bg-amber-500';
+  return 'bg-slate-400';
+}
 
 function getAvatarColorClass(role) {
   return 'bg-slate-100 text-slate-700 border border-slate-200';

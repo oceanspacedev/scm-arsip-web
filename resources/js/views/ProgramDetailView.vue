@@ -2,7 +2,26 @@
   <div v-if="program" class="space-y-6 select-none max-w-7xl mx-auto pb-10">
     <!-- Judul, ringkasan, dan status -->
     <div>
-      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          class="-ml-2 inline-flex items-center gap-2 h-8 px-2 rounded-lg text-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          @click="goBack"
+        >
+          <ArrowLeft class="w-4 h-4" :stroke-width="1.75" />
+          <span>Kembali</span>
+        </button>
+        <button
+          v-if="canEditProgram"
+          type="button"
+          class="h-9 px-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          @click="openEditModal"
+        >
+          <Pencil class="w-4 h-4 text-slate-500 dark:text-slate-400" :stroke-width="1.75" />
+          <span>Ubah data</span>
+        </button>
+      </div>
+      <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">
         {{ program.program_name }}
       </h1>
       <p v-if="canViewMasterColumns" class="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -21,7 +40,7 @@
           {{ statusBadgeText }}
         </span>
         <span class="text-slate-300 dark:text-slate-600">·</span>
-        <span>Diarsipkan oleh {{ uploaderName }} · diperbarui {{ formatDate(program.program_date) }}</span>
+        <span class="tabular-nums">Tanggal program {{ formatDate(program.program_date) }}</span>
       </div>
     </div>
 
@@ -30,10 +49,10 @@
       <section
         v-for="cat in documentCategories"
         :key="cat.type"
-        class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col"
+        class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col"
       >
         <div class="flex items-center justify-between gap-3 mb-3 min-h-[28px]">
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100">
             {{ cat.label }}
             <span v-if="getDocs(cat.type).length > 0" class="ml-1 text-xs font-normal text-slate-400 dark:text-slate-500 tabular-nums">
               {{ getDocs(cat.type).length }}
@@ -58,10 +77,10 @@
             class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
           >
             <div class="min-w-0 flex-1">
-              <p class="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="doc.file_name">
+              <p class="text-sm text-slate-900 dark:text-slate-100 truncate" :title="doc.file_name">
                 {{ doc.file_name }}
               </p>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                 {{ formatUploadDate(doc.uploaded_at || program.program_date) }}
               </p>
             </div>
@@ -103,14 +122,14 @@
           @click="openUpload(cat.type, cat.label)"
         >
           <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Unggah {{ cat.label }}</span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-500">PDF, JPG, PNG · maks. 15 MB</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">PDF, JPG, PNG · maks. 15 MB</span>
         </button>
         <div
           v-else
           class="flex-1 min-h-[96px] rounded-lg border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-1 px-3 text-center"
         >
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Belum ada berkas</span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-500">
+          <span class="text-xs text-slate-500 dark:text-slate-400">
             {{ cat.type === 'mou' ? 'Diunggah oleh Tim Gudang / SCM' : 'Diunggah oleh Tim Finance / SCM' }}
           </span>
         </div>
@@ -123,26 +142,26 @@
       class="grid grid-cols-1 gap-4"
       :class="(canViewFinanceColumns && canViewMasterColumns) ? 'lg:grid-cols-2' : 'lg:grid-cols-1'"
     >
-      <section v-if="canViewFinanceColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col">
-        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai & Perpajakan</h3>
+      <section v-if="canViewFinanceColumns" class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col">
+        <h3 class="px-5 pt-5 text-sm font-medium text-slate-900 dark:text-slate-100">Nilai & perpajakan</h3>
 
         <dl class="px-5 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
           <div v-for="field in invoiceFields" :key="field.label" class="min-w-0">
-            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
-            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
+            <dt class="text-xs text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
+            <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100 truncate tabular-nums" :title="field.value">{{ field.value || '-' }}</dd>
           </div>
         </dl>
 
         <dl class="mx-5 mt-5 border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-          <div v-for="row in amountRows" :key="row.label" class="py-2 flex items-center justify-between text-xs">
+          <div v-for="row in amountRows" :key="row.label" class="h-10 flex items-center justify-between text-sm">
             <dt class="text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
-            <dd class="font-medium text-slate-800 dark:text-slate-200 tabular-nums">{{ formatRupiah(row.value) }}</dd>
+            <dd class="text-slate-900 dark:text-slate-100 tabular-nums">{{ formatRupiah(row.value) }}</dd>
           </div>
         </dl>
 
         <div class="mt-auto px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xs font-medium text-slate-700 dark:text-slate-300" title="DPP + PPN (termasuk pajak)">Total Payment</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300" title="DPP + PPN (termasuk pajak)">Total pembayaran</span>
             <div class="relative inline-flex items-center group">
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors select-none"
@@ -168,300 +187,181 @@
               </select>
             </div>
           </div>
-          <span class="text-base font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+          <span class="text-lg font-medium text-slate-900 dark:text-slate-100 tabular-nums">
             {{ formatRupiah(program.total_invoice) }}
           </span>
         </div>
       </section>
 
-      <section v-if="canViewMasterColumns" class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
-        <h3 class="px-5 pt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Data Program & Supplier</h3>
+      <section v-if="canViewMasterColumns" class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800">
+        <h3 class="px-5 pt-5 text-sm font-medium text-slate-900 dark:text-slate-100">Data program & supplier</h3>
 
         <dl class="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
           <div v-for="field in programFields" :key="field.label" class="min-w-0">
-            <dt class="text-[11px] text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
-            <dd class="mt-0.5 text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate" :title="field.value">{{ field.value || '-' }}</dd>
+            <dt class="text-xs text-slate-500 dark:text-slate-400">{{ field.label }}</dt>
+            <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100 truncate tabular-nums" :title="field.value">{{ field.value || '-' }}</dd>
           </div>
         </dl>
       </section>
     </div>
 
-    <!-- Edit Program Modal -->
-    <div
-      v-if="isEditModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-    >
-      <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs" @click="isEditModalOpen = false"></div>
-      <div class="relative bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Ubah Data Program</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Wewenang: {{ store.currentUser.value?.role || 'Pengguna' }}</p>
-          </div>
-          <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" @click="isEditModalOpen = false">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <form @submit.prevent="saveEditProgram" class="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
-          <!-- Section 1: Data Purchase & Vendor -->
-          <div class="space-y-3">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Purchase & Pengadaan</span>
-              <span v-if="!canEditPurchase" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
+    <!-- Dialog ubah program -->
+    <Teleport to="body">
+      <div v-if="isEditModalOpen" :class="f.dialogOverlay" @click.self="isEditModalOpen = false">
+        <form :class="f.dialogPanel" role="dialog" aria-labelledby="de-title" @submit.prevent="saveEditProgram">
+          <div :class="f.dialogHeader">
+            <div class="min-w-0">
+              <h2 id="de-title" class="text-base font-medium text-slate-900 dark:text-slate-100">Ubah data program</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Sebagai {{ store.currentUser.value?.role || 'pengguna' }}</p>
             </div>
-
-            <div>
-              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Program</label>
-              <input
-                v-model="editForm.program_name"
-                type="text"
-                required
-                :disabled="!canEditPurchase"
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Supplier</label>
-                <select
-                  v-model="editForm.supplier"
-                  required
-                  @change="onEditSupplierChange"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="s in masterSuppliers" :key="s.name" :value="s.name">
-                    {{ s.name }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">NPWP Supplier</label>
-                <input
-                  v-model="editForm.npwp"
-                  type="text"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-                <select
-                  v-model="editForm.company_name"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="c in availableCompanies" :key="c" :value="c">
-                    {{ c }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. PO / SJ</label>
-                <input
-                  v-model="editForm.po_sj_number"
-                  type="text"
-                  placeholder="PO/SCM/2026/001"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
-                <select
-                  v-model="editForm.category"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="cat in availableCategories" :key="cat" :value="cat">
-                    {{ cat }}
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
-                <select
-                  v-model="editForm.brand"
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="b in availableBrands" :key="b" :value="b">
-                    {{ b }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 2: Data Nilai & Perpajakan -->
-          <div class="space-y-3 pt-2">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-              <span class="font-semibold text-slate-900 dark:text-slate-100">Data Nilai & Faktur Pajak</span>
-              <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
-            </div>
-
-            <!-- No. Invoice & Status Payment -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
-                <input
-                  v-model="editForm.invoice_number"
-                  type="text"
-                  placeholder="Contoh: INV/2026/001"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
-                <select
-                  :value="normalizePayStatus(editForm.payment_status)"
-                  @change="editForm.payment_status = $event.target.value"
-                  :disabled="!canEditFinance && !isAdmin"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai DPP (IDR)</label>
-                <input
-                  v-model.number="editForm.dpp"
-                  type="number"
-                  required
-                  :disabled="!canEditFinance"
-                  @input="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tarif PPN</label>
-                <select
-                  v-model="editForm.ppn_rate"
-                  :disabled="!canEditFinance"
-                  @change="calculateTaxes"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option value="0.11">11% (Standar)</option>
-                  <option value="0.12">12%</option>
-                  <option value="0">0% (Non-PPN)</option>
-                </select>
-                <p v-if="editForm.ppn_rate === '0'" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">Non-PPN (0%)</p>
-                <p v-else class="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">PPN {{ Number(editForm.ppn_rate) * 100 }}%</p>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPN (IDR)</label>
-                <input
-                  :value="editForm.ppn"
-                  type="number"
-                  readonly
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 cursor-not-allowed"
-                />
-              </div>
-            </div>
-            <!-- Total Invoice -->
-            <div>
-              <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice (IDR)</label>
-              <input
-                :value="editForm.dpp + editForm.ppn"
-                type="number"
-                readonly
-                class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
-              />
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{{ formatRupiah(editForm.dpp + editForm.ppn) }}</p>
-            </div>
-
-            <!-- Jenis PPh & Nilai PPh -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Jenis PPh</label>
-                <select
-                  v-model="editForm.pph_type"
-                  :disabled="!canEditFinance"
-                  @change="onPphTypeChange"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden cursor-pointer disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                  <option value="NON_PPH">Non PPh</option>
-                  <option value="PPH_21">PPh 21 (2,5%)</option>
-                  <option value="PPH_23">PPh 23 (2%)</option>
-                  <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
-                  <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPh (IDR)</label>
-                <input
-                  v-model.number="editForm.pph"
-                  type="number"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-                  {{ formatRupiah(editForm.pph || 0) }}
-                </p>
-              </div>
-            </div>
-
-            <!-- No. Faktur Pajak & Tanggal Faktur Pajak -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Faktur Pajak</label>
-                <input
-                  v-model="editForm.faktur_number"
-                  type="text"
-                  placeholder="010.000-25.00000001"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: XXX.XXX-XX.XXXXXXXX</p>
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Faktur Pajak</label>
-                <input
-                  v-model="editForm.faktur_date"
-                  type="date"
-                  :disabled="!canEditFinance"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 focus:outline-hidden disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              :disabled="isSavingEdit"
-              class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="isEditModalOpen = false"
-            >
-              Batal
+            <button type="button" :class="f.closeButton" aria-label="Tutup" @click="isEditModalOpen = false">
+              <X class="w-4 h-4" :stroke-width="1.75" />
             </button>
-            <button
-              type="submit"
-              :disabled="isSavingEdit"
-              class="px-5 py-2 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-            >
-              <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-              <span>{{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
+          </div>
+
+          <div :class="f.dialogBody">
+            <!-- Pengadaan -->
+            <section>
+              <div :class="f.sectionHead">
+                <h3 :class="f.sectionTitle">Pengadaan</h3>
+                <span v-if="!canEditPurchase" :class="f.readOnlyBadge"><Lock class="w-3.5 h-3.5" :stroke-width="1.75" />Hanya baca</span>
+              </div>
+              <div :class="f.fieldGrid">
+                <div class="sm:col-span-2">
+                  <label for="de-name" :class="f.fieldLabel">Nama program</label>
+                  <input id="de-name" v-model="editForm.program_name" type="text" required :disabled="!canEditPurchase" :class="f.fieldInput" />
+                </div>
+
+                <div>
+                  <label id="de-supplier" :class="f.fieldLabel">Supplier</label>
+                  <SearchSelect
+                    :model-value="editForm.supplier"
+                    labelledby="de-supplier"
+                    search-placeholder="Cari supplier"
+                    :options="supplierOptions"
+                    :disabled="!canEditPurchase"
+                    @update:model-value="(v) => { editForm.supplier = v; onEditSupplierChange(); }"
+                  />
+                </div>
+                <div>
+                  <label for="de-npwp" :class="f.fieldLabel">NPWP supplier</label>
+                  <input id="de-npwp" v-model="editForm.npwp" type="text" :disabled="!canEditPurchase" :class="[f.fieldInput, 'tabular-nums']" />
+                </div>
+
+                <div>
+                  <label id="de-company" :class="f.fieldLabel">Company</label>
+                  <SearchSelect v-model="editForm.company_name" labelledby="de-company" search-placeholder="Cari company" :options="companyOptions" :disabled="!canEditPurchase" />
+                </div>
+                <div>
+                  <label for="de-po" :class="f.fieldLabel">No. PO/SJ</label>
+                  <input id="de-po" v-model="editForm.po_sj_number" type="text" placeholder="PO/SCM/2026/001" :disabled="!canEditPurchase" :class="[f.fieldInput, 'tabular-nums']" />
+                </div>
+
+                <div>
+                  <label id="de-category" :class="f.fieldLabel">Kategori</label>
+                  <SearchSelect v-model="editForm.category" labelledby="de-category" search-placeholder="Cari kategori" :options="categoryOptions" :disabled="!canEditPurchase" />
+                </div>
+                <div>
+                  <label id="de-brand" :class="f.fieldLabel">Brand</label>
+                  <SearchSelect v-model="editForm.brand" labelledby="de-brand" search-placeholder="Cari brand" :options="brandOptions" :disabled="!canEditPurchase" />
+                </div>
+              </div>
+            </section>
+
+            <!-- Nilai & pajak -->
+            <section>
+              <div :class="f.sectionHead">
+                <h3 :class="f.sectionTitle">Nilai dan pajak</h3>
+                <span v-if="!canEditFinance" :class="f.readOnlyBadge"><Lock class="w-3.5 h-3.5" :stroke-width="1.75" />Hanya baca</span>
+              </div>
+              <div :class="f.fieldGrid">
+                <div>
+                  <label for="de-invoice" :class="f.fieldLabel">No. invoice</label>
+                  <input id="de-invoice" v-model="editForm.invoice_number" type="text" placeholder="INV/2026/001" :disabled="!canEditFinance" :class="[f.fieldInput, 'tabular-nums']" />
+                </div>
+                <div>
+                  <label id="de-payment" :class="f.fieldLabel">Status pembayaran</label>
+                  <SearchSelect
+                    :model-value="normalizePayStatus(editForm.payment_status)"
+                    labelledby="de-payment"
+                    :options="editPaymentStatusOptions"
+                    :disabled="!canEditFinance && !isAdmin"
+                    @update:model-value="(v) => { editForm.payment_status = v; }"
+                  />
+                </div>
+
+                <div>
+                  <label for="de-faktur" :class="f.fieldLabel">No. faktur pajak</label>
+                  <input id="de-faktur" v-model="editForm.faktur_number" type="text" placeholder="010.000-25.00000001" :disabled="!canEditFinance" :class="[f.fieldInput, 'tabular-nums']" />
+                  <p :class="f.fieldHint">Format XXX.XXX-XX.XXXXXXXX</p>
+                </div>
+                <div>
+                  <label for="de-faktur-date" :class="f.fieldLabel">Tanggal faktur pajak</label>
+                  <input id="de-faktur-date" v-model="editForm.faktur_date" type="date" :disabled="!canEditFinance" :class="f.fieldInput" />
+                </div>
+
+                <div>
+                  <label for="de-dpp" :class="f.fieldLabel">DPP</label>
+                  <input id="de-dpp" v-model.number="editForm.dpp" type="number" required :disabled="!canEditFinance" :class="f.fieldNumber" @input="calculateTaxes" />
+                </div>
+                <div>
+                  <label id="de-ppn-rate" :class="f.fieldLabel">Tarif PPN</label>
+                  <SearchSelect
+                    :model-value="String(editForm.ppn_rate)"
+                    labelledby="de-ppn-rate"
+                    :options="PPN_RATE_OPTIONS"
+                    :disabled="!canEditFinance"
+                    @update:model-value="(v) => { editForm.ppn_rate = v; calculateTaxes(); }"
+                  />
+                </div>
+
+                <div>
+                  <label id="de-pph-type" :class="f.fieldLabel">Jenis PPh</label>
+                  <SearchSelect
+                    :model-value="editForm.pph_type"
+                    labelledby="de-pph-type"
+                    :options="PPH_TYPE_OPTIONS"
+                    :disabled="!canEditFinance"
+                    @update:model-value="(v) => { editForm.pph_type = v; onPphTypeChange(); }"
+                  />
+                </div>
+                <div>
+                  <label for="de-pph" :class="f.fieldLabel">Nilai PPh</label>
+                  <input id="de-pph" v-model.number="editForm.pph" type="number" :disabled="!canEditFinance" :class="f.fieldNumber" />
+                </div>
+              </div>
+
+              <dl :class="f.summaryBox">
+                <div :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">DPP</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.dpp || 0) }}</dd>
+                </div>
+                <div :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">PPN {{ Math.round(Number(editForm.ppn_rate) * 100) }}%</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.ppn || 0) }}</dd>
+                </div>
+                <div :class="f.summaryRow">
+                  <dt class="font-medium text-slate-900 dark:text-slate-100">Total invoice</dt>
+                  <dd class="tabular-nums font-medium text-slate-900 dark:text-slate-100">{{ formatRupiah((editForm.dpp || 0) + (editForm.ppn || 0)) }}</dd>
+                </div>
+                <div v-if="editForm.pph_type !== 'NON_PPH'" :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">PPh dipotong</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.pph || 0) }}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+
+          <div :class="f.dialogFooter">
+            <button type="button" :class="f.buttonSecondary" :disabled="isSavingEdit" @click="isEditModalOpen = false">Batal</button>
+            <button type="submit" :class="f.buttonPrimary" :disabled="isSavingEdit">
+              <span v-if="isSavingEdit" class="w-4 h-4 rounded-full border-2 border-current/30 border-t-current animate-spin"></span>
+              {{ isSavingEdit ? 'Menyimpan…' : 'Simpan perubahan' }}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Upload Document Modal -->
     <DocumentUploadModal
@@ -484,7 +384,7 @@
         v-if="docToDelete"
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
       >
-        <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white dark:bg-graphite-card rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
           <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto mb-3 border border-slate-200 dark:border-slate-700">
             <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
           </div>
@@ -537,7 +437,7 @@
         v-if="isDeleteProgramModalOpen"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-xs"
       >
-        <div class="bg-white dark:bg-[#111827] rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white dark:bg-graphite-card rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
           <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto mb-3 border border-slate-200 dark:border-slate-700">
             <Trash2 class="w-5 h-5 text-red-600 dark:text-rose-400" />
           </div>
@@ -572,9 +472,9 @@
   </div>
 
   <!-- Not Found State -->
-  <div v-else class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center space-y-3">
+  <div v-else class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center space-y-3">
     <FileText class="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-    <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Program Tidak Ditemukan</h3>
+    <h3 class="text-base font-semibold text-slate-800 dark:text-slate-200">Program tidak ditemukan</h3>
     <p class="text-xs text-slate-500 dark:text-slate-400">Program mungkin telah dihapus atau URL tidak sesuai.</p>
     <router-link
       to="/programs"
@@ -597,9 +497,14 @@ import {
   Download,
   ChevronDown,
   X,
-  Loader2
+  Loader2,
+  Pencil,
+  Lock
 } from 'lucide-vue-next';
 import DocumentUploadModal from '../components/detail/DocumentUploadModal.vue';
+import SearchSelect from '../components/ui/SearchSelect.vue';
+import * as f from '../components/programs/formStyles';
+import { PPH_TYPE_OPTIONS } from '../components/programs/formStyles';
 import DocumentPreviewSheet from '../components/detail/DocumentPreviewSheet.vue';
 import {
   useTaxStore,
@@ -620,6 +525,15 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+
+// Kembali ke halaman sebelumnya (filter & halaman tabel tetap); dibuka langsung dari link → ke arsip program
+function goBack() {
+  if (window.history.state?.back) {
+    router.back();
+  } else {
+    router.push('/programs');
+  }
+}
 const store = useTaxStore();
 
 const isAdmin = computed(() => store.isAdmin.value);
@@ -644,7 +558,9 @@ const programId = computed(() => route.params.id);
 const program = computed(() => store.getProgramById(programId.value));
 const completeness = computed(() => getCompleteness(program.value));
 
-const uploaderName = computed(() => store.currentUser.value?.name || 'Bagas Nugroho');
+
+// Nama pengguna yang sedang masuk, dicatat sebagai pengunggah berkas
+const uploaderName = computed(() => store.currentUser.value?.name || '');
 
 const documentCategories = [
   { type: 'invoice', label: 'Invoice' },
@@ -657,11 +573,11 @@ const invoiceFields = computed(() => {
   const p = program.value;
   if (!p) return [];
   return [
-    { label: 'No. Invoice', value: p.invoice_number },
-    { label: 'Tanggal Invoice', value: formatDate(p.program_date) },
-    { label: 'Jatuh Tempo', value: formatDueDate(p.program_date) },
-    { label: 'No. Faktur Pajak', value: p.faktur_number },
-    { label: 'Tanggal Faktur Pajak', value: p.faktur_date ? formatDate(p.faktur_date) : '' }
+    { label: 'No. invoice', value: p.invoice_number },
+    { label: 'Tanggal invoice', value: formatDate(p.program_date) },
+    { label: 'Jatuh tempo', value: formatDueDate(p.program_date) },
+    { label: 'No. faktur pajak', value: p.faktur_number },
+    { label: 'Tanggal faktur pajak', value: p.faktur_date ? formatDate(p.faktur_date) : '' }
   ];
 });
 
@@ -679,14 +595,14 @@ const programFields = computed(() => {
   const p = program.value;
   if (!p) return [];
   return [
-    { label: 'Company Name', value: p.company_name || getProgramCompanyName(p) },
-    { label: 'No. PO / SJ', value: p.po_sj_number || getProgramPoSjNumber(p) },
-    { label: 'Nama Supplier', value: p.supplier },
-    { label: 'NPWP Supplier', value: p.npwp || '02.010.121.3-071.000' },
+    { label: 'Company', value: p.company_name || getProgramCompanyName(p) },
+    { label: 'No. PO/SJ', value: p.po_sj_number || getProgramPoSjNumber(p) },
+    { label: 'Supplier', value: p.supplier },
+    { label: 'NPWP supplier', value: p.npwp },
     { label: 'Kategori', value: p.category },
     { label: 'Brand', value: p.brand || getProgramBrand(p) },
-    { label: 'Bulan / Masa Pajak', value: `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}` },
-    { label: 'Nomor Memo/DO', value: p.mou_number || `DO/SCM/2026/${String(p.id).padStart(3, '0')}` },
+    { label: 'Masa pajak', value: `${getProgramMonth(p.program_date)} ${getProgramYear(p.program_date)}` },
+    { label: 'No. memo/DO', value: p.mou_number },
     { label: 'Periode', value: `${formatDate(p.program_date)} – ${formatDueDate(p.program_date)}` }
   ];
 });
@@ -707,12 +623,12 @@ const statusBadgeText = computed(() => {
   const hasMou = docs.some(d => d.document_type === 'mou');
 
   const count = (hasInvoice ? 1 : 0) + (hasFaktur ? 1 : 0) + (hasMou ? 1 : 0);
-  if (count === 3) return 'Dokumen Lengkap';
-  if (!hasFaktur && hasInvoice && hasMou) return 'Kurang Faktur Pajak';
-  if (!hasInvoice && hasFaktur && hasMou) return 'Kurang Invoice';
-  if (!hasMou && hasInvoice && hasFaktur) return 'Kurang Memo/DO';
-  if (count === 0) return 'Belum Ada Dokumen';
-  return `Kurang ${3 - count} Dokumen`;
+  if (count === 3) return 'Dokumen lengkap';
+  if (!hasFaktur && hasInvoice && hasMou) return 'Kurang faktur pajak';
+  if (!hasInvoice && hasFaktur && hasMou) return 'Kurang invoice';
+  if (!hasMou && hasInvoice && hasFaktur) return 'Kurang memo/DO';
+  if (count === 0) return 'Belum ada dokumen';
+  return `Kurang ${3 - count} dokumen`;
 });
 
 function formatDueDate(dateStr) {
@@ -740,10 +656,6 @@ function formatDueDate(dateStr) {
   } catch (e) {
     return '-';
   }
-}
-
-function goBack() {
-  router.push('/programs');
 }
 
 // Upload Modal State
@@ -903,6 +815,23 @@ const availableCompanies = computed(() => {
   }
   return list;
 });
+
+// Opsi dropdown dialog ubah ({ value, label })
+const supplierOptions = computed(() => {
+  const list = masterSuppliers.value.map(s => ({ value: s.name, label: s.name, hint: s.npwp || '' }));
+  if (editForm.supplier && !list.some(s => s.value === editForm.supplier)) {
+    list.unshift({ value: editForm.supplier, label: editForm.supplier });
+  }
+  return list;
+});
+const companyOptions = computed(() => availableCompanies.value.map(c => ({ value: c, label: c })));
+const categoryOptions = computed(() => availableCategories.value.map(c => ({ value: c, label: c })));
+const brandOptions = computed(() => availableBrands.value.map(b => ({ value: b, label: b })));
+const PPN_RATE_OPTIONS = [
+  { value: '0.11', label: '11% (standar)' },
+  { value: '0.12', label: '12%' },
+  { value: '0', label: '0% (non-PPN)' },
+];
 
 function onEditSupplierChange() {
   const match = masterSuppliers.value.find(s => s.name === editForm.supplier);

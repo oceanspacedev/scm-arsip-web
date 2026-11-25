@@ -1,230 +1,125 @@
 <template>
-  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-5">
-    <!-- Header matching screenshot -->
-    <div class="mb-4">
-      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Rekap DPP & PPN per Bulan
-      </h3>
-      <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-        Berdasarkan tanggal invoice program
-      </p>
+  <div class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col">
+    <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 mb-6">
+      <div>
+        <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100">Rekap DPP dan PPN per bulan</h3>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ yearLabel }}, berdasarkan tanggal invoice program</p>
+      </div>
+      <!-- Legenda -->
+      <div v-if="hasData" class="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+        <span class="inline-flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-blue-600 dark:bg-blue-500"></span>DPP</span>
+        <span class="inline-flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-slate-300 dark:bg-slate-600"></span>PPN</span>
+        <span class="inline-flex items-center gap-2"><span class="w-4 h-0.5 rounded-full bg-slate-700 dark:bg-slate-300"></span>Total invoice</span>
+      </div>
     </div>
 
-    <!-- Chart Canvas Container -->
-    <div class="relative w-full h-[185px] select-none">
-      <svg
-        class="w-full h-full overflow-visible"
-        viewBox="0 0 640 175"
-        preserveAspectRatio="none"
-        @mouseleave="hoveredIndex = null"
-      >
-        <defs>
-          <!-- Gradient for DPP bar -->
-          <linearGradient id="dppGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3B82F6" />
-            <stop offset="100%" stop-color="#2563EB" />
-          </linearGradient>
+    <!-- Grafik: batang DPP (utama) dan PPN, garis tipis untuk total invoice -->
+    <div v-if="hasData" class="flex-1 flex flex-col min-h-0">
+      <div class="flex gap-3 h-56">
+        <!-- Sumbu Y -->
+        <div class="relative w-16 shrink-0 text-right text-xs tabular-nums text-slate-500 dark:text-slate-400">
+          <span
+            v-for="tick in ticks"
+            :key="tick"
+            class="absolute right-0 translate-y-1/2"
+            :style="{ bottom: (tick / scaleMax) * 100 + '%' }"
+          >{{ formatShort(tick) }}</span>
+        </div>
 
-          <!-- Gradient for PPN bar -->
-          <linearGradient id="ppnGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#F59E0B" />
-            <stop offset="100%" stop-color="#D97706" />
-          </linearGradient>
+        <div class="relative flex-1 min-w-0" @mouseleave="hoveredIndex = null">
+          <!-- Garis bantu -->
+          <div
+            v-for="tick in ticks"
+            :key="'grid-' + tick"
+            class="absolute inset-x-0 border-t"
+            :class="tick === 0 ? 'border-slate-300 dark:border-slate-700' : 'border-dashed border-slate-200 dark:border-slate-800'"
+            :style="{ bottom: (tick / scaleMax) * 100 + '%' }"
+          ></div>
 
-          <!-- Shadow Filter for Trend Dots -->
-          <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.25" />
-          </filter>
-        </defs>
+          <!-- Kolom per bulan -->
+          <div class="absolute inset-0 grid grid-cols-12">
+            <div
+              v-for="(item, idx) in monthlyData"
+              :key="item.month"
+              class="relative flex items-end justify-center gap-1 rounded-md cursor-default transition-colors"
+              :class="hoveredIndex === idx ? 'bg-slate-100/70 dark:bg-slate-800/50' : ''"
+              @mouseenter="hoveredIndex = idx"
+            >
+              <span
+                class="chart-bar w-[28%] max-w-3 rounded-t-sm bg-blue-600 dark:bg-blue-500"
+                :style="{ height: barHeight(item.dpp), '--i': idx }"
+              ></span>
+              <span
+                class="chart-bar w-[28%] max-w-3 rounded-t-sm bg-slate-300 dark:bg-slate-600"
+                :style="{ height: barHeight(item.ppn), '--i': idx }"
+              ></span>
+            </div>
+          </div>
 
-        <!-- Grid Lines & Y-axis labels with Ticks matching screenshot -->
-        <g class="text-[10px] font-mono fill-slate-400">
-          <!-- Left vertical axis line -->
-          <line x1="58" y1="20" x2="58" y2="142" stroke="#CBD5E1" stroke-width="1.2" />
+          <!-- Garis total invoice -->
+          <svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 1200 100" preserveAspectRatio="none" aria-hidden="true">
+            <polyline
+              :points="linePoints"
+              fill="none"
+              class="stroke-slate-700 dark:stroke-slate-300"
+              stroke-width="1.5"
+              stroke-linejoin="round"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
+          <span
+            v-for="(item, idx) in monthlyData"
+            :key="'dot-' + item.month"
+            class="absolute w-2 h-2 -translate-x-1/2 translate-y-1/2 rounded-full border-2 pointer-events-none border-white dark:border-graphite-card"
+            :class="hoveredIndex === idx ? 'bg-blue-600 dark:bg-blue-400 scale-125' : 'bg-slate-700 dark:bg-slate-300'"
+            :style="{ left: ((idx + 0.5) / 12) * 100 + '%', bottom: (item.total / scaleMax) * 100 + '%' }"
+          ></span>
 
-          <!-- 2.2 M -->
-          <line x1="53" y1="30" x2="58" y2="30" stroke="#CBD5E1" stroke-width="1.2" />
-          <line x1="58" y1="30" x2="630" y2="30" stroke="#F1F5F9" stroke-dasharray="3 3" />
-          <text x="48" y="33" text-anchor="end">Rp 2.2 M</text>
-
-          <!-- 1.6 M -->
-          <line x1="53" y1="60" x2="58" y2="60" stroke="#CBD5E1" stroke-width="1.2" />
-          <line x1="58" y1="60" x2="630" y2="60" stroke="#F1F5F9" stroke-dasharray="3 3" />
-          <text x="48" y="63" text-anchor="end">Rp 1.6 M</text>
-
-          <!-- 1.1 M -->
-          <line x1="53" y1="88" x2="58" y2="88" stroke="#CBD5E1" stroke-width="1.2" />
-          <line x1="58" y1="88" x2="630" y2="88" stroke="#F1F5F9" stroke-dasharray="3 3" />
-          <text x="48" y="91" text-anchor="end">Rp 1.1 M</text>
-
-          <!-- 550 Jt -->
-          <line x1="53" y1="115" x2="58" y2="115" stroke="#CBD5E1" stroke-width="1.2" />
-          <line x1="58" y1="115" x2="630" y2="115" stroke="#F1F5F9" stroke-dasharray="3 3" />
-          <text x="48" y="118" text-anchor="end">Rp 550 Jt</text>
-
-          <!-- Baseline 0 -->
-          <line x1="53" y1="142" x2="58" y2="142" stroke="#CBD5E1" stroke-width="1.2" />
-          <line x1="58" y1="142" x2="630" y2="142" stroke="#CBD5E1" stroke-width="1.2" />
-          <text x="48" y="145" text-anchor="end">Rp 0</text>
-        </g>
-
-        <!-- Column Background Hover Highlight & Bars -->
-        <g v-for="(item, idx) in monthlyData" :key="item.month">
-          <!-- Column Hover Zone / Highlight Pill -->
-          <rect
-            :x="getX(idx) - 22"
-            y="15"
-            width="44"
-            height="130"
-            rx="4"
-            :fill="hoveredIndex === idx ? '#F8FAFC' : 'transparent'"
-            :stroke="hoveredIndex === idx ? '#E2E8F0' : 'transparent'"
-            stroke-width="1"
-            class="transition-colors duration-150 cursor-pointer"
-            @mouseenter="hoveredIndex = idx"
-          />
-
-          <!-- DPP Bar (Emerald) -->
-          <rect
-            :x="getX(idx) - 11"
-            :y="getY(item.dpp)"
-            width="10"
-            :height="Math.max(2, 142 - getY(item.dpp))"
-            fill="url(#dppGradient)"
-            rx="2"
-            class="chart-bar cursor-pointer transition-all duration-200"
-            :style="{ '--i': idx }"
-            :class="hoveredIndex === idx ? 'brightness-110 filter drop-shadow-sm' : ''"
-            @mouseenter="hoveredIndex = idx"
-          />
-
-          <!-- PPN Bar (Amber) -->
-          <rect
-            :x="getX(idx) + 1"
-            :y="getY(item.ppn)"
-            width="10"
-            :height="Math.max(2, 142 - getY(item.ppn))"
-            fill="url(#ppnGradient)"
-            rx="2"
-            class="chart-bar cursor-pointer transition-all duration-200"
-            :style="{ '--i': idx + 0.3 }"
-            :class="hoveredIndex === idx ? 'brightness-110 filter drop-shadow-sm' : ''"
-            @mouseenter="hoveredIndex = idx"
-          />
-
-          <!-- X Axis Month Label -->
-          <text
-            :x="getX(idx)"
-            y="160"
-            text-anchor="middle"
-            class="text-[10px] font-medium transition-colors duration-150"
-            :class="hoveredIndex === idx ? 'fill-slate-900 font-bold' : 'fill-slate-500'"
+          <!-- Tooltip -->
+          <div
+            v-if="hoveredMonth"
+            class="absolute top-0 z-10 w-56 -translate-x-1/2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.5)] px-3 py-2.5 text-xs pointer-events-none"
+            :style="{ left: tooltipLeft }"
           >
-            {{ item.month }}
-          </text>
-        </g>
-
-        <!-- Total Invoice Trend Line with Animated Draw -->
-        <path
-          :d="trendLinePath"
-          fill="none"
-          stroke="#1E293B"
-          stroke-width="2"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-          class="chart-line"
-        />
-
-        <!-- Dots on Trend Line with Pop Animation -->
-        <g v-for="(item, idx) in monthlyData" :key="'dot-' + item.month">
-          <!-- Outer Pulsing Ring when Hovered -->
-          <circle
-            v-if="hoveredIndex === idx"
-            :cx="getX(idx)"
-            :cy="getY(item.total)"
-            r="8"
-            fill="#2563EB"
-            fill-opacity="0.2"
-            class="animate-ping"
-          />
-
-          <!-- Inner Dot -->
-          <circle
-            :cx="getX(idx)"
-            :cy="getY(item.total)"
-            :r="hoveredIndex === idx ? 5 : 3.5"
-            :fill="hoveredIndex === idx ? '#2563EB' : '#1E293B'"
-            stroke="#FFFFFF"
-            stroke-width="1.8"
-            filter="url(#dotShadow)"
-            class="chart-dot cursor-pointer transition-all duration-200"
-            :style="{ '--i': idx }"
-            @mouseenter="hoveredIndex = idx"
-          />
-        </g>
-      </svg>
-
-      <!-- Floating Tooltip -->
-      <transition
-        enter-active-class="transition duration-150 ease-out"
-        enter-from-class="opacity-0 translate-y-1 scale-95"
-        enter-to-class="opacity-100 translate-y-0 scale-100"
-        leave-active-class="transition duration-100 ease-in"
-        leave-from-class="opacity-100 translate-y-0 scale-100"
-        leave-to-class="opacity-0 translate-y-1 scale-95"
-      >
-        <div
-          v-if="hoveredMonth"
-          class="absolute top-1 right-2 bg-slate-900/95 backdrop-blur-xs text-white px-3 py-2 rounded-lg shadow-xl text-xs space-y-1 border border-slate-700/80 pointer-events-none z-20 min-w-[175px]"
-        >
-          <div class="flex items-center justify-between border-b border-slate-700/70 pb-1">
-            <span class="font-bold text-blue-400 text-[11px]">
-              {{ hoveredMonth.month }} 2025
-            </span>
-            <span class="text-[9px] text-slate-400 uppercase tracking-wider">Perpajakan</span>
-          </div>
-
-          <div class="flex justify-between items-center text-slate-300 text-[11px] pt-0.5">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-[#2563EB]"></span>
-              <span>DPP:</span>
-            </span>
-            <span class="font-mono font-medium text-white">{{ formatRupiah(hoveredMonth.dpp) }}</span>
-          </div>
-
-          <div class="flex justify-between items-center text-slate-300 text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
-              <span>PPN (11%):</span>
-            </span>
-            <span class="font-mono font-medium text-white">{{ formatRupiah(hoveredMonth.ppn) }}</span>
-          </div>
-
-          <div class="flex justify-between items-center text-slate-200 pt-1 border-t border-slate-700/70 text-[11px] font-semibold">
-            <span>Total Invoice:</span>
-            <span class="font-mono text-blue-300">{{ formatRupiah(hoveredMonth.total) }}</span>
+            <p class="font-medium text-slate-900 dark:text-slate-100">{{ hoveredMonth.fullName }}</p>
+            <dl class="mt-2 space-y-1.5 tabular-nums">
+              <div class="flex justify-between gap-3">
+                <dt class="flex items-center gap-2 text-slate-500 dark:text-slate-400"><span class="w-2 h-2 rounded-sm bg-blue-600 dark:bg-blue-500"></span>DPP</dt>
+                <dd class="text-slate-900 dark:text-slate-100">{{ formatRupiah(hoveredMonth.dpp) }}</dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="flex items-center gap-2 text-slate-500 dark:text-slate-400"><span class="w-2 h-2 rounded-sm bg-slate-300 dark:bg-slate-600"></span>PPN</dt>
+                <dd class="text-slate-900 dark:text-slate-100">{{ formatRupiah(hoveredMonth.ppn) }}</dd>
+              </div>
+              <div class="flex justify-between gap-3 pt-1.5 border-t border-slate-200 dark:border-slate-700">
+                <dt class="text-slate-500 dark:text-slate-400">Total invoice</dt>
+                <dd class="font-medium text-slate-900 dark:text-slate-100">{{ formatRupiah(hoveredMonth.total) }}</dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">Program</dt>
+                <dd class="text-slate-900 dark:text-slate-100">{{ hoveredMonth.count }}</dd>
+              </div>
+            </dl>
           </div>
         </div>
-      </transition>
+      </div>
+
+      <!-- Sumbu X -->
+      <div class="flex gap-3 mt-2">
+        <div class="w-16 shrink-0"></div>
+        <div class="flex-1 grid grid-cols-12 text-center text-xs text-slate-500 dark:text-slate-400">
+          <span
+            v-for="(item, idx) in monthlyData"
+            :key="'label-' + item.month"
+            :class="{ 'text-slate-900 dark:text-slate-100': hoveredIndex === idx }"
+          >{{ item.month }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Chart Legend (Bottom) -->
-    <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-6 text-xs text-slate-600 dark:text-slate-400">
-      <div class="flex items-center gap-1.5 cursor-default hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB] shadow-2xs"></span>
-        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">DPP</span>
-      </div>
-      <div class="flex items-center gap-1.5 cursor-default hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shadow-2xs"></span>
-        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">PPN (11%)</span>
-      </div>
-      <div class="flex items-center gap-1.5 cursor-default hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
-        <div class="flex items-center">
-          <div class="w-3.5 h-0.5 bg-[#1E293B] dark:bg-slate-300"></div>
-          <div class="w-2 h-2 rounded-full bg-[#1E293B] dark:bg-slate-300 -ml-1 border border-white dark:border-slate-900"></div>
-        </div>
-        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Total Invoice</span>
-      </div>
+    <div v-else class="flex-1 min-h-56 flex flex-col items-center justify-center text-center">
+      <p class="text-sm text-slate-700 dark:text-slate-300">Belum ada nilai invoice di {{ yearLabel.toLowerCase() }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pilih tahun pajak lain atau tambahkan program</p>
     </div>
   </div>
 </template>
@@ -236,136 +131,86 @@ import { useTaxStore, formatRupiah } from '../../store/taxStore';
 const store = useTaxStore();
 const hoveredIndex = ref(null);
 
-const monthNames = [
-  { name: 'Jan', num: '01' },
-  { name: 'Feb', num: '02' },
-  { name: 'Mar', num: '03' },
-  { name: 'Apr', num: '04' },
-  { name: 'Mei', num: '05' },
-  { name: 'Jun', num: '06' },
-  { name: 'Jul', num: '07' },
-  { name: 'Agu', num: '08' },
-  { name: 'Sep', num: '09' },
-  { name: 'Okt', num: '10' },
-];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const MONTHS_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-const selectedYear = computed(() => store.selectedFiscalYear.value || String(new Date().getFullYear()));
-const shortYear = computed(() => {
-  const y = selectedYear.value;
-  return y === 'all' ? 'All' : y.slice(-2);
-});
+const year = computed(() => store.effectiveFiscalYear.value);
+const yearLabel = computed(() => (year.value === 'all' ? 'Semua tahun' : `Tahun pajak ${year.value}`));
 
-// Dynamic monthly data aggregated from dashboardPrograms
+// Jumlah per bulan dari program yang tampil di dashboard (sudah disaring tahun pajak)
 const monthlyData = computed(() => {
-  const progs = store.dashboardPrograms.value || [];
-  
-  return monthNames.map(m => {
-    let dpp = 0;
-    let ppn = 0;
-    let total = 0;
-
-    progs.forEach(p => {
-      const dateStr = p.program_date || p.due_date || '';
-      if (dateStr.length >= 7) {
-        const parts = dateStr.split('-');
-        if (parts[1] === m.num) {
-          dpp += Number(p.dpp) || 0;
-          ppn += Number(p.ppn) || 0;
-          total += Number(p.total_invoice) || 0;
-        }
-      }
-    });
-
-    return {
-      month: `${m.name} ${shortYear.value}`,
-      dpp,
-      ppn,
-      total
-    };
+  const rows = MONTHS.map((month, i) => ({
+    month,
+    fullName: year.value === 'all' ? MONTHS_FULL[i] : `${MONTHS_FULL[i]} ${year.value}`,
+    dpp: 0,
+    ppn: 0,
+    total: 0,
+    count: 0,
+  }));
+  (store.dashboardPrograms.value || []).forEach(p => {
+    const monthIdx = Number(String(p.program_date || p.due_date || '').slice(5, 7)) - 1;
+    if (monthIdx < 0 || monthIdx > 11) return;
+    const row = rows[monthIdx];
+    row.dpp += Number(p.dpp) || 0;
+    row.ppn += Number(p.ppn) || 0;
+    row.total += Number(p.total_invoice) || 0;
+    row.count += 1;
   });
+  return rows;
 });
 
-const hoveredMonth = computed(() => {
-  return (hoveredIndex.value !== null && monthlyData.value[hoveredIndex.value]) ? monthlyData.value[hoveredIndex.value] : null;
+const highest = computed(() => Math.max(0, ...monthlyData.value.map(m => Math.max(m.total, m.dpp, m.ppn))));
+const hasData = computed(() => highest.value > 0);
+
+// Skala sumbu Y dengan langkah bulat (1, 2, 2,5, 5 × 10ⁿ), sekitar 4 garis
+const step = computed(() => {
+  const raw = highest.value / 4 || 1;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const norm = raw / magnitude;
+  const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
+  return nice * magnitude;
+});
+const scaleMax = computed(() => Math.max(step.value, Math.ceil(highest.value / step.value) * step.value));
+const ticks = computed(() => {
+  const list = [];
+  for (let v = 0; v <= scaleMax.value + step.value / 2; v += step.value) list.push(v);
+  return list;
 });
 
-const maxVal = computed(() => {
-  const highest = monthlyData.value.reduce((acc, m) => Math.max(acc, m.total, m.dpp, m.ppn), 0);
-  if (highest <= 0) return 2000000000;
-  return Math.max(2000000000, Math.ceil((highest * 1.15) / 500000000) * 500000000);
-});
-
-function getX(idx) {
-  const startX = 85;
-  const step = 56;
-  return startX + idx * step;
+function barHeight(value) {
+  return value > 0 ? `${Math.max(1, (value / scaleMax.value) * 100)}%` : '0%';
 }
 
-function getY(value) {
-  const baseline = 142;
-  const availableHeight = 112; // 142 - 30
-  const ratio = Math.min(1, Math.max(0, value / maxVal.value));
-  return baseline - (ratio * availableHeight);
-}
+const linePoints = computed(() => monthlyData.value
+  .map((m, i) => `${(i + 0.5) * 100},${100 - (m.total / scaleMax.value) * 100}`)
+  .join(' '));
 
-const trendLinePath = computed(() => {
-  return monthlyData.value.reduce((path, item, idx) => {
-    const x = getX(idx);
-    const y = getY(item.total);
-    return idx === 0 ? `M ${x} ${y}` : `${path} L ${x} ${y}`;
-  }, '');
+const hoveredMonth = computed(() => (hoveredIndex.value === null ? null : monthlyData.value[hoveredIndex.value]));
+
+// Tooltip di atas kolom yang disorot, tetap di dalam area grafik
+const tooltipLeft = computed(() => {
+  const pct = ((hoveredIndex.value + 0.5) / 12) * 100;
+  return `clamp(7rem, ${pct}%, calc(100% - 7rem))`;
 });
+
+function formatShort(value) {
+  if (value === 0) return 'Rp 0';
+  if (value >= 1e9) return `Rp ${(value / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 1 })} M`;
+  if (value >= 1e6) return `Rp ${(value / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 0 })} Jt`;
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+}
 </script>
 
 <style scoped>
-/* Rise-up animation for bars with transform-origin at bottom */
+/* Batang tumbuh dari bawah saat pertama tampil */
 .chart-bar {
-  transform-box: fill-box;
   transform-origin: bottom center;
-  animation: barRise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(var(--i, 0) * 0.045s);
+  animation: barRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.03s);
 }
 
 @keyframes barRise {
-  from {
-    transform: scaleY(0);
-    opacity: 0.2;
-  }
-  to {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-/* SVG Line Draw-in animation */
-.chart-line {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: lineDraw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s forwards;
-}
-
-@keyframes lineDraw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Pop-in animation for dots */
-.chart-dot {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: dotPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  animation-delay: calc(0.35s + var(--i, 0) * 0.05s);
-}
-
-@keyframes dotPop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
 }
 </style>

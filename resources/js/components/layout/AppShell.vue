@@ -1,39 +1,45 @@
 <template>
   <SidebarProvider>
     <AppSidebar />
-    <SidebarInset class="bg-[#F8FAFC] dark:bg-[#090D16] min-w-0 w-full max-w-full overflow-x-clip transition-colors">
-      <header class="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md px-4 w-full transition-[width,height,background-color,border-color] ease-linear">
+    <SidebarInset class="bg-slate-50 dark:bg-graphite-page min-w-0 w-full max-w-full overflow-x-clip">
+      <header class="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-white/95 dark:bg-graphite-page/95 backdrop-blur-md px-4 sm:px-6 w-full">
         <div class="flex items-center gap-2 min-w-0">
           <SidebarTrigger class="-ml-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer shrink-0" />
           <Separator orientation="vertical" class="mr-2 h-4 bg-slate-200 dark:bg-slate-800 shrink-0" />
 
-          <nav class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium select-none truncate">
-            <router-link to="/dashboard" class="hover:text-slate-800 dark:hover:text-slate-200 transition-colors shrink-0">
-              TaxVault
+          <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 select-none truncate">
+            <router-link to="/dashboard" class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0">
+              SCM TaxVault
             </router-link>
-            <ChevronRight class="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
-            <span class="text-slate-900 dark:text-slate-100 font-semibold truncate">{{ currentRouteName }}</span>
+            <ChevronRight class="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" :stroke-width="1.5" />
+            <span class="text-slate-900 dark:text-slate-100 font-medium truncate">{{ currentRouteName }}</span>
           </nav>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            class="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer focus:outline-hidden"
-            :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
+            :class="headerButtonClass"
+            :aria-label="isDark ? 'Beralih ke tema terang' : 'Beralih ke tema gelap'"
+            :title="isDark ? 'Tema terang' : 'Tema gelap'"
             @click="toggleDark()"
           >
-            <Sun v-if="isDark" class="w-4 h-4 text-amber-400 transition-transform duration-200" />
-            <Moon v-else class="w-4 h-4 text-slate-600 transition-transform duration-200" />
+            <Sun v-if="isDark" class="w-4 h-4" :stroke-width="1.75" />
+            <Moon v-else class="w-4 h-4" :stroke-width="1.75" />
           </button>
-
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
-            <span>{{ userRole }}</span>
-          </div>
+          <button
+            type="button"
+            :class="headerButtonClass"
+            aria-label="Keluar"
+            title="Keluar"
+            @click="handleLogout"
+          >
+            <LogOut class="w-4 h-4" :stroke-width="1.75" />
+          </button>
         </div>
       </header>
 
-      <div class="flex-1 min-w-0 w-full max-w-full p-4 sm:p-6 lg:p-7 overflow-x-clip">
+      <div class="flex-1 min-w-0 w-full max-w-full p-4 sm:p-6 lg:p-8 overflow-x-clip">
         <div class="w-full max-w-[1600px] mx-auto min-w-0">
           <router-view />
         </div>
@@ -48,9 +54,9 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useDark, useToggle } from '@vueuse/core';
-import { ChevronRight, Sun, Moon } from 'lucide-vue-next';
+import { ChevronRight, Sun, Moon, LogOut } from 'lucide-vue-next';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Separator from '@/components/ui/separator/Separator.vue';
 import AppSidebar from './AppSidebar.vue';
@@ -71,18 +77,31 @@ const isDark = useDark({
 });
 const toggleDark = useToggle(isDark);
 
-const userRole = computed(() => store.currentUser.value?.role || 'Tamu');
+const router = useRouter();
+
+// Tombol ikon di pojok kanan atas (tema, keluar)
+const headerButtonClass = 'h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500';
+
+async function handleLogout() {
+  store.beginLogout();
+  try {
+    await router.replace({ name: 'login' });
+  } finally {
+    store.logout();
+  }
+}
+
 
 const currentRouteName = computed(() => {
   const path = route.path;
   if (path === '/dashboard') return 'Dashboard';
-  if (path === '/programs') return 'Arsip Program';
-  if (path.startsWith('/programs/')) return 'Detail Program';
+  if (path === '/programs') return 'Arsip program';
+  if (path.startsWith('/programs/')) return 'Detail program';
   if (path === '/history') return 'History';
-  if (path === '/users') return 'Manajemen User';
-  if (path === '/permissions') return 'Hak Akses & Role';
-  if (path === '/master-data') return 'Data Master';
-  if (path === '/settings') return 'Pengaturan Sistem';
+  if (path === '/users') return 'Manajemen user';
+  if (path === '/permissions') return 'Hak akses & role';
+  if (path === '/master-data') return 'Data master';
+  if (path === '/settings') return 'Pengaturan sistem';
   return route.name || 'Dokumen Pajak';
 });
 </script>

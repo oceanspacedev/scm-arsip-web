@@ -1,12 +1,12 @@
 <template>
-  <div class="space-y-4 max-w-6xl pb-8 select-none font-sans text-xs">
+  <div class="space-y-4 max-w-6xl pb-8 text-sm">
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Hak Akses & Role
+        <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">
+          Hak akses & role
         </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Atur wewenang setiap peran pengguna melalui centang perizinan
         </p>
       </div>
@@ -14,21 +14,21 @@
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+          class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors cursor-pointer"
           :disabled="isSaving"
           @click="resetToDefaults"
         >
-          Reset Default
+          Reset ke default
         </button>
 
         <button
           type="button"
-          class="h-8 px-3.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
+          class="h-9 px-4 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-60 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
           :disabled="isSaving"
           @click="saveChanges"
         >
-          <Loader2 v-if="isSaving" class="w-3.5 h-3.5 animate-spin text-slate-500" />
-          <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
+          <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+          <span>{{ isSaving ? 'Menyimpan…' : 'Simpan perubahan' }}</span>
         </button>
       </div>
     </div>
@@ -36,12 +36,12 @@
     <!-- Search & Mobile Role Switcher -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
       <div class="relative w-full sm:w-72">
-        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Search class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Cari izin..."
-          class="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition-colors"
+          placeholder="Cari izin"
+          class="w-full h-9 pl-9 pr-8 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
         />
         <button
           v-if="searchQuery"
@@ -70,20 +70,20 @@
     </div>
 
     <!-- Desktop: matriks izin x peran, satu baris per izin (keterangan muncul saat kursor diarahkan) -->
-    <div class="hidden lg:block bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <table class="w-full text-left text-xs border-collapse">
+    <div class="hidden lg:block bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <table class="w-full text-left text-sm border-collapse">
         <thead>
-          <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-            <th class="py-2.5 px-4 w-[40%] text-[11px] font-medium">Perizinan</th>
+          <tr class="bg-slate-100 dark:bg-[#202022] border-b border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+            <th class="py-3 px-4 w-[40%] text-xs font-medium">Perizinan</th>
             <th
               v-for="role in rolesList"
               :key="role.key"
-              class="group py-2.5 px-3 text-center w-[15%] font-normal"
+              class="group py-3 px-3 text-center w-[15%] font-normal"
             >
               <span class="block font-medium text-slate-700 dark:text-slate-200 text-xs">{{ role.label }}</span>
-              <span v-if="role.key === 'Admin SCM'" class="block text-[11px] text-slate-400 mt-0.5">Akses penuh</span>
+              <span v-if="role.key === 'Admin SCM'" class="block text-xs text-slate-400 mt-0.5">Akses penuh</span>
               <!-- Pilih/kosongkan semua: muncul saat kolom diarahkan kursor supaya header tetap bersih -->
-              <span v-else class="flex items-center justify-center gap-1 mt-0.5 text-[11px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <span v-else class="flex items-center justify-center gap-1 mt-0.5 text-xs opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                 <button
                   type="button"
                   class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
@@ -104,10 +104,10 @@
           </tr>
         </thead>
 
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+        <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800">
           <template v-for="group in filteredGroups" :key="group.id">
             <tr>
-              <td colspan="5" class="pt-3 pb-1.5 px-4 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              <td colspan="5" class="pt-5 pb-2 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">
                 {{ group.title }}
               </td>
             </tr>
@@ -115,15 +115,15 @@
             <tr
               v-for="item in group.items"
               :key="item.key"
-              class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
+              class="hover:bg-[#eef3fc] dark:hover:bg-[#242428] transition-colors"
             >
-              <td class="py-1.5 px-4 text-slate-700 dark:text-slate-200" :title="item.description">
+              <td class="h-11 px-4 text-slate-800 dark:text-slate-200" :title="item.description">
                 {{ item.name }}
               </td>
               <td
                 v-for="role in rolesList"
                 :key="role.key"
-                class="py-1.5 px-3 text-center align-middle"
+                class="h-11 px-3 text-center align-middle"
               >
                 <Check v-if="role.key === 'Admin SCM'" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 mx-auto" />
                 <button
@@ -158,7 +158,7 @@
     </div>
 
     <!-- Mobile: satu peran per tampilan -->
-    <div class="lg:hidden bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
+    <div class="lg:hidden bg-white dark:bg-graphite-card rounded-xl border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800">
         <div class="min-w-0">
           <p class="font-medium text-slate-800 dark:text-slate-200">{{ activeRoleObj?.label }}</p>
@@ -273,93 +273,93 @@ const activeRoleObj = computed(() => {
 const permissionGroups = [
   {
     id: 'modules_visibility',
-    title: 'Visibilitas Kolom & Modul',
+    title: 'Visibilitas kolom dan modul',
     items: [
       {
         key: 'view_dashboard',
-        name: 'Akses Dashboard',
+        name: 'Akses dashboard',
         description: 'Ringkasan metrik statistik dan overview tagihan'
       },
       {
         key: 'view_programs',
-        name: 'Akses Arsip Program',
+        name: 'Akses arsip program',
         description: 'Membuka tabel arsip program SCM'
       },
       {
         key: 'view_master_columns',
-        name: 'Tampilkan Kolom Master Data',
+        name: 'Tampilkan kolom data master',
         description: 'Kolom Kategori, Brand, Company, Kode Gudang, No. PO/SJ, dan Supplier'
       },
       {
         key: 'view_finance_columns',
-        name: 'Tampilkan Kolom Keuangan',
+        name: 'Tampilkan kolom keuangan',
         description: 'Kolom DPP, PPN, Total Tagihan, Faktur Pajak, dan Status Pembayaran'
       },
     ]
   },
   {
     id: 'programs_actions',
-    title: 'Pengelolaan Arsip Program',
+    title: 'Pengelolaan arsip program',
     items: [
       {
         key: 'add_program',
-        name: 'Tambah Program Baru',
+        name: 'Tambah program baru',
         description: 'Formulir input program baru ke arsip'
       },
       {
         key: 'edit_purchase',
-        name: 'Edit Data Pengadaan / Vendor / Master',
+        name: 'Ubah data pengadaan, vendor, dan master',
         description: 'Ubah nama program, vendor, NPWP, kategori, brand, kode gudang, PO'
       },
       {
         key: 'edit_finance',
-        name: 'Edit Data Keuangan & Status Payment',
+        name: 'Ubah data keuangan dan status pembayaran',
         description: 'Ubah invoice, nominal DPP/PPN, faktur pajak, dan status payment'
       },
       {
         key: 'delete_program',
-        name: 'Hapus Program / Arsip',
+        name: 'Hapus program',
         description: 'Hapus permanen program dari database'
       },
       {
         key: 'import_program',
-        name: 'Import Excel / CSV',
+        name: 'Impor Excel/CSV',
         description: 'Unggah file spreadsheet untuk sinkronisasi massal'
       },
       {
         key: 'export_program',
-        name: 'Ekspor Data ke Excel',
+        name: 'Ekspor data ke Excel',
         description: 'Unduh seluruh arsip program ke format spreadsheet'
       },
     ]
   },
   {
     id: 'documents_management',
-    title: 'Manajemen Dokumen',
+    title: 'Manajemen dokumen',
     items: [
       {
         key: 'upload_memo',
-        name: 'Unggah Memo / DO (Surat Jalan)',
+        name: 'Unggah memo/DO (surat jalan)',
         description: 'Lampirkan bukti serah terima atau surat jalan'
       },
       {
         key: 'upload_invoice',
-        name: 'Unggah Invoice',
+        name: 'Unggah invoice',
         description: 'Lampirkan invoice tagihan resmi vendor'
       },
       {
         key: 'upload_faktur',
-        name: 'Unggah Faktur Pajak',
+        name: 'Unggah faktur pajak',
         description: 'Lampirkan berkas e-Faktur PPN masukan DJP'
       },
       {
         key: 'delete_memo',
-        name: 'Hapus Memo / DO',
+        name: 'Hapus memo/DO',
         description: 'Hapus berkas surat jalan/memo terlampir'
       },
       {
         key: 'delete_finance_doc',
-        name: 'Hapus Invoice & Faktur Pajak',
+        name: 'Hapus invoice dan faktur pajak',
         description: 'Hapus berkas invoice atau faktur pajak terlampir'
       },
     ]

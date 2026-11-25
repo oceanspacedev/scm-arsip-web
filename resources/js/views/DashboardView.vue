@@ -1,51 +1,27 @@
 <template>
-  <div class="space-y-5 select-none">
-    <!-- Header with Title & Fiscal Year Filter -->
+  <div class="space-y-6">
+    <!-- Judul + pilihan tahun pajak -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
       <div class="min-w-0">
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Dashboard Program SCM
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Ringkasan arsip dokumen & rekap perpajakan program
-        </p>
+        <h1 class="text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100">Dashboard program SCM</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Ringkasan arsip dokumen dan rekap pajak program</p>
       </div>
-
-      <!-- Fiscal Year Filter Dropdown -->
-      <div class="relative self-start sm:self-auto">
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          @click="showYearMenu = !showYearMenu"
-        >
-          <span>{{ currentYearLabel }}</span>
-          <ChevronDown class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 ml-0.5 transition-transform" :class="{ 'rotate-180': showYearMenu }" />
-        </button>
-
-        <div
-          v-if="showYearMenu"
-          class="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100"
-        >
-          <button
-            v-for="yr in yearOptions"
-            :key="yr.value"
-            type="button"
-            class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-colors"
-            :class="selectedYear === yr.value ? 'font-medium text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60' : 'text-slate-700 dark:text-slate-300'"
-            @click="chooseYear(yr.value)"
-          >
-            <span>{{ yr.label }}</span>
-            <Check v-if="selectedYear === yr.value" class="w-3.5 h-3.5 text-slate-900 dark:text-slate-100" />
-          </button>
-        </div>
+      <div class="w-full sm:w-52">
+        <SearchSelect
+          :model-value="selectedYear"
+          aria-label="Tahun pajak"
+          :options="yearOptions"
+          border-class="border-slate-200 dark:border-slate-700"
+          @update:model-value="chooseYear"
+        />
       </div>
     </div>
 
-    <!-- 4 Metric Cards Row matching screenshot -->
+    <!-- Ringkasan angka -->
     <DashboardMetricCards />
 
-    <!-- Two Charts Grid Row matching screenshot -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+    <!-- Rekap bulanan + supplier teratas -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
       <!-- Left (Rekap DPP & PPN per Bulan) -->
       <div class="lg:col-span-7 xl:col-span-8 flex flex-col">
         <MonthlyTaxChart class="h-full" />
@@ -65,49 +41,34 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { Check, ChevronDown } from 'lucide-vue-next';
+import { computed } from 'vue';
 import DashboardMetricCards from '../components/dashboard/DashboardMetricCards.vue';
 import MonthlyTaxChart from '../components/dashboard/MonthlyTaxChart.vue';
 import TopSuppliersChart from '../components/dashboard/TopSuppliersChart.vue';
 import IncompleteAlertSection from '../components/dashboard/IncompleteAlertSection.vue';
+import SearchSelect from '../components/ui/SearchSelect.vue';
 import { useTaxStore } from '../store/taxStore';
 
 const store = useTaxStore();
-const showYearMenu = ref(false);
 
-const selectedYear = computed(() => store.state.selectedFiscalYear || String(new Date().getFullYear()));
+// Tahun yang sedang dipakai: pilihan pengguna, atau tahun terbaru yang punya data
+const selectedYear = computed(() => store.effectiveFiscalYear.value);
 
 const yearOptions = computed(() => {
-  // Kumpulkan semua tahun dari data program
-  const years = new Set();
+  // Tahun yang punya data program, ditambah tahun berjalan
+  const years = new Set([String(new Date().getFullYear())]);
   (store.programs?.value || []).forEach(p => {
-    const date = p.program_date || p.due_date || '';
-    const yr = String(date).slice(0, 4);
-    if (yr && /^\d{4}$/.test(yr)) years.add(yr);
+    const yr = String(p.program_date || p.due_date || '').slice(0, 4);
+    if (/^\d{4}$/.test(yr)) years.add(yr);
   });
 
-  // Selalu tampilkan tahun saat ini dan 2 tahun sebelumnya
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear; y >= currentYear - 2; y--) {
-    years.add(String(y));
-  }
-
-  const sortedYears = Array.from(years).sort((a, b) => Number(b) - Number(a));
-
   return [
-    ...sortedYears.map(y => ({ value: y, label: `Tahun Pajak ${y}` })),
-    { value: 'all', label: 'Semua Tahun Pajak' }
+    ...Array.from(years).sort((a, b) => Number(b) - Number(a)).map(y => ({ value: y, label: `Tahun pajak ${y}` })),
+    { value: 'all', label: 'Semua tahun' },
   ];
-});
-
-const currentYearLabel = computed(() => {
-  const found = yearOptions.value.find(o => o.value === selectedYear.value);
-  return found ? found.label : `Tahun Pajak ${selectedYear.value}`;
 });
 
 function chooseYear(yr) {
   store.setFiscalYear(yr);
-  showYearMenu.value = false;
 }
 </script>

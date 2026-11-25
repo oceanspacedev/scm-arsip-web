@@ -411,7 +411,8 @@ const state = reactive({
     activeNotification: null,
     isImportModalOpen: false,
     isApprovalModalOpen: false,
-    selectedFiscalYear: localStorage.getItem('scm_fiscal_year') || String(new Date().getFullYear()),
+    // Kosong = belum pernah dipilih; dashboard memakai tahun terbaru yang punya data (effectiveFiscalYear)
+    selectedFiscalYear: localStorage.getItem('scm_fiscal_year') || '',
     isLoggingOut: false,
 });
 
@@ -757,8 +758,18 @@ function dedupe(key, fn) {
 export const useTaxStore = () => {
     const programs = computed(() => state.programs);
 
+    // Tahun terbaru yang punya data program; dipakai bila pengguna belum pernah memilih tahun pajak
+    const latestDataYear = computed(() => {
+        const years = state.programs
+            .map(p => String(p.program_date || p.due_date || '').slice(0, 4))
+            .filter(y => /^\d{4}$/.test(y));
+        return years.length ? years.sort().pop() : String(new Date().getFullYear());
+    });
+
+    const effectiveFiscalYear = computed(() => state.selectedFiscalYear || latestDataYear.value);
+
     const dashboardPrograms = computed(() => {
-        const yr = state.selectedFiscalYear;
+        const yr = effectiveFiscalYear.value;
         if (!yr || yr === 'all' || yr === 'Semua') {
             return state.programs;
         }
@@ -1366,8 +1377,8 @@ export const useTaxStore = () => {
     }
 
     // Riwayat dokumen yang masuk (menu Riwayat)
-    async function fetchDocumentLogs({ status = '', source = '', q = '', page = 1 } = {}) {
-        const params = new URLSearchParams({ page: String(page) });
+    async function fetchDocumentLogs({ status = '', source = '', q = '', page = 1, perPage = 25 } = {}) {
+        const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
         if (status) params.set('status', status);
         if (source) params.set('source', source);
         if (q) params.set('q', q);
@@ -2651,6 +2662,7 @@ export const useTaxStore = () => {
         closeMobileSidebar,
         openMobileSidebar,
         selectedFiscalYear: computed(() => state.selectedFiscalYear),
+        effectiveFiscalYear,
         setFiscalYear,
         dashboardPrograms,
     };

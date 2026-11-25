@@ -1,57 +1,54 @@
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 max-w-sm pointer-events-none">
-      <div
-        v-if="notification"
-        :class="[
-          'pointer-events-auto flex items-start gap-3 p-3.5 bg-white rounded-lg border shadow-lg text-sm',
-          borderClass
-        ]"
+    <div class="fixed bottom-4 right-4 left-4 sm:left-auto z-[60] flex flex-col items-end gap-2 pointer-events-none">
+      <Transition
+        enter-active-class="transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        enter-from-class="opacity-0 translate-y-2"
+        leave-active-class="transition-opacity duration-150"
+        leave-to-class="opacity-0"
       >
-        <div :class="['p-1 rounded-full shrink-0', iconBgClass]">
-          <Check v-if="notification.type === 'success'" class="w-3.5 h-3.5 text-[#15803D]" />
-          <AlertTriangle v-else-if="notification.type === 'warning'" class="w-3.5 h-3.5 text-[#B45309]" />
-          <Info v-else class="w-3.5 h-3.5 text-[#0F766E]" />
-        </div>
+        <div
+          v-if="notification"
+          :key="notification.id"
+          role="status"
+          aria-live="polite"
+          class="pointer-events-auto flex w-full sm:w-auto sm:max-w-sm items-start gap-3 py-3 pl-4 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] text-sm"
+        >
+          <component :is="icon.component" :class="['w-4 h-4 shrink-0 mt-0.5', icon.color]" />
 
-        <div class="flex-1 pr-2">
-          <p class="font-medium text-[#17201E] leading-snug">
+          <p class="flex-1 text-slate-800 dark:text-slate-100 leading-5">
             {{ notification.message }}
           </p>
-        </div>
 
-        <button
-          type="button"
-          class="text-[#66736F] hover:text-[#17201E] p-0.5 rounded cursor-pointer"
-          @click="dismiss"
-        >
-          <X class="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <button
+            type="button"
+            aria-label="Tutup notifikasi"
+            class="-my-1 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            @click="dismiss"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </Transition>
     </div>
   </Teleport>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { Check, AlertTriangle, Info, X } from 'lucide-vue-next';
+import { CircleCheck, TriangleAlert, Info, X } from 'lucide-vue-next';
 import { useTaxStore } from '../../store/taxStore';
 
 const store = useTaxStore();
 const notification = computed(() => store.state.activeNotification);
 
-const borderClass = computed(() => {
-  if (!notification.value) return 'border-[#DDE4E1]';
-  if (notification.value.type === 'success') return 'border-[#BBF7D0]';
-  if (notification.value.type === 'warning') return 'border-[#FDE68A]';
-  return 'border-[#CCFBF1]';
-});
-
-const iconBgClass = computed(() => {
-  if (!notification.value) return 'bg-[#F4F6F5]';
-  if (notification.value.type === 'success') return 'bg-[#F0FDF4]';
-  if (notification.value.type === 'warning') return 'bg-[#FFFBEB]';
-  return 'bg-[#F0FDFA]';
+// Warna hanya di ikon; permukaan toast mengikuti tema (putih / grafit)
+const icon = computed(() => {
+  const type = notification.value?.type;
+  if (type === 'success') return { component: CircleCheck, color: 'text-emerald-600 dark:text-emerald-400' };
+  if (type === 'warning') return { component: TriangleAlert, color: 'text-amber-600 dark:text-amber-400' };
+  if (type === 'error') return { component: TriangleAlert, color: 'text-rose-600 dark:text-rose-400' };
+  return { component: Info, color: 'text-blue-600 dark:text-blue-400' };
 });
 
 function dismiss() {

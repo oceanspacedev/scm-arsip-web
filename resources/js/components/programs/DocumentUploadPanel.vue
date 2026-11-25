@@ -2,7 +2,7 @@
   <!-- Progres unggah invoice & faktur pajak di latar belakang: tampil di semua halaman selama antrean berisi -->
   <section
     v-if="queue.items.length > 0"
-    class="fixed bottom-4 right-4 z-40 w-[min(400px,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] shadow-lg text-xs"
+    class="fixed bottom-4 right-4 z-40 w-[min(400px,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-graphite-card shadow-lg text-xs"
   >
     <div class="flex items-center gap-2.5 px-4 py-3">
       <Loader2 v-if="queue.isProcessing" class="w-3.5 h-3.5 shrink-0 animate-spin text-slate-400" />

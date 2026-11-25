@@ -16,7 +16,7 @@ class DocumentUploadLogController extends Controller
     private const SOURCES = [DocumentUploadLog::SOURCE_AUTO, DocumentUploadLog::SOURCE_MANUAL, DocumentUploadLog::SOURCE_WHMS];
 
     /**
-     * GET /api/document-logs?status=&source=&q=&page=
+     * GET /api/document-logs?status=&source=&q=&page=&per_page=
      */
     public function index(Request $request)
     {
@@ -24,6 +24,7 @@ class DocumentUploadLogController extends Controller
             'status' => 'nullable|in:' . implode(',', self::STATUSES),
             'source' => 'nullable|in:' . implode(',', self::SOURCES),
             'q' => 'nullable|string|max:100',
+            'per_page' => 'nullable|integer|min:10|max:100',
         ]);
 
         $search = trim((string) ($validated['q'] ?? ''));
@@ -40,7 +41,7 @@ class DocumentUploadLogController extends Controller
                     ->orWhereHas('program', fn ($program) => $program->where('title', 'like', $like));
             }))
             ->latest('id')
-            ->paginate(50);
+            ->paginate((int) ($validated['per_page'] ?? 50));
 
         return response()->json([
             'success' => true,

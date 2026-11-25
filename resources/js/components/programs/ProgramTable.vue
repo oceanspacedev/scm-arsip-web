@@ -1,888 +1,428 @@
 <template>
-  <div class="bg-white dark:bg-[#111827] rounded-xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col w-full min-w-0">
-    <!-- Desktop Table Container (hidden md:block) -->
-    <div class="hidden md:block overflow-x-auto w-full max-w-full">
-      <table class="w-full text-left text-xs border-collapse min-w-[1520px]">
+  <div class="bg-white dark:bg-graphite-card rounded-xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col w-full min-w-0">
+    <!--
+      Tabel desktop: satu data per kolom, satu baris per sel. Teks panjang dipotong dan lengkapnya muncul saat kursor diarahkan.
+      Kolom Program menempel di kiri dan Aksi di kanan saat tabel digeser ke samping. Baris berselang warna agar mudah diikuti.
+    -->
+    <div ref="tableScrollRef" class="hidden md:block overflow-x-auto w-full max-w-full" @scroll.passive="updateScrollEdges">
+      <table class="w-full text-left text-[13px] border-collapse whitespace-nowrap">
         <thead>
-          <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
-            <th class="py-2.5 px-3 min-w-[105px]">Tanggal</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[110px]">Kategori</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[100px]">Brand</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[145px]">Company</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[120px]">Kode Gudang</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[125px]">No. PO/SJ</th>
-            <th class="py-2.5 px-3 min-w-[200px]">Program</th>
-            <th v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[150px]">Supplier</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 min-w-[100px]">No. Invoice</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 min-w-[130px]">Faktur Pajak</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 text-right min-w-[90px]">DPP</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2 text-right min-w-[85px]">PPN</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-right min-w-[105px]">Total Payment</th>
-            <th v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-center min-w-[130px]">Status Payment</th>
-            <th class="py-2.5 px-2 text-center min-w-[95px]">Dokumen</th>
-            <th class="py-2.5 px-2 text-center min-w-[100px]">Status</th>
-            <th class="py-2.5 px-2 text-center w-20 sticky right-0 bg-white dark:bg-[#111827] border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10">Aksi</th>
+          <tr class="border-b border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
+            <th :class="[thClass, stickyLeftClass, 'z-10 bg-[#e8eaee]! dark:bg-[#28282b]!']">Program</th>
+            <th v-if="show('date')" :class="thClass">Tanggal</th>
+            <template v-if="canViewMasterColumns">
+              <th v-if="show('category')" :class="thClass">Kategori</th>
+              <th v-if="show('brand')" :class="thClass">Brand</th>
+              <th v-if="show('company')" :class="thClass">Company</th>
+              <th v-if="show('supplier')" :class="thClass">Supplier</th>
+              <th v-if="show('po_sj')" :class="thClass">No. PO/SJ</th>
+              <th v-if="show('warehouse')" :class="thClass">Kode gudang</th>
+            </template>
+            <template v-if="canViewFinanceColumns">
+              <th v-if="show('invoice_number')" :class="thClass">No. invoice</th>
+              <th v-if="show('faktur_number')" :class="thClass">No. faktur pajak</th>
+              <th v-if="show('dpp')" :class="[thClass, 'text-right']">DPP</th>
+              <th v-if="show('ppn')" :class="[thClass, 'text-right']">PPN</th>
+              <th v-if="show('total')" :class="[thClass, 'text-right']">Total</th>
+              <th v-if="show('payment')" :class="thClass">Pembayaran</th>
+            </template>
+            <th v-for="doc in visibleDocTypes" :key="doc.type" :class="thClass">{{ doc.label }}</th>
+            <th v-if="show('completeness')" :class="thClass">Kelengkapan</th>
+            <th :class="[thClass, stickyRightClass, 'z-10 bg-[#e8eaee]! dark:bg-[#28282b]!']"><span class="sr-only">Aksi</span></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+        <tbody>
           <tr
-            v-for="program in paginatedPrograms"
+            v-for="(program, rowIdx) in paginatedPrograms"
             :key="program.id"
-            class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+            class="group cursor-pointer border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
+            :class="rowBg(rowIdx)"
             @click="goToDetail(program.id)"
           >
-            <!-- 1. TANGGAL -->
-            <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px] tabular-nums">
-              {{ formatDate(program.program_date) }}
-            </td>
-
-            <!-- 2. KATEGORI -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
-              {{ program.category || 'Logistik' }}
-            </td>
-
-            <!-- 2.5 BRAND -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap text-[11px]">
-              {{ program.brand || getProgramBrand(program) }}
-            </td>
-
-            <!-- 3. COMPANY NAME -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[140px] max-w-[200px]">
-              <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="getProgramCompanyName(program)">
-                {{ getProgramCompanyName(program) }}
-              </div>
-            </td>
-
-            <!-- 3.5 KODE GUDANG -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 max-w-[120px]">
-              <div class="truncate text-[11px] text-slate-700 dark:text-slate-300 tabular-nums" :title="program.kode_gudang || '-'">
-                {{ program.kode_gudang || '-' }}
-              </div>
-            </td>
-
-            <!-- 4. NO. PO/SJ -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
-              {{ getProgramPoSjNumber(program) }}
-            </td>
-
-            <!-- 5. PROGRAM -->
-            <td class="py-2.5 px-3 min-w-[200px] max-w-[280px]">
+            <td :class="[tdClass, stickyLeftClass, 'z-[1]', stickyBg(rowIdx)]">
               <router-link
                 :to="`/programs/${program.id}`"
-                class="font-normal text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white hover:underline transition-colors block text-[11px] leading-snug break-words"
+                class="block max-w-[300px] truncate font-medium text-slate-900 dark:text-slate-50 hover:underline underline-offset-2"
                 :title="program.program_name"
                 @click.stop
               >
                 {{ program.program_name }}
               </router-link>
             </td>
+            <td v-if="show('date')" :class="[tdClass, 'tabular-nums']">{{ formatDate(program.program_date) }}</td>
 
-            <!-- 6. SUPPLIER -->
-            <td v-if="canViewMasterColumns" class="py-2.5 px-2.5 min-w-[150px] max-w-[220px]">
-              <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug break-words" :title="program.supplier">
-                {{ program.supplier }}
-              </div>
-              <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate tabular-nums">
-                {{ program.npwp || '01.000.000.0-000.000' }}
-              </div>
-            </td>
+            <template v-if="canViewMasterColumns">
+              <td v-if="show('category')" :class="tdClass">{{ program.category || '-' }}</td>
+              <td v-if="show('brand')" :class="tdClass">{{ program.brand || getProgramBrand(program) || '-' }}</td>
+              <td v-if="show('company')" :class="tdClass"><span class="block max-w-[200px] truncate" :title="getProgramCompanyName(program)">{{ getProgramCompanyName(program) }}</span></td>
+              <td v-if="show('supplier')" :class="tdClass"><span class="block max-w-[220px] truncate" :title="program.supplier">{{ program.supplier || '-' }}</span></td>
+              <td v-if="show('po_sj')" :class="[tdClass, 'tabular-nums']">{{ getProgramPoSjNumber(program) }}</td>
+              <td v-if="show('warehouse')" :class="tdClass">{{ program.kode_gudang || '-' }}</td>
+            </template>
 
-            <!-- 7. NO. INVOICE -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 whitespace-nowrap text-[11px] text-slate-700 dark:text-slate-300 tabular-nums">
-              {{ program.invoice_number || '-' }}
-            </td>
-
-            <!-- 8. FAKTUR PAJAK (Tanggal & Nomor) -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 whitespace-nowrap text-[11px]">
-              <div v-if="program.faktur_date" class="text-slate-700 dark:text-slate-300 tabular-nums">
-                {{ formatDate(program.faktur_date) }}
-              </div>
-              <div v-else class="text-slate-400 dark:text-slate-500">
-                -
-              </div>
-              <div v-if="program.faktur_number" class="text-[10px] text-slate-400 dark:text-slate-500 truncate tabular-nums mt-0.5" :title="program.faktur_number">
-                No: {{ program.faktur_number }}
-              </div>
-            </td>
-
-            <!-- 4. DPP -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
-              {{ formatRupiah(program.dpp) }}
-            </td>
-
-            <!-- 5. PPN -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2 text-slate-700 dark:text-slate-300 text-right whitespace-nowrap text-[11px] tabular-nums">
-              {{ formatRupiah(program.ppn) }}
-            </td>
-
-            <!-- 6. TOTAL PAYMENT -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 font-medium text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] tabular-nums">
-              {{ formatRupiah(program.total_invoice) }}
-            </td>
-
-            <!-- 6.5 STATUS PAYMENT -->
-            <td v-if="canViewFinanceColumns" class="py-2.5 px-2.5 text-center whitespace-nowrap" @click.stop>
-              <div class="relative inline-flex items-center group">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border transition-all select-none"
+            <template v-if="canViewFinanceColumns">
+              <td v-if="show('invoice_number')" :class="[tdClass, 'tabular-nums']">{{ program.invoice_number || '-' }}</td>
+              <td v-if="show('faktur_number')" :class="[tdClass, 'tabular-nums']">{{ program.faktur_number || '-' }}</td>
+              <td v-if="show('dpp')" :class="[tdClass, 'text-right tabular-nums']">{{ formatRupiah(program.dpp) }}</td>
+              <td v-if="show('ppn')" :class="[tdClass, 'text-right tabular-nums']">{{ formatRupiah(program.ppn) }}</td>
+              <td v-if="show('total')" :class="[tdClass, 'text-right tabular-nums font-medium text-slate-900 dark:text-slate-50']">{{ formatRupiah(program.total_invoice) }}</td>
+              <td v-if="show('payment')" :class="tdClass" @click.stop>
+                <button
+                  type="button"
+                  class="-ml-2 inline-flex items-center gap-2 h-8 px-2 rounded-lg transition-colors"
                   :class="[
-                    getPaymentBadgeClass(program.payment_status),
-                    (!canEditFinance && !isAdmin) ? 'opacity-85' : ''
+                    canChangePayment ? 'cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-700/60' : 'cursor-default',
+                    paymentMenu?.programId === program.id ? 'bg-slate-200/70 dark:bg-slate-700/60' : ''
                   ]"
+                  :disabled="!canChangePayment"
+                  :aria-haspopup="canChangePayment ? 'menu' : undefined"
+                  :aria-expanded="paymentMenu?.programId === program.id"
+                  aria-label="Status pembayaran"
+                  @click="togglePaymentMenu($event, program)"
                 >
-                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
+                  <span class="w-2 h-2 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
                   <span>{{ formatPaymentStatus(program.payment_status) }}</span>
-                  <ChevronDown v-if="canEditFinance || isAdmin" class="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-0.5 shrink-0" />
-                </span>
-                <select
-                  :value="normalizePayStatus(program.payment_status)"
-                  :disabled="!canEditFinance && !isAdmin"
-                  @change="handleSelectPaymentStatus(program.id, $event.target.value)"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-                  title="Ubah Status Payment"
-                >
-                  <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
-                </select>
-              </div>
-            </td>
-
-            <!-- 7. DOKUMEN -->
-            <td class="py-2.5 px-2 text-center whitespace-nowrap" @click.stop>
-              <div class="inline-flex items-center gap-1">
-                <!-- INVOICE -->
-                <button
-                  type="button"
-                  class="px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-                  :class="[
-                    hasDoc(program, 'invoice')
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                      : (store.canUploadDoc('invoice')
-                        ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-                  ]"
-                  :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
-                  @click="handlePillClick(program, 'invoice', 'Invoice')"
-                >
-                  <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>IN
+                  <ChevronDown v-if="canChangePayment" class="w-3.5 h-3.5 text-slate-400" :stroke-width="1.75" />
                 </button>
+              </td>
+            </template>
 
-                <!-- FAKTUR PAJAK -->
-                <button
-                  type="button"
-                  class="px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-                  :class="[
-                    hasDoc(program, 'faktur_pajak')
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                      : (store.canUploadDoc('faktur_pajak')
-                        ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-                  ]"
-                  :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
-                  @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
-                >
-                  <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>FP
-                </button>
-
-                <!-- MEMO / DO -->
-                <button
-                  type="button"
-                  class="px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-                  :class="[
-                    hasDoc(program, 'mou')
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                      : (store.canUploadDoc('mou')
-                        ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                        : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-                  ]"
-                  :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
-                  @click="handlePillClick(program, 'mou', 'Memo/DO')"
-                >
-                  <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 text-[9px] font-normal text-slate-400 dark:text-slate-500">+</span>DO
-                </button>
-              </div>
-            </td>
-
-            <!-- 8. STATUS KELENGKAPAN -->
-            <td class="py-2.5 px-2 text-center whitespace-nowrap">
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border select-none"
-                :class="getStatusBadgeClass(program)"
+            <!-- Tiga dokumen wajib: Ada (klik untuk lihat) / Unggah / Belum ada -->
+            <td v-for="doc in visibleDocTypes" :key="doc.type" :class="tdClass" @click.stop>
+              <button
+                v-if="hasDoc(program, doc.type)"
+                type="button"
+                class="-ml-2 inline-flex items-center gap-1.5 h-8 px-2 rounded-lg text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
+                :title="`Lihat ${doc.label}`"
+                @click="handlePillClick(program, doc.type, doc.label)"
               >
-                <span
-                  class="w-1.5 h-1.5 rounded-full shrink-0"
-                  :class="{
-                    'bg-emerald-500': getStatusText(program) === 'Lengkap',
-                    'bg-rose-500': getStatusText(program) === 'Belum Lengkap',
-                    'bg-amber-500': getStatusText(program).startsWith('Sebagian')
-                  }"
-                ></span>
-                <span>{{ getStatusText(program) }}</span>
+                <CircleCheck class="w-4 h-4" :stroke-width="2" />
+                <span>Ada</span>
+              </button>
+              <button
+                v-else-if="store.canUploadDoc(doc.type)"
+                type="button"
+                class="-ml-2 inline-flex items-center gap-1.5 h-8 px-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-500 hover:text-slate-900 dark:hover:border-slate-400 dark:hover:text-slate-100 transition-colors cursor-pointer"
+                :title="`Unggah ${doc.label}`"
+                @click="handlePillClick(program, doc.type, doc.label)"
+              >
+                <Upload class="w-3.5 h-3.5" :stroke-width="2" />
+                <span>Unggah</span>
+              </button>
+              <span v-else class="text-slate-400 dark:text-slate-500">Belum ada</span>
+            </td>
+
+            <td v-if="show('completeness')" :class="tdClass">
+              <span class="inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full shrink-0" :class="docStatus(program).dot"></span>
+                {{ docStatus(program).label }}
               </span>
             </td>
 
-            <!-- 9. AKSI (Compact Icon Buttons - Sticky right) -->
-            <td class="py-2.5 px-2 text-center whitespace-nowrap sticky right-0 bg-white dark:bg-[#111827] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 transition-colors border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.03)] z-10" @click.stop>
-              <div class="inline-flex items-center justify-center gap-0.5">
-                <button
-                  type="button"
-                  class="p-1 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Lihat Detail Program"
-                  @click="goToDetail(program.id)"
-                >
-                  <Eye class="w-3.5 h-3.5" />
-                </button>
+            <td :class="['px-2 py-2 z-[1]', stickyRightClass, stickyBg(rowIdx)]" @click.stop>
+              <div class="flex items-center justify-end gap-0.5">
                 <button
                   v-if="canEditProgram"
                   type="button"
-                  class="p-1 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Edit Data Program"
+                  class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+                  aria-label="Ubah program"
+                  title="Ubah"
                   @click="openEditModal(program)"
                 >
-                  <Pencil class="w-3.5 h-3.5" />
+                  <Pencil class="w-4 h-4" :stroke-width="1.75" />
                 </button>
                 <button
                   v-if="isAdmin"
                   type="button"
-                  class="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
-                  title="Hapus Program"
+                  class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                  aria-label="Hapus program"
+                  title="Hapus"
                   @click="openDeleteConfirm(program)"
                 >
-                  <Trash2 class="w-3.5 h-3.5" />
+                  <Trash2 class="w-4 h-4" :stroke-width="1.75" />
                 </button>
+                <ChevronRight v-if="!canEditProgram && !isAdmin" class="w-4 h-4 text-slate-400" />
               </div>
             </td>
           </tr>
 
-          <!-- Empty State Desktop -->
           <tr v-if="filteredPrograms.length === 0">
-            <td colspan="15" class="py-14 text-center">
-              <div class="flex flex-col items-center justify-center space-y-2">
-                <FolderArchive class="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada program ditemukan</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500 max-w-sm">
-                  Coba sesuaikan kata kunci pencarian atau reset filter kategori, status, dan supplier.
-                </p>
-              </div>
+            <td colspan="30" class="py-16 text-center whitespace-normal">
+              <FolderArchive class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" :stroke-width="1.5" />
+              <p class="mt-3 text-sm text-slate-800 dark:text-slate-200">Tidak ada program yang cocok</p>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Ubah kata kunci atau reset filter</p>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Mobile Cards List (block md:hidden) - NO horizontal scroll required! -->
-    <div class="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+    <!-- Kartu program untuk layar kecil: ketuk kartu untuk membuka detail -->
+    <div class="block md:hidden divide-y divide-slate-200 dark:divide-slate-800">
       <div
         v-for="program in paginatedPrograms"
         :key="program.id"
-        class="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+        class="p-4 active:bg-slate-50 dark:active:bg-slate-800/40 transition-colors cursor-pointer"
         @click="goToDetail(program.id)"
       >
-        <!-- Top Row: Program Name & Status Badge -->
-        <div class="flex items-start justify-between gap-2.5">
-          <div class="min-w-0 flex-1">
-            <router-link
-              :to="`/programs/${program.id}`"
-              class="font-semibold text-slate-900 dark:text-slate-100 hover:underline text-sm leading-snug block break-words"
-              @click.stop
-            >
-              {{ program.program_name }}
-            </router-link>
-            <div class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              <div>
-                <span class="tabular-nums">{{ formatDate(program.program_date) }}</span>
-                <span class="text-slate-300 dark:text-slate-600 mx-1">·</span>
-                <span>{{ program.category }}</span>
-              </div>
-              <div class="truncate">{{ getProgramCompanyName(program) }}</div>
-            </div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900 dark:text-slate-100 leading-5">{{ program.program_name }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <span class="tabular-nums">{{ formatDate(program.program_date) }}</span>
+              <template v-if="canViewMasterColumns">
+                <span class="mx-1 text-slate-300 dark:text-slate-600">·</span>{{ program.category || '-' }}
+              </template>
+            </p>
           </div>
-
-          <!-- Status Badge -->
-          <span
-            :class="[
-              'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0',
-              getStatusBadgeClass(program)
-            ]"
-          >
-            <span
-              class="w-1.5 h-1.5 rounded-full shrink-0"
-              :class="{
-                'bg-emerald-500': getStatusText(program) === 'Lengkap',
-                'bg-rose-500': getStatusText(program) === 'Belum Lengkap',
-                'bg-amber-500': getStatusText(program).startsWith('Sebagian')
-              }"
-            ></span>
-            <span>{{ getStatusText(program) }}</span>
+          <span class="shrink-0 inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full" :class="docStatus(program).dot"></span>
+            {{ docStatus(program).label }}
           </span>
         </div>
 
-        <!-- Supplier & Financial Box (Clean compact card) -->
-        <div v-if="canViewMasterColumns || canViewFinanceColumns" class="rounded-xl p-3 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-          <!-- Supplier -->
-          <div v-if="canViewMasterColumns" class="flex items-center justify-between gap-2">
-            <span class="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Supplier:</span>
-            <div class="text-right min-w-0">
-              <span class="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[210px]">{{ program.supplier }}</span>
-              <span class="text-[10px] text-slate-400 dark:text-slate-500 block tabular-nums">{{ program.npwp || '-' }}</span>
-            </div>
+        <dl v-if="canViewMasterColumns || canViewFinanceColumns" class="mt-3 space-y-1.5 text-sm">
+          <div v-if="canViewMasterColumns" class="flex justify-between gap-4">
+            <dt class="text-slate-500 dark:text-slate-400 shrink-0">Supplier</dt>
+            <dd class="text-right text-slate-800 dark:text-slate-200 truncate">{{ program.supplier || '-' }}</dd>
           </div>
-
-          <!-- No. PO/SJ & Company -->
-          <div v-if="canViewMasterColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
-            <div>
-              <span class="text-slate-500 dark:text-slate-400 block">No. PO/SJ:</span>
-              <span class="font-medium text-slate-700 dark:text-slate-300 block tabular-nums">{{ getProgramPoSjNumber(program) }}</span>
-            </div>
-            <div class="text-right">
-              <span class="text-slate-500 dark:text-slate-400 block">Company:</span>
-              <span class="font-semibold text-slate-700 dark:text-slate-300 block truncate max-w-[160px]">{{ getProgramCompanyName(program) }}</span>
-            </div>
+          <div v-if="canViewMasterColumns" class="flex justify-between gap-4">
+            <dt class="text-slate-500 dark:text-slate-400 shrink-0">No. PO/SJ</dt>
+            <dd class="text-right text-slate-800 dark:text-slate-200 tabular-nums truncate">{{ getProgramPoSjNumber(program) }}</dd>
           </div>
-
-          <!-- No. Invoice & Total Payment -->
-          <div v-if="canViewFinanceColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
-            <div>
-              <span class="text-slate-500 dark:text-slate-400 text-[11px] block">No. Invoice</span>
-              <span class="text-[11px] font-medium text-slate-700 dark:text-slate-300 block tabular-nums">{{ program.invoice_number || '-' }}</span>
-            </div>
-            <div class="text-right">
-              <div class="flex items-center justify-end gap-1.5 mb-0.5">
-                <span class="text-slate-500 dark:text-slate-400 text-[11px] block">Total Payment</span>
-                <div class="relative inline-flex items-center group" @click.stop>
-                  <span
-                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-all select-none"
-                    :class="[
-                      getPaymentBadgeClass(program.payment_status),
-                      (!canEditFinance && !isAdmin) ? 'opacity-85' : 'group-hover:opacity-90'
-                    ]"
-                  >
-                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(program.payment_status)"></span>
-                    <span>{{ formatPaymentStatus(program.payment_status) }}</span>
-                    <ChevronDown v-if="canEditFinance || isAdmin" class="w-2 h-2 text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 ml-0.5 shrink-0" />
-                  </span>
-                  <select
-                    :value="normalizePayStatus(program.payment_status)"
-                    :disabled="!canEditFinance && !isAdmin"
-                    @change="handleSelectPaymentStatus(program.id, $event.target.value)"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-default"
-                  >
-                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                      {{ opt.label }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <span class="font-semibold text-xs sm:text-sm block text-slate-900 dark:text-slate-100 tabular-nums">
-                {{ formatRupiah(program.total_invoice) }}
+          <div v-if="canViewFinanceColumns" class="flex justify-between gap-4">
+            <dt class="text-slate-500 dark:text-slate-400 shrink-0">No. invoice</dt>
+            <dd class="text-right text-slate-800 dark:text-slate-200 tabular-nums truncate">{{ program.invoice_number || '-' }}</dd>
+          </div>
+          <div v-if="canViewFinanceColumns" class="flex justify-between items-center gap-4">
+            <dt class="text-slate-500 dark:text-slate-400 shrink-0">Total</dt>
+            <dd class="text-right">
+              <span class="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{{ formatRupiah(program.total_invoice) }}</span>
+              <span class="ml-2 inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <span class="w-1.5 h-1.5 rounded-full" :class="getPaymentDotClass(program.payment_status)"></span>
+                {{ formatPaymentStatus(program.payment_status) }}
               </span>
-            </div>
+            </dd>
           </div>
+        </dl>
 
-          <!-- Tax Invoice Date & No. FP -->
-          <div v-if="canViewFinanceColumns" class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
-            <div>
-              <span class="text-slate-500 dark:text-slate-400 block">Tax Invoice Date:</span>
-              <span class="font-medium text-slate-700 dark:text-slate-300 block">
-                {{ program.faktur_date ? formatDate(program.faktur_date) : '-' }}
-              </span>
-            </div>
-            <div class="text-right" v-if="program.faktur_number">
-              <span class="text-slate-500 dark:text-slate-400 block">No. FP:</span>
-              <span class="text-slate-700 dark:text-slate-300 block tabular-nums">{{ program.faktur_number }}</span>
-            </div>
-          </div>
-
-          <!-- DPP & PPN Breakdown -->
-          <div v-if="canViewFinanceColumns" class="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
-            <div>
-              <span class="text-slate-400 dark:text-slate-500 text-[10px]">DPP:</span>
-              <span class="text-slate-700 dark:text-slate-300 ml-1 tabular-nums">{{ formatRupiah(program.dpp) }}</span>
-            </div>
-            <div class="text-right">
-              <span class="text-slate-400 dark:text-slate-500 text-[10px]">PPN 11%:</span>
-              <span class="text-slate-700 dark:text-slate-300 font-medium ml-1 tabular-nums">{{ formatRupiah(program.ppn) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dokumen Lampiran & Action Buttons Row -->
-        <div class="flex items-center justify-between gap-2 pt-1" @click.stop>
-          <!-- Dokumen Lampiran Interactive Pills -->
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">Dok</span>
-            <!-- INVOICE -->
+        <!-- Dokumen + aksi -->
+        <div class="mt-3 flex items-center justify-between gap-2" @click.stop>
+          <div class="flex flex-wrap items-center gap-1">
             <button
+              v-for="doc in DOC_TYPES"
+              :key="doc.type"
               type="button"
-              class="px-2 py-1 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-              :class="[
-                hasDoc(program, 'invoice')
-                  ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                  : (store.canUploadDoc('invoice')
-                    ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-              ]"
-              :title="hasDoc(program, 'invoice') ? 'Invoice ada - Klik untuk melihat' : (store.canUploadDoc('invoice') ? 'Invoice belum ada - Klik unggah' : 'Invoice belum ada (Khusus Finance/Admin)')"
-              @click="handlePillClick(program, 'invoice', 'Invoice')"
+              class="h-7 px-2 inline-flex items-center gap-1 rounded-md text-xs transition-colors"
+              :class="hasDoc(program, doc.type)
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 cursor-pointer'
+                : store.canUploadDoc(doc.type)
+                  ? 'border border-dashed border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 cursor-pointer'
+                  : 'border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'"
+              :title="docChipTitle(program, doc)"
+              @click="handlePillClick(program, doc.type, doc.label)"
             >
-              <span v-if="!hasDoc(program, 'invoice')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>IN
-            </button>
-
-            <!-- FAKTUR PAJAK -->
-            <button
-              type="button"
-              class="px-2 py-1 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-              :class="[
-                hasDoc(program, 'faktur_pajak')
-                  ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                  : (store.canUploadDoc('faktur_pajak')
-                    ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-              ]"
-              :title="hasDoc(program, 'faktur_pajak') ? 'Faktur Pajak ada - Klik untuk melihat' : (store.canUploadDoc('faktur_pajak') ? 'Faktur Pajak belum ada - Klik unggah' : 'Faktur Pajak belum ada (Khusus Finance/Admin)')"
-              @click="handlePillClick(program, 'faktur_pajak', 'Faktur Pajak')"
-            >
-              <span v-if="!hasDoc(program, 'faktur_pajak')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>FP
-            </button>
-
-            <!-- Memo / DO -->
-            <button
-              type="button"
-              class="px-2 py-1 rounded-md text-[10px] font-medium transition-all select-none active:scale-95"
-              :class="[
-                hasDoc(program, 'mou')
-                  ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'
-                  : (store.canUploadDoc('mou')
-                    ? 'text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer'
-                    : 'text-slate-300 dark:text-slate-600 border border-dashed border-slate-200 dark:border-slate-800 cursor-not-allowed')
-              ]"
-              :title="hasDoc(program, 'mou') ? 'Memo/DO ada - Klik untuk melihat' : (store.canUploadDoc('mou') ? 'Memo/DO belum ada - Klik unggah' : 'Memo/DO belum ada (Khusus Gudang/Admin)')"
-              @click="handlePillClick(program, 'mou', 'Memo/DO')"
-            >
-              <span v-if="!hasDoc(program, 'mou')" class="mr-0.5 font-normal text-slate-400 dark:text-slate-500">+</span>DO
+              <CircleCheck v-if="hasDoc(program, doc.type)" class="w-3.5 h-3.5" :stroke-width="2" />
+              <span v-else aria-hidden="true">+</span>
+              {{ doc.type === 'faktur_pajak' ? 'Faktur' : doc.label }}
             </button>
           </div>
-
-          <!-- Quick Action Buttons -->
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              class="h-8 px-2.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium text-xs transition-colors flex items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
-              @click="goToDetail(program.id)"
-              title="Lihat Detail"
-            >
-              <Eye class="w-3.5 h-3.5" />
-              <span>Detail</span>
-            </button>
+          <div class="flex items-center shrink-0">
             <button
               v-if="canEditProgram"
               type="button"
-              class="h-8 w-8 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer flex items-center justify-center"
-              title="Edit Data Program"
+              class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              aria-label="Ubah program"
               @click="openEditModal(program)"
             >
-              <Pencil class="w-3.5 h-3.5" />
+              <Pencil class="w-4 h-4" :stroke-width="1.75" />
             </button>
             <button
               v-if="isAdmin"
               type="button"
-              class="h-8 w-8 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer flex items-center justify-center"
-              title="Hapus Program"
+              class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
+              aria-label="Hapus program"
               @click="openDeleteConfirm(program)"
             >
-              <Trash2 class="w-3.5 h-3.5" />
+              <Trash2 class="w-4 h-4" :stroke-width="1.75" />
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Empty State Mobile -->
-      <div v-if="filteredPrograms.length === 0" class="py-12 px-4 text-center">
-        <FolderArchive class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Tidak ada program ditemukan</p>
-        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Sesuaikan filter atau pencarian.</p>
+      <div v-if="filteredPrograms.length === 0" class="py-16 px-4 text-center">
+        <FolderArchive class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" :stroke-width="1.5" />
+        <p class="mt-3 text-sm text-slate-800 dark:text-slate-200">Tidak ada program yang cocok</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Ubah kata kunci atau reset filter</p>
       </div>
     </div>
 
-    <!-- Table Footer / Summary & Pagination -->
-    <div class="px-4 sm:px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-      <div class="flex items-center justify-between w-full sm:w-auto">
-        <span v-if="filteredPrograms.length > 0">
-          Menampilkan <strong class="text-slate-800 dark:text-slate-200 font-semibold">{{ startIndex + 1 }} - {{ endIndex }}</strong> dari <strong class="text-slate-800 dark:text-slate-200 font-semibold">{{ filteredPrograms.length }}</strong> data
-        </span>
-        <span v-else>
-          Menampilkan <strong class="text-slate-800 dark:text-slate-200 font-semibold">0</strong> data
-        </span>
+    <TablePagination
+      v-model:page="currentPage"
+      v-model:page-size="pageSize"
+      :total="filteredPrograms.length"
+      item-label="program"
+    />
 
-        <!-- Mobile Total Nilai Badge -->
-        <span v-if="filteredPrograms.length > 0" class="sm:hidden tabular-nums text-slate-800 dark:text-slate-200 font-semibold text-[11px]">
-          {{ formatRupiah(totalSum) }}
-        </span>
-      </div>
-
-      <!-- Pagination Controls (Sebelumnya / Next) -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
-        <button
-          type="button"
-          :disabled="currentPage === 1"
-          @click="currentPage--"
-          class="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1"
-        >
-          <ChevronLeft class="w-3.5 h-3.5" />
-          <span>Sebelumnya</span>
-        </button>
-
-        <!-- Page indicators: Mobile shows 'X / Y', Desktop shows page numbers -->
-        <div class="sm:hidden text-xs font-semibold text-slate-700 dark:text-slate-300 px-2">
-          {{ currentPage }} / {{ totalPages }}
-        </div>
-
-        <div class="hidden sm:flex items-center gap-1">
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            type="button"
-            @click="currentPage = page"
-            :class="[
-              'w-7 h-7 rounded-lg text-xs font-medium flex items-center justify-center transition-colors cursor-pointer',
-              currentPage === page
-                ? 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            ]"
-          >
-            {{ page }}
-          </button>
-        </div>
-
-        <button
-          type="button"
-          :disabled="currentPage >= totalPages"
-          @click="currentPage++"
-          class="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1"
-        >
-          <span>Selanjutnya</span>
-          <ChevronRight class="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      <div class="hidden sm:flex items-center gap-4 text-xs">
-        <span v-if="filteredPrograms.length > 0">
-          Total Nilai: <strong class="tabular-nums text-slate-800 dark:text-slate-200 font-semibold ml-1">{{ formatRupiah(totalSum) }}</strong>
-        </span>
-      </div>
-    </div>
-
-    <!-- Quick Edit Modal -->
+    <!-- Dialog ubah program -->
     <Teleport to="body">
-      <div
-        v-if="isEditModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
-        @click.self="isEditModalOpen = false"
-      >
-        <div class="bg-white dark:bg-[#111827] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-xl overflow-hidden max-h-[92vh] flex flex-col">
-          <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-            <div>
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Edit Data Program</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Wewenang: {{ store.currentUser.value?.role || 'Pengguna' }}</p>
+      <div v-if="isEditModalOpen" :class="f.dialogOverlay" @click.self="isEditModalOpen = false">
+        <form :class="f.dialogPanel" role="dialog" aria-labelledby="edit-program-title" @submit.prevent="saveEdit">
+          <div :class="f.dialogHeader">
+            <div class="min-w-0">
+              <h2 id="edit-program-title" class="text-base font-medium text-slate-900 dark:text-slate-100">Ubah data program</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Sebagai {{ store.currentUser.value?.role || 'pengguna' }}</p>
             </div>
-            <button
-              type="button"
-              class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              @click="isEditModalOpen = false"
-            >
-              <X class="w-4 h-4" />
+            <button type="button" :class="f.closeButton" aria-label="Tutup" @click="isEditModalOpen = false">
+              <X class="w-4 h-4" :stroke-width="1.75" />
             </button>
           </div>
 
-          <form @submit.prevent="saveEdit" class="p-4 sm:p-5 space-y-5 overflow-y-auto flex-1 text-xs">
-            <!-- Section 1: Data Purchase & Vendor -->
-            <div class="space-y-3">
-              <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-                <span class="font-semibold text-slate-900 dark:text-slate-100">Data Purchase & Pengadaan</span>
-                <span v-if="!canEditPurchase" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
+          <div :class="f.dialogBody">
+            <!-- Pengadaan -->
+            <section>
+              <div :class="f.sectionHead">
+                <h3 :class="f.sectionTitle">Pengadaan</h3>
+                <span v-if="!canEditPurchase" :class="f.readOnlyBadge"><Lock class="w-3.5 h-3.5" :stroke-width="1.75" />Hanya baca</span>
               </div>
+              <div :class="f.fieldGrid">
+                <div class="sm:col-span-2">
+                  <label for="te-name" :class="f.fieldLabel">Nama program</label>
+                  <input id="te-name" v-model="editForm.program_name" type="text" required :disabled="!canEditPurchase" :class="f.fieldInput" />
+                </div>
 
-              <div>
-                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Program</label>
-                <input
-                  v-model="editForm.program_name"
-                  type="text"
-                  required
-                  :disabled="!canEditPurchase"
-                  class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                />
-              </div>
+                <div>
+                  <label id="te-supplier" :class="f.fieldLabel">Supplier</label>
+                  <SearchSelect
+                    :model-value="editForm.supplier"
+                    labelledby="te-supplier"
+                    search-placeholder="Cari supplier"
+                    :options="supplierEditOptions"
+                    :disabled="!canEditPurchase"
+                    @update:model-value="(v) => { editForm.supplier = v; onEditSupplierChange(); }"
+                  />
+                  <input v-if="editForm.supplier === '__custom__'" v-model="customEditSupplier" type="text" required placeholder="Nama supplier baru" :class="[f.fieldInput, 'mt-2']" />
+                </div>
+                <div>
+                  <label for="te-npwp" :class="f.fieldLabel">NPWP supplier</label>
+                  <input id="te-npwp" v-model="editForm.npwp" type="text" :disabled="!canEditPurchase" :class="[f.fieldInput, 'tabular-nums']" />
+                </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Supplier / Vendor</label>
-                  <select
-                    v-model="editForm.supplier"
-                    required
-                    @change="onEditSupplierChange"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
-                  >
-                    <option v-for="s in editSupplierOptions" :key="s.name" :value="s.name">
-                      {{ s.name }}
-                    </option>
-                    <option value="__custom__">+ Ketik Supplier Lain...</option>
-                  </select>
-                  <input
-                    v-if="editForm.supplier === '__custom__'"
-                    v-model="customEditSupplier"
-                    type="text"
-                    placeholder="Ketik nama supplier baru..."
-                    required
-                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 font-medium"
-                  />
+                  <label id="te-company" :class="f.fieldLabel">Company</label>
+                  <SearchSelect v-model="editForm.company_name" labelledby="te-company" search-placeholder="Cari company" :options="companyEditOptions" :disabled="!canEditPurchase" />
+                  <input v-if="editForm.company_name === '__custom__'" v-model="customEditCompany" type="text" placeholder="Nama company baru" :class="[f.fieldInput, 'mt-2']" />
                 </div>
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">NPWP Vendor</label>
-                  <input
-                    v-model="editForm.npwp"
-                    type="text"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
+                  <label for="te-po" :class="f.fieldLabel">No. PO/SJ</label>
+                  <input id="te-po" v-model="editForm.po_sj_number" type="text" placeholder="PO/2025/1016" :disabled="!canEditPurchase" :class="[f.fieldInput, 'tabular-nums']" />
                 </div>
-              </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-                  <select
-                    v-model="editForm.company_name"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
-                  >
-                    <option v-for="c in editCompanyOptions" :key="c" :value="c">
-                      {{ c }}
-                    </option>
-                    <option value="__custom__">+ Ketik Company Lain...</option>
-                  </select>
-                  <input
-                    v-if="editForm.company_name === '__custom__'"
-                    v-model="customEditCompany"
-                    type="text"
-                    placeholder="Ketik nama company baru..."
-                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 font-medium"
-                  />
+                  <label id="te-category" :class="f.fieldLabel">Kategori</label>
+                  <SearchSelect v-model="editForm.category" labelledby="te-category" search-placeholder="Cari kategori" :options="categoryEditOptions" :disabled="!canEditPurchase" />
+                  <input v-if="editForm.category === '__custom__'" v-model="customEditCategory" type="text" required placeholder="Kategori baru" :class="[f.fieldInput, 'mt-2']" />
                 </div>
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kode Gudang</label>
-                  <select
-                    v-model="editForm.kode_gudang"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-mono cursor-pointer"
-                  >
-                    <option value="">-- Pilih Kode Gudang --</option>
-                    <option v-for="w in editWarehouseOptions" :key="w.code" :value="w.code">
-                      {{ w.code }} - {{ w.name }}
-                    </option>
-                    <option value="__custom__">+ Ketik Kode Gudang Lain...</option>
-                  </select>
-                  <input
-                    v-if="editForm.kode_gudang === '__custom__'"
-                    v-model="customEditWarehouse"
-                    type="text"
-                    placeholder="Contoh: GDG-JKT-03"
-                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 font-medium"
-                  />
+                  <label id="te-brand" :class="f.fieldLabel">Brand</label>
+                  <SearchSelect v-model="editForm.brand" labelledby="te-brand" search-placeholder="Cari brand" :options="brandEditOptions" :disabled="!canEditPurchase" />
+                  <input v-if="editForm.brand === '__custom__'" v-model="customEditBrand" type="text" placeholder="Brand baru" :class="[f.fieldInput, 'mt-2']" />
                 </div>
+
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. PO / SJ</label>
-                  <input
-                    v-model="editForm.po_sj_number"
-                    type="text"
-                    placeholder="Contoh: PO/2025/1016 / SJ-1016"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
+                  <label id="te-warehouse" :class="f.fieldLabel">Kode gudang</label>
+                  <SearchSelect v-model="editForm.kode_gudang" labelledby="te-warehouse" placeholder="Belum dipilih" search-placeholder="Cari kode gudang" :options="warehouseEditOptions" :disabled="!canEditPurchase" />
+                  <input v-if="editForm.kode_gudang === '__custom__'" v-model="customEditWarehouse" type="text" placeholder="GDG-JKT-03" :class="[f.fieldInput, 'mt-2 uppercase']" />
                 </div>
               </div>
+            </section>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
-                  <select
-                    v-model="editForm.category"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
-                  >
-                    <option v-for="cat in editCategoryOptions" :key="cat" :value="cat">
-                      {{ cat }}
-                    </option>
-                    <option value="__custom__">+ Ketik Kategori Lain...</option>
-                  </select>
-                  <input
-                    v-if="editForm.category === '__custom__'"
-                    v-model="customEditCategory"
-                    type="text"
-                    placeholder="Ketik kategori baru..."
-                    required
-                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Brand</label>
-                  <select
-                    v-model="editForm.brand"
-                    :disabled="!canEditPurchase"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
-                  >
-                    <option v-for="b in editBrandOptions" :key="b" :value="b">
-                      {{ b }}
-                    </option>
-                    <option value="__custom__">+ Ketik Brand Lain...</option>
-                  </select>
-                  <input
-                    v-if="editForm.brand === '__custom__'"
-                    v-model="customEditBrand"
-                    type="text"
-                    placeholder="Ketik nama brand baru..."
-                    class="mt-1.5 w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 font-medium"
-                  />
-                </div>
+            <!-- Nilai & pajak -->
+            <section>
+              <div :class="f.sectionHead">
+                <h3 :class="f.sectionTitle">Nilai dan pajak</h3>
+                <span v-if="!canEditFinance" :class="f.readOnlyBadge"><Lock class="w-3.5 h-3.5" :stroke-width="1.75" />Hanya baca</span>
               </div>
-            </div>
-
-            <!-- Section 2: Data Nilai & Perpajakan -->
-            <div class="space-y-3 pt-2">
-              <div class="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
-                <span class="font-semibold text-slate-900 dark:text-slate-100">Data Nilai & Faktur Pajak</span>
-                <span v-if="!canEditFinance" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Hanya baca</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div :class="f.fieldGrid">
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Invoice</label>
-                  <input
-                    v-model="editForm.invoice_number"
-                    type="text"
-                    :disabled="!canEditFinance"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
+                  <label for="te-invoice" :class="f.fieldLabel">No. invoice</label>
+                  <input id="te-invoice" v-model="editForm.invoice_number" type="text" :disabled="!canEditFinance" :class="[f.fieldInput, 'tabular-nums']" />
                 </div>
                 <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Payment</label>
-                  <select
-                    :value="normalizePayStatus(editForm.payment_status)"
-                    @change="editForm.payment_status = $event.target.value"
+                  <label id="te-payment" :class="f.fieldLabel">Status pembayaran</label>
+                  <SearchSelect
+                    :model-value="normalizePayStatus(editForm.payment_status)"
+                    labelledby="te-payment"
+                    :options="editPaymentStatusOptions"
                     :disabled="!canEditFinance && !isAdmin"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium cursor-pointer"
-                  >
-                    <option v-for="opt in editPaymentStatusOptions" :key="opt.value" :value="opt.value">
-                      {{ opt.label }}
-                    </option>
-                  </select>
+                    @update:model-value="(v) => { editForm.payment_status = v; }"
+                  />
+                </div>
+
+                <div>
+                  <label for="te-faktur" :class="f.fieldLabel">No. faktur pajak</label>
+                  <input id="te-faktur" v-model="editForm.faktur_number" type="text" placeholder="010.000-25.00000001" :disabled="!canEditFinance" :class="[f.fieldInput, 'tabular-nums']" />
+                </div>
+                <div>
+                  <label for="te-faktur-date" :class="f.fieldLabel">Tanggal faktur pajak</label>
+                  <input id="te-faktur-date" v-model="editForm.faktur_date" type="date" :disabled="!canEditFinance" :class="f.fieldInput" />
+                </div>
+
+                <div>
+                  <label for="te-dpp" :class="f.fieldLabel">DPP</label>
+                  <input id="te-dpp" v-model.number="editForm.dpp" type="number" required :disabled="!canEditFinance" :class="f.fieldNumber" @input="calculateTaxes" />
+                </div>
+                <div>
+                  <label for="te-ppn" :class="f.fieldLabel">PPN</label>
+                  <input id="te-ppn" v-model.number="editForm.ppn" type="number" :disabled="!canEditFinance" :class="f.fieldNumber" />
+                  <p :class="f.fieldHint">Otomatis 11% dari DPP, bisa diubah</p>
+                </div>
+
+                <div>
+                  <label id="te-pph-type" :class="f.fieldLabel">Jenis PPh</label>
+                  <SearchSelect
+                    :model-value="editForm.pph_type"
+                    labelledby="te-pph-type"
+                    :options="PPH_TYPE_OPTIONS"
+                    :disabled="!canEditFinance"
+                    @update:model-value="(v) => { editForm.pph_type = v; onPphTypeChange(); }"
+                  />
+                </div>
+                <div>
+                  <label for="te-pph" :class="f.fieldLabel">Nilai PPh</label>
+                  <input id="te-pph" v-model.number="editForm.pph" type="number" :disabled="!canEditFinance" :class="f.fieldNumber" />
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai DPP (IDR)</label>
-                  <input
-                    v-model.number="editForm.dpp"
-                    type="number"
-                    required
-                    :disabled="!canEditFinance"
-                    @input="calculateTaxes"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
+              <dl :class="f.summaryBox">
+                <div :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">DPP</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.dpp || 0) }}</dd>
                 </div>
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">PPN 11% (IDR)</label>
-                  <input
-                    v-model.number="editForm.ppn"
-                    type="number"
-                    :disabled="!canEditFinance"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
+                <div :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">PPN</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.ppn || 0) }}</dd>
                 </div>
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Invoice</label>
-                  <input
-                    :value="editForm.dpp + editForm.ppn"
-                    type="number"
-                    readonly
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 cursor-not-allowed"
-                  />
+                <div :class="f.summaryRow">
+                  <dt class="font-medium text-slate-900 dark:text-slate-100">Total invoice</dt>
+                  <dd class="tabular-nums font-medium text-slate-900 dark:text-slate-100">{{ formatRupiah((editForm.dpp || 0) + (editForm.ppn || 0)) }}</dd>
                 </div>
-              </div>
+                <div v-if="editForm.pph_type !== 'NON_PPH'" :class="f.summaryRow">
+                  <dt class="text-slate-500 dark:text-slate-400">PPh dipotong</dt>
+                  <dd class="tabular-nums text-slate-800 dark:text-slate-200">{{ formatRupiah(editForm.pph || 0) }}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Jenis PPh</label>
-                  <select
-                    v-model="editForm.pph_type"
-                    :disabled="!canEditFinance"
-                    @change="onPphTypeChange"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  >
-                    <option value="NON_PPH">Non PPh</option>
-                    <option value="PPH_21">PPh 21 (2,5%)</option>
-                    <option value="PPH_23">PPh 23 (2%)</option>
-                    <option value="PPH_4_2">PPh 4 Ayat 2 (10%)</option>
-                    <option value="PPH_23_BONUS">PPh 23 Atas Bonus (15%)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nilai PPh (IDR)</label>
-                  <input
-                    v-model.number="editForm.pph"
-                    type="number"
-                    :disabled="!canEditFinance"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">No. Faktur Pajak</label>
-                  <input
-                    v-model="editForm.faktur_number"
-                    type="text"
-                    placeholder="010.000-25.00000001"
-                    :disabled="!canEditFinance"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
-                </div>
-                <div>
-                  <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tax Invoice Date</label>
-                  <input
-                    v-model="editForm.faktur_date"
-                    type="date"
-                    :disabled="!canEditFinance"
-                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed font-medium"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5 shrink-0">
-              <button
-                type="button"
-                :disabled="isSavingEdit"
-                class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
-                @click="isEditModalOpen = false"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                :disabled="isSavingEdit"
-                class="px-4 py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700"
-              >
-                <span v-if="isSavingEdit" class="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></span>
-                <span>{{ isSavingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
+          <div :class="f.dialogFooter">
+            <button type="button" :class="f.buttonSecondary" :disabled="isSavingEdit" @click="isEditModalOpen = false">Batal</button>
+            <button type="submit" :class="f.buttonPrimary" :disabled="isSavingEdit">
+              <span v-if="isSavingEdit" class="w-4 h-4 rounded-full border-2 border-current/30 border-t-current animate-spin"></span>
+              {{ isSavingEdit ? 'Menyimpan…' : 'Simpan perubahan' }}
+            </button>
+          </div>
+        </form>
       </div>
     </Teleport>
 
@@ -893,7 +433,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
         @click.self="programToDelete = null"
       >
-        <div class="bg-white dark:bg-[#111827] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-5 text-center">
+        <div class="bg-white dark:bg-graphite-card rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-5 text-center">
           <div class="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3">
             <Trash2 class="w-5 h-5" />
           </div>
@@ -928,6 +468,40 @@
       :program="activeProgram"
     />
 
+    <!-- Menu status pembayaran (di body supaya tidak terpotong oleh tabel yang bisa digeser) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        enter-from-class="opacity-0 -translate-y-1"
+        leave-active-class="transition-opacity duration-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="paymentMenu"
+          ref="paymentMenuRef"
+          role="menu"
+          aria-label="Ubah status pembayaran"
+          class="fixed z-50 w-60 p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-[0_8px_24px_rgba(0,0,0,0.10)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+          :style="{ top: paymentMenu.top + 'px', left: paymentMenu.left + 'px' }"
+        >
+          <p class="px-2.5 pt-1.5 pb-1 text-xs text-slate-500 dark:text-slate-400">Status pembayaran</p>
+          <button
+            v-for="opt in paymentMenuOptions"
+            :key="opt.value"
+            type="button"
+            role="menuitemradio"
+            :aria-checked="opt.value === paymentMenu.current"
+            class="w-full h-9 px-2.5 flex items-center gap-2.5 rounded-lg text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:bg-slate-100 dark:focus-visible:bg-slate-700 outline-none transition-colors cursor-pointer"
+            @click="choosePaymentStatus(opt.value)"
+          >
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getPaymentDotClass(opt.value)"></span>
+            <span class="flex-1 truncate">{{ opt.label }}</span>
+            <Check v-if="opt.value === paymentMenu.current" class="w-4 h-4 text-slate-900 dark:text-slate-100" :stroke-width="2" />
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Document Upload Modal -->
     <DocumentUploadModal
       v-model:open="isUploadOpen"
@@ -939,9 +513,11 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive, watch } from 'vue';
+import { computed, ref, reactive, watch, nextTick } from 'vue';
+import { onClickOutside, onKeyStroke, useEventListener, useResizeObserver } from '@vueuse/core';
+import { useProgramColumns } from '../../store/programColumns';
 import { useRouter } from 'vue-router';
-import { FolderArchive, Trash2, X, ChevronLeft, ChevronRight, Eye, Pencil, ChevronDown } from 'lucide-vue-next';
+import { FolderArchive, Trash2, X, ChevronLeft, ChevronRight, Eye, Pencil, ChevronDown, Check, CircleCheck, Upload, Lock } from 'lucide-vue-next';
 import {
   useTaxStore,
   formatRupiah,
@@ -954,6 +530,10 @@ import {
 } from '../../store/taxStore';
 import DocumentPreviewSheet from '../detail/DocumentPreviewSheet.vue';
 import DocumentUploadModal from '../detail/DocumentUploadModal.vue';
+import TablePagination from '../ui/TablePagination.vue';
+import SearchSelect from '../ui/SearchSelect.vue';
+import * as f from './formStyles';
+import { PPH_TYPE_OPTIONS } from './formStyles';
 
 const router = useRouter();
 const store = useTaxStore();
@@ -1043,37 +623,180 @@ async function handleSelectPaymentStatus(programId, newStatus) {
   await store.updatePaymentStatus(programId, newStatus);
 }
 
+// Menu status pembayaran di tabel desktop
+const canChangePayment = computed(() => canEditFinance.value || isAdmin.value);
+const paymentMenu = ref(null); // { programId, current, top, left }
+const paymentMenuRef = ref(null);
+const MENU_WIDTH = 240;
+
+const paymentMenuOptions = computed(() => {
+  const master = masterPaymentStatuses.value.length > 0
+    ? masterPaymentStatuses.value
+    : ['Waiting Payment', 'CBD (Cash Before Delivery)', 'Tempo', 'Paid (Lunas)'];
+  const seen = new Set();
+  return master
+    .map(label => ({ value: normalizePayStatus(label), label }))
+    .filter(opt => !seen.has(opt.value) && seen.add(opt.value));
+});
+
+function togglePaymentMenu(event, program) {
+  if (!canChangePayment.value) return;
+  if (paymentMenu.value?.programId === program.id) {
+    paymentMenu.value = null;
+    return;
+  }
+  paymentTrigger = event.currentTarget;
+  paymentMenu.value = {
+    programId: program.id,
+    current: normalizePayStatus(program.payment_status),
+    ...menuPosition(paymentTrigger.getBoundingClientRect()),
+  };
+  nextTick(() => paymentMenuRef.value?.querySelector('[aria-checked="true"]')?.focus({ preventScroll: true }));
+}
+
+let paymentTrigger = null;
+
+// Di bawah tombol, rata kanan; naik ke atas tombol bila tidak cukup ruang di bawah
+function menuPosition(rect) {
+  const menuHeight = 40 + paymentMenuOptions.value.length * 36;
+  const opensUp = rect.bottom + 4 + menuHeight > window.innerHeight - 8;
+  return {
+    top: opensUp ? rect.top - menuHeight - 4 : rect.bottom + 4,
+    left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
+  };
+}
+
+// Saat halaman/tabel digulir, menu ikut tombolnya; tutup bila tombol keluar dari layar
+function followPaymentTrigger() {
+  if (!paymentMenu.value || !paymentTrigger) return;
+  const rect = paymentTrigger.getBoundingClientRect();
+  if (rect.bottom < 0 || rect.top > window.innerHeight || !paymentTrigger.isConnected) {
+    paymentMenu.value = null;
+    return;
+  }
+  Object.assign(paymentMenu.value, menuPosition(rect));
+}
+
+async function choosePaymentStatus(value) {
+  const menu = paymentMenu.value;
+  paymentMenu.value = null;
+  if (menu && value !== menu.current) {
+    await handleSelectPaymentStatus(menu.programId, value);
+  }
+}
+
+// Tutup saat klik di luar atau Esc
+onClickOutside(paymentMenuRef, (event) => {
+  if (!event.target.closest?.('[aria-label="Status pembayaran"]')) paymentMenu.value = null;
+});
+onKeyStroke('Escape', () => { paymentMenu.value = null; });
+useEventListener(window, 'scroll', followPaymentTrigger, { capture: true, passive: true });
+useEventListener(window, 'resize', followPaymentTrigger);
+
 const filteredPrograms = computed(() => store.filteredPrograms.value);
 const totalCount = computed(() => store.programs.value.length);
 const categoriesList = computed(() => store.categoriesList.value.filter(c => c !== 'Semua Kategori'));
 
-// Pagination state (15 data per halaman)
-const itemsPerPage = 15;
+// Pagination (jumlah baris per halaman bisa dipilih di bawah tabel)
+const pageSize = ref(10);
 const currentPage = ref(1);
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredPrograms.value.length / itemsPerPage) || 1;
-});
-
-const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage);
-const endIndex = computed(() => {
-  return Math.min(startIndex.value + itemsPerPage, filteredPrograms.value.length);
-});
-
 const paginatedPrograms = computed(() => {
-  return filteredPrograms.value.slice(startIndex.value, endIndex.value);
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredPrograms.value.slice(start, start + pageSize.value);
 });
 
-// Reset ke halaman 1 jika filter berubah
-watch(filteredPrograms, () => {
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = 1;
+// Filter atau pencarian berubah: kembali ke halaman 1
+watch(
+  () => [
+    store.state.searchQuery, store.state.selectedStatus, store.state.selectedPaymentStatus,
+    store.state.selectedSupplier, store.state.selectedCategory, store.state.selectedBrand,
+    store.state.selectedMonth, store.state.selectedCompany,
+  ],
+  () => { currentPage.value = 1; }
+);
+
+// Data berkurang (mis. program dihapus): jangan tertinggal di halaman kosong
+watch(filteredPrograms, (list) => {
+  const lastPage = Math.max(1, Math.ceil(list.length / pageSize.value));
+  if (currentPage.value > lastPage) currentPage.value = lastPage;
+});
+
+// Gaya sel tabel desktop. Baris berselang warna; sel yang menempel (Program, Aksi) memakai warna baris yang sama
+const thClass = 'h-11 px-4 bg-slate-100 dark:bg-[#202022]';
+const tdClass = 'h-12 px-4';
+function rowBase(idx) {
+  return idx % 2 ? 'bg-slate-50 dark:bg-[#1d1d1f]' : 'bg-white dark:bg-graphite-card';
+}
+// Baris yang disorot kursor diberi warna sama di semua sel, termasuk sel yang menempel
+function rowBg(idx) {
+  return `${rowBase(idx)} hover:bg-[#eef3fc] dark:hover:bg-[#242428]`;
+}
+// Kolom yang menempel (Program, Aksi) sedikit lebih gelap dari kolom yang bergeser, supaya terlihat terpisah
+function stickyBg(idx) {
+  const base = idx % 2 ? 'bg-[#eef0f3] dark:bg-[#252528]' : 'bg-[#f3f4f6] dark:bg-[#222225]';
+  return `${base} group-hover:bg-[#e4ecfb] dark:group-hover:bg-[#2b2b30]`;
+}
+
+// Bayangan di tepi kolom yang menempel hanya saat ada isi tabel yang tergeser di bawahnya
+const tableScrollRef = ref(null);
+const scrollEdges = reactive({ left: false, right: false });
+
+function updateScrollEdges() {
+  const el = tableScrollRef.value;
+  if (!el) return;
+  scrollEdges.left = el.scrollLeft > 1;
+  scrollEdges.right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+}
+
+const stickyLeftClass = computed(() => [
+  'sticky left-0 border-r border-slate-300 dark:border-slate-700',
+  scrollEdges.left ? 'shadow-[6px_0_10px_-6px_rgba(15,23,42,0.25)] dark:shadow-[6px_0_10px_-6px_rgba(0,0,0,0.8)]' : '',
+]);
+const stickyRightClass = computed(() => [
+  'sticky right-0 border-l border-slate-300 dark:border-slate-700',
+  scrollEdges.right ? 'shadow-[-6px_0_10px_-6px_rgba(15,23,42,0.25)] dark:shadow-[-6px_0_10px_-6px_rgba(0,0,0,0.8)]' : '',
+]);
+
+useResizeObserver(tableScrollRef, updateScrollEdges);
+
+// Kolom yang dipilih pengguna (tombol "Kolom" di toolbar)
+const { isVisible: isColumnVisible, hiddenKeys } = useProgramColumns();
+function show(key) {
+  return isColumnVisible(key);
+}
+const visibleDocTypes = computed(() => DOC_TYPES.filter(doc => show(`doc_${doc.type}`)));
+watch([hiddenKeys, paginatedPrograms], () => nextTick(updateScrollEdges));
+
+// Tiga dokumen wajib per program
+const DOC_TYPES = [
+  { type: 'invoice', short: 'IN', label: 'Invoice' },
+  { type: 'faktur_pajak', short: 'FP', label: 'Faktur pajak' },
+  { type: 'mou', short: 'DO', label: 'Memo/DO' },
+];
+
+function docStatus(program) {
+  const count = new Set((program.documents || []).map(d => d.document_type)).size;
+  if (count >= 3) return { label: 'Lengkap', dot: 'bg-emerald-500' };
+  if (count === 0) return { label: 'Belum ada dokumen', dot: 'bg-rose-500' };
+  return { label: `Kurang ${3 - count} dokumen`, dot: 'bg-amber-500' };
+}
+
+function docChipClass(program, docType) {
+  const base = 'h-6 min-w-8 px-1.5 rounded-md text-[11px] font-medium transition-colors select-none';
+  if (hasDoc(program, docType)) {
+    return `${base} bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer`;
   }
-});
+  if (store.canUploadDoc(docType)) {
+    return `${base} border border-dashed border-slate-300 text-slate-400 hover:border-slate-500 hover:text-slate-700 dark:border-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-pointer`;
+  }
+  return `${base} border border-dashed border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-600 cursor-not-allowed`;
+}
 
-const totalSum = computed(() => {
-  return filteredPrograms.value.reduce((acc, p) => acc + (Number(p.total_invoice) || 0), 0);
-});
+function docChipTitle(program, doc) {
+  if (hasDoc(program, doc.type)) return `${doc.label} sudah ada, klik untuk melihat`;
+  return store.canUploadDoc(doc.type) ? `${doc.label} belum ada, klik untuk mengunggah` : `${doc.label} belum ada`;
+}
 
 // Document Preview & Upload states
 const isPreviewOpen = ref(false);
@@ -1163,6 +886,29 @@ const editSupplierOptions = computed(() => {
   }
   return list;
 });
+
+// Opsi dropdown dialog ubah ({ value, label }); "__custom__" membuka isian manual di bawahnya
+const supplierEditOptions = computed(() => [
+  ...editSupplierOptions.value.map(s => ({ value: s.name, label: s.name, hint: s.npwp || '' })),
+  { value: '__custom__', label: '+ Supplier lain (ketik manual)' },
+]);
+const companyEditOptions = computed(() => [
+  ...editCompanyOptions.value.map(c => ({ value: c, label: c })),
+  { value: '__custom__', label: '+ Company lain (ketik manual)' },
+]);
+const categoryEditOptions = computed(() => [
+  ...editCategoryOptions.value.map(c => ({ value: c, label: c })),
+  { value: '__custom__', label: '+ Kategori lain (ketik manual)' },
+]);
+const brandEditOptions = computed(() => [
+  ...editBrandOptions.value.map(b => ({ value: b, label: b })),
+  { value: '__custom__', label: '+ Brand lain (ketik manual)' },
+]);
+const warehouseEditOptions = computed(() => [
+  { value: '', label: 'Belum dipilih' },
+  ...editWarehouseOptions.value.map(w => ({ value: w.code, label: w.code, hint: w.name !== w.code ? w.name : '' })),
+  { value: '__custom__', label: '+ Kode gudang lain (ketik manual)' },
+]);
 
 function onEditSupplierChange() {
   if (editForm.supplier === '__custom__') return;

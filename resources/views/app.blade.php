@@ -6,7 +6,7 @@
     <title>SCM TaxVault - Arsip Dokumen Pajak</title>
 
     <!-- Ikon tab: ikon arsip polos (?v= memaksa browser mengganti ikon lama yang tersimpan di cache) -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6">
 
     <!-- Font: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +33,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-[#F8FAFC] antialiased font-sans selection:bg-[#E0F2FE] selection:text-[#0369A1] transition-colors">
+<body class="bg-[#F8FAFC] dark:bg-graphite-page text-[#0F172A] dark:text-[#ededed] antialiased font-sans selection:bg-[#E0F2FE] selection:text-[#0369A1] transition-colors">
     <div id="app"></div>
 </body>
 </html>
